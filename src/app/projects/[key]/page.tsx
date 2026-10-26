@@ -9,7 +9,7 @@ export default async function ProjectDetailPage({
   searchParams,
 }: {
   params: Promise<{ key: string }>;
-  searchParams: Promise<{ status?: string; severity?: string; q?: string }>;
+  searchParams: Promise<{ status?: string; severity?: string; q?: string; assignedToMe?: string }>;
 }) {
   const session = await auth();
   const user = session?.user as
@@ -34,7 +34,7 @@ export default async function ProjectDetailPage({
     redirect("/projects");
   }
 
-  const { status, severity, q } = await searchParams;
+  const { status, severity, q, assignedToMe } = await searchParams;
 
   // Aggregate counts for summary header cards (Total, Draft, Open, In Progress, Ready, Closed)
   const [totalCount, draftCount, openCount, inProgressCount, readyCount, closedCount, myAssignedCount] =
@@ -51,6 +51,7 @@ export default async function ProjectDetailPage({
   const bugs = await prisma.bug.findMany({
     where: {
       projectId: project.id,
+      ...(assignedToMe === "true" ? { assigneeId: user.id } : {}),
       ...(status ? { status: status as BugStatus } : {}),
       ...(severity ? { severity: severity as BugSeverity } : {}),
       ...(q
@@ -183,6 +184,12 @@ export default async function ProjectDetailPage({
             <div className="flex items-center gap-2">
               <span className="font-semibold">Info tugas:</span> Ada {myAssignedCount} bug aktif yang ditugaskan kepada Anda.
             </div>
+            <Link
+              href={`/projects/${project.key}?assignedToMe=true`}
+              className="font-bold underline hover:text-blue-950"
+            >
+              Lihat Bug Saya →
+            </Link>
           </div>
         )}
 

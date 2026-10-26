@@ -5,6 +5,7 @@ import { recordAuditLog } from "@/lib/user-service";
 import { BugSeverity, BugPriority, BugStatus } from "@prisma/client";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { DuplicateChecker } from "./duplicate-checker";
 
 export default async function NewBugPage({
   params,
@@ -145,6 +146,7 @@ export default async function NewBugPage({
                 Judul Bug *
               </label>
               <input
+                id="bug-title-input"
                 type="text"
                 name="title"
                 required
@@ -152,6 +154,8 @@ export default async function NewBugPage({
                 className="w-full text-sm px-3 py-2 border border-slate-300 rounded focus:outline-none focus:ring-1 focus:ring-slate-900"
               />
             </div>
+
+            <DuplicateChecker projectKey={project.key} />
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div>

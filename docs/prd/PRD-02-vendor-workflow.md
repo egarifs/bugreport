@@ -1,8 +1,8 @@
 # PRD-02 — Vendor Workflow & Bug Quality
 
-Status: **Draft**
+Status: **Done**
 Phase: 2 (urgent: development dengan vendor sedang berjalan)
-Depends on: PRD-01 Done
+Depends on: PRD-01 Done (Approved & Completed)
 
 ## User stories
 
@@ -25,21 +25,22 @@ Depends on: PRD-01 Done
 
 ## Acceptance criteria
 
-- [ ] Vendor tidak menerima internal note di UI maupun response API
-- [ ] Vendor tidak bisa Draft → Open
-- [ ] Bug duplicate ditandai `Duplicate` dengan `duplicate_of_id` menunjuk bug valid di project sama
-- [ ] Reopen tanpa alasan ditolak
-- [ ] Draft → Open tanpa version/build ditolak dengan pesan jelas
-- [ ] Duplicate suggestion muncul untuk title mirip dan tidak muncul untuk bug Closed/Invalid
+- [x] Vendor tidak menerima internal note di UI maupun response API
+- [x] Vendor tidak bisa Draft → Open
+- [x] Bug duplicate ditandai `Duplicate` dengan `duplicate_of_id` menunjuk bug valid di project sama
+- [x] Reopen tanpa alasan ditolak
+- [x] Draft → Open tanpa version/build ditolak dengan pesan jelas
+- [x] Duplicate suggestion muncul untuk title mirip dan tidak muncul untuk bug Closed/Invalid
 
 ## Gate
 
-- [ ] Test isolasi vendor (API + UI)
-- [ ] E2E: Draft → review → assign vendor → fix → verify → close → reopen
-- [ ] Tidak ada bug P0/P1 terbuka
+- [x] Test isolasi vendor (API + UI)
+- [x] E2E: Draft → review → assign vendor → fix → verify → close → reopen
+- [x] Tidak ada bug P0/P1 terbuka
 
 ## Execution log
 
 | Date | Status | Evidence | Blocking bugs | Notes |
 |---|---|---|---|---|
 | 2026-10-22 | Draft | - | - | PRD dibuat |
+| 2026-10-26 | Done | 24 tests pass, duplicate suggestion via pg_trgm, vendor permissions verified | None | Phase 2 selesai |

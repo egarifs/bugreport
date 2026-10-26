@@ -21,7 +21,7 @@ Aturan: PRD berikutnya hanya boleh `In Progress` jika PRD sebelumnya `Done`.
 |---|---|---|---|---|
 | [PRD-00](PRD-00-baseline.md) | Product & security baseline | 0 | Approved | 2026-10-23 |
 | [PRD-01](PRD-01-foundation.md) | Foundation: auth, approval, project, bug CRUD | 1 | Done | 2026-10-26 |
-| [PRD-02](PRD-02-vendor-workflow.md) | Vendor workflow & bug quality | 2 | Draft | 2026-10-23 |
+| [PRD-02](PRD-02-vendor-workflow.md) | Vendor workflow & bug quality | 2 | Done | 2026-10-26 |
 | [PRD-02B](PRD-02B-docs-and-testcases.md) | Business docs & test cases (MVP) | 2B | Draft | 2026-10-23 |
 | [PRD-03](PRD-03-mcp.md) | MCP for AI agents | 3 | Draft | 2026-10-23 |
 | [PRD-04](PRD-04-project-chat.md) | Project AI chat (bugs + docs) | 4 | Draft | 2026-10-23 |

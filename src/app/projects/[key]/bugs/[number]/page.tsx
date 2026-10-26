@@ -50,6 +50,7 @@ export default async function BugDetailPage({
       reporter: { select: { id: true, name: true, email: true } },
       assignee: { select: { id: true, name: true, email: true } },
       reviewedBy: { select: { name: true, email: true } },
+      duplicateOf: { select: { key: true, number: true, title: true } },
       comments: {
         where: canSeeInternalNotes ? {} : { type: CommentType.PUBLIC },
         orderBy: { createdAt: "asc" },
@@ -59,6 +60,13 @@ export default async function BugDetailPage({
   });
 
   if (!bug) notFound();
+
+  // Audit timeline for activity
+  const timeline = await prisma.auditLog.findMany({
+    where: { entityType: "bug", entityId: bug.id },
+    orderBy: { createdAt: "desc" },
+    take: 15,
+  });
 
   const members = await prisma.projectMember.findMany({
     where: { projectId: project.id },
@@ -163,6 +171,19 @@ export default async function BugDetailPage({
                   </div>
                 </div>
               </div>
+
+              {bug.duplicateOf && (
+                <div className="bg-amber-50 border border-amber-200 rounded p-3 text-amber-900">
+                  <span className="font-semibold">Ditandai duplikat dari:</span>{" "}
+                  <Link
+                    href={`/projects/${project.key}/bugs/${bug.duplicateOf.number}`}
+                    className="font-mono font-bold underline"
+                  >
+                    {bug.duplicateOf.key}
+                  </Link>{" "}
+                  - {bug.duplicateOf.title}
+                </div>
+              )}
 
               {bug.description && bug.description !== bug.title && (
                 <div>
@@ -307,9 +328,33 @@ export default async function BugDetailPage({
                   const actor = (await auth())?.user as { id: string; email: string };
                   const targetStatus = formData.get("targetStatus") as BugStatus;
                   const reopenReason = (formData.get("reopenReason") as string)?.trim();
+                  const appVersion = (formData.get("appVersion") as string)?.trim();
+                  const duplicateOfKey = (formData.get("duplicateOfKey") as string)?.trim();
 
                   const check = canTransitionBug(bug.status, targetStatus, userRole, user.isAdmin);
                   if (!check.allowed) return;
+
+                  // AC: Reopen without reason rejected
+                  if (targetStatus === BugStatus.REOPENED && !reopenReason) {
+                    return;
+                  }
+
+                  // AC: Draft -> Open requires version/build
+                  if (targetStatus === BugStatus.OPEN && bug.status === BugStatus.DRAFT) {
+                    const finalVersion = appVersion || bug.appVersion;
+                    if (!finalVersion) {
+                      return;
+                    }
+                  }
+
+                  // Optional duplicate link
+                  let duplicateOfId: string | undefined = undefined;
+                  if (duplicateOfKey) {
+                    const targetBug = await prisma.bug.findFirst({
+                      where: { projectId: project.id, key: duplicateOfKey.toUpperCase() },
+                    });
+                    if (targetBug) duplicateOfId = targetBug.id;
+                  }
 
                   const isReopen = targetStatus === BugStatus.REOPENED;
 
@@ -317,10 +362,12 @@ export default async function BugDetailPage({
                     where: { id: bug.id },
                     data: {
                       status: targetStatus,
+                      ...(appVersion ? { appVersion } : {}),
+                      ...(duplicateOfId ? { duplicateOfId } : {}),
                       ...(isReopen
                         ? {
                             reopenCount: { increment: 1 },
-                            reopenReason: reopenReason || "Ditemukan kembali saat testing",
+                            reopenReason,
                           }
                         : {}),
                       ...(targetStatus === BugStatus.OPEN && bug.status === BugStatus.DRAFT
@@ -341,7 +388,7 @@ export default async function BugDetailPage({
                     entityId: bug.id,
                     changes: {
                       before: { status: bug.status },
-                      after: { status: targetStatus, reopenReason },
+                      after: { status: targetStatus, reopenReason, duplicateOfKey, appVersion },
                     },
                   });
 
@@ -361,12 +408,45 @@ export default async function BugDetailPage({
                   ))}
                 </select>
 
-                <input
-                  type="text"
-                  name="reopenReason"
-                  placeholder="Alasan jika Reopen (opsional)"
-                  className="w-full px-2 py-1 border border-slate-300 rounded text-xs"
-                />
+                {bug.status === BugStatus.DRAFT && (
+                  <div>
+                    <label className="block text-[11px] text-slate-500 mb-0.5">
+                      Versi / Build Rilis (wajib untuk Open) *
+                    </label>
+                    <input
+                      type="text"
+                      name="appVersion"
+                      defaultValue={bug.appVersion ?? ""}
+                      placeholder="Contoh: v1.0.4-staging"
+                      className="w-full px-2 py-1 border border-slate-300 rounded text-xs"
+                    />
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-[11px] text-slate-500 mb-0.5">
+                    Alasan Reopen (wajib jika Reopened)
+                  </label>
+                  <input
+                    type="text"
+                    name="reopenReason"
+                    placeholder="Contoh: Bug masih terjadi di branch staging..."
+                    className="w-full px-2 py-1 border border-slate-300 rounded text-xs"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] text-slate-500 mb-0.5">
+                    Tautkan Duplikat (opsional, misal CRM-1)
+                  </label>
+                  <input
+                    type="text"
+                    name="duplicateOfKey"
+                    defaultValue={bug.duplicateOf?.key ?? ""}
+                    placeholder="Contoh: CRM-1"
+                    className="w-full px-2 py-1 border border-slate-300 rounded text-xs uppercase font-mono"
+                  />
+                </div>
 
                 <button
                   type="submit"
@@ -480,6 +560,34 @@ export default async function BugDetailPage({
                 </button>
               </div>
             </form>
+          </div>
+
+          {/* Activity Timeline */}
+          <div className="bg-white border border-slate-200 rounded-lg p-5 shadow-sm space-y-3">
+            <h3 className="font-bold text-slate-900">Riwayat Aktivitas</h3>
+            {timeline.length === 0 ? (
+              <p className="text-slate-400 text-xs italic">Belum ada riwayat aktivitas.</p>
+            ) : (
+              <ol className="relative border-l border-slate-200 ml-2 space-y-3">
+                {timeline.map((item) => (
+                  <li key={item.id} className="ml-3">
+                    <div className="absolute -left-1.5 mt-1 w-3 h-3 rounded-full border-2 border-white bg-slate-400" />
+                    <p className="font-semibold text-slate-800 text-[11px]">
+                      {item.action === "bug.create" && "Laporan dibuat"}
+                      {item.action === "bug.status_change" && "Status diperbarui"}
+                      {item.action === "bug.comment" && "Komentar ditambahkan"}
+                      {item.action === "bug.assign" && "Assignee diubah"}
+                      {!["bug.create", "bug.status_change", "bug.comment", "bug.assign"].includes(
+                        item.action
+                      ) && item.action}
+                    </p>
+                    <p className="text-[10px] text-slate-400">
+                      Oleh {item.actorEmail || "Sistem"} • {item.createdAt.toLocaleTimeString()}
+                    </p>
+                  </li>
+                ))}
+              </ol>
+            )}
           </div>
         </div>
       </main>
