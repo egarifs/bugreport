@@ -19,14 +19,15 @@ Aturan: PRD berikutnya hanya boleh `In Progress` jika PRD sebelumnya `Done`.
 
 | ID | Judul | Phase | Status | Updated |
 |---|---|---|---|---|
-| [PRD-00](PRD-00-baseline.md) | Product & security baseline | 0 | Draft | 2026-10-22 |
-| [PRD-01](PRD-01-foundation.md) | Foundation: auth, approval, project, bug CRUD | 1 | Draft | 2026-10-22 |
-| [PRD-02](PRD-02-vendor-workflow.md) | Vendor workflow & bug quality | 2 | Draft | 2026-10-22 |
-| [PRD-03](PRD-03-mcp.md) | MCP for AI agents | 3 | Draft | 2026-10-22 |
-| [PRD-04](PRD-04-project-chat.md) | Project AI chat | 4 | Draft | 2026-10-22 |
-| [PRD-05](PRD-05-reporting.md) | Reporting & release readiness | 5 | Draft | 2026-10-22 |
-| PRD-06 | Test case management | 6 | Not written | - |
-| PRD-07 | Test runner | 7 | Not written | - |
+| [PRD-00](PRD-00-baseline.md) | Product & security baseline | 0 | Approved | 2026-10-23 |
+| [PRD-01](PRD-01-foundation.md) | Foundation: auth, approval, project, bug CRUD | 1 | Approved | 2026-10-23 |
+| [PRD-02](PRD-02-vendor-workflow.md) | Vendor workflow & bug quality | 2 | Draft | 2026-10-23 |
+| [PRD-02B](PRD-02B-docs-and-testcases.md) | Business docs & test cases (MVP) | 2B | Draft | 2026-10-23 |
+| [PRD-03](PRD-03-mcp.md) | MCP for AI agents | 3 | Draft | 2026-10-23 |
+| [PRD-04](PRD-04-project-chat.md) | Project AI chat (bugs + docs) | 4 | Draft | 2026-10-23 |
+| [PRD-05](PRD-05-reporting.md) | Reporting & release readiness | 5 | Draft | 2026-10-23 |
+| PRD-06 | AI test case generator (from docs) | 6 | Not written | - |
+| PRD-07 | Test runner & Grill Mode | 7 | Not written | - |
 
 PRD-06 dan PRD-07 ditulis setelah PRD-05 `Done`.
 

@@ -1,20 +1,26 @@
 # PRD-00 — Product & Security Baseline
 
-Status: **Draft**
+Status: **Approved**
 Phase: 0
 Owner: egarifs
 
 ## Problem
 
-Bug tim tersebar di catatan masing-masing. Tidak ada source of truth, tidak ada tracking status, vendor dan QA tidak punya tempat kolaborasi.
+Bug tim tersebar di catatan masing-masing. Tidak ada source of truth, tidak ada tracking status, vendor dan QA tidak punya tempat kolaborasi. Dokumen bisnis (PRD) dan test case terpisah di Google Sheets tanpa keterlacakan ke bug.
 
 ## Goal
 
-Satu aplikasi bug tracker untuk banyak project, dipakai QA, developer, vendor, CEO, dan client, dengan AI agent yang bisa melapor bug sebagai Draft.
+Satu aplikasi bug tracker untuk banyak project, dipakai QA, developer, vendor, CEO, dan client, dengan:
+- AI agent yang bisa melapor bug sebagai Draft
+- Dokumen bisnis terversi per project
+- Test case terstruktur yang di-import dari CSV
+- Test run yang otomatis membuat bug Draft dari step gagal
+- AI chat berbasis bug dan dokumen bisnis
 
 ## Non-goals (MVP)
 
-- Test case management, test runner
+- Test runner otomatis (arbitrary code execution)
+- Generator test case via AI di dalam app (ditunda ke Phase 6; MVP pakai import CSV)
 - Replace Jira untuk project management umum
 - Vector DB, Redis, queue, microservice
 - i18n (UI English dulu)
@@ -39,6 +45,11 @@ Role = bundle permission. Server cek permission, bukan nama role.
 | bug.reopen | ✓ | ✓ | | | ✓ | |
 | bug.comment | ✓ | ✓ | ✓ | ✓ | ✓ | |
 | note.internal.read | ✓ | ✓ | ✓ | | | |
+| doc.manage | ✓ | ✓ | | | | |
+| doc.read | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| testcase.manage | ✓ | ✓ | | | | |
+| testcase.read | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| testrun.execute | ✓ | ✓ | ✓ | | | |
 | chat.ask | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 
 Role diberikan per project (`project_members.role`). Admin global lewat `users.is_admin`.
@@ -69,24 +80,27 @@ Severity: Blocker, High, Medium, Low. Priority: Urgent, High, Normal, Low. Defin
 
 - Authorization di setiap query lewat `project_members`
 - Secret hanya di env server, tidak pernah ke client bundle atau log
-- Upload: PNG/JPEG/WebP, ≤ 5 MB, ≤ 5 per bug, cek magic bytes, nama file di-generate server
-- Audit log append-only untuk semua perubahan bug, user, member
+- Upload:
+  - Screenshot: PNG/JPEG/WebP, ≤ 5 MB, ≤ 5 per bug
+  - Dokumen bisnis: PDF/MD, ≤ 20 MB per file
+  - Cek magic bytes, nama file di-generate server, disk volume
+- Audit log append-only untuk semua perubahan bug, user, member, dokumen, testrun
 - Redaction pola secret (`Bearer`, `api_key=`, `password=`, `Cookie:`) di text field sebelum simpan
+- AI input defense: dokumen bisnis dan teks bug diperlakukan sebagai data mentah, bukan instruksi sistem
 
 ## Data model
 
-`users, projects, project_members, bugs, bug_comments, bug_attachments, audit_logs, api_keys, agent_runs, chat_threads, chat_messages`
-
-Labels ditunda; pakai `component` text dulu.
+`users, projects, project_members, bugs, bug_comments, bug_attachments, business_docs, business_doc_versions, business_doc_chunks, test_cases, test_case_steps, test_runs, test_run_items, audit_logs, api_keys, agent_runs, chat_threads, chat_messages`
 
 ## Gate
 
-- [ ] Permission matrix disetujui
-- [ ] Transition map disetujui
-- [ ] Threat model ditinjau (auth bypass, IDOR antar project, upload, prompt injection)
+- [x] Permission matrix disetujui (termasuk doc.* dan testcase.*)
+- [x] Transition map disetujui
+- [x] Threat model ditinjau (auth bypass, IDOR antar project, upload, prompt injection)
 
 ## Execution log
 
 | Date | Status | Evidence | Blocking bugs | Notes |
 |---|---|---|---|---|
 | 2026-10-22 | Draft | - | - | PRD dibuat |
+| 2026-10-23 | Approved | Wawancara grill-me selesai | - | Tambah permissions doc/testcase; approved user |

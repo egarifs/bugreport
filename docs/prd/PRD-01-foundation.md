@@ -1,8 +1,8 @@
 # PRD-01 — Foundation: Auth, Approval, Project, Bug CRUD
 
-Status: **Draft**
+Status: **Approved**
 Phase: 1
-Depends on: PRD-00 Done
+Depends on: PRD-00 Approved
 
 ## User stories
 
@@ -32,6 +32,7 @@ Depends on: PRD-00 Done
 
 Wajib: title, description, steps, expected, actual, severity, environment.
 Opsional: priority, assignee, component, app version, build, browser/device.
+Relasi (nullable di MVP phase 1, diisi di phase 2B): `test_case_id`, `test_run_id`, `doc_version_id`.
 
 ## Acceptance criteria
 
@@ -55,3 +56,4 @@ Opsional: priority, assignee, component, app version, build, browser/device.
 | Date | Status | Evidence | Blocking bugs | Notes |
 |---|---|---|---|---|
 | 2026-10-22 | Draft | - | - | PRD dibuat |
+| 2026-10-23 | Approved | Sesuai scope wawancara | - | Approved user; siap dieksekusi |
