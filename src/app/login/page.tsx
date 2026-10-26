@@ -1,6 +1,8 @@
 import { auth, signIn } from "@/lib/auth";
 import { redirect } from "next/navigation";
 
+export const dynamic = "force-dynamic";
+
 export default async function LoginPage({
   searchParams,
 }: {
@@ -16,7 +18,7 @@ export default async function LoginPage({
   }
 
   const { callbackUrl } = await searchParams;
-  const isDev = process.env.NODE_ENV !== "production";
+  const showDevLogin = process.env.NODE_ENV !== "production" || process.env.ENABLE_DEV_LOGIN === "true";
 
   return (
     <main className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
@@ -64,7 +66,7 @@ export default async function LoginPage({
           </button>
         </form>
 
-        {isDev && (
+        {showDevLogin && (
           <div className="mt-8 pt-6 border-t border-dashed border-slate-200">
             <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
               Developer Quick Login

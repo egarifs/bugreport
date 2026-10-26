@@ -5,17 +5,18 @@ import { UserStatus } from "@prisma/client";
 import { upsertGoogleUser } from "./user-service";
 import { prisma } from "./db";
 
-// ponytail: Credentials provider enabled only for non-production environments to allow deterministic testing without Google OAuth keys
-const isDevOrTest = process.env.NODE_ENV !== "production";
+// ponytail: Credentials provider enabled for dev/test or when explicitly enabled
+const enableDevLogin = process.env.NODE_ENV !== "production" || process.env.ENABLE_DEV_LOGIN === "true";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  trustHost: true,
   session: { strategy: "jwt" },
   providers: [
     Google({
       clientId: process.env.AUTH_GOOGLE_ID || "",
       clientSecret: process.env.AUTH_GOOGLE_SECRET || "",
     }),
-    ...(isDevOrTest
+    ...(enableDevLogin
       ? [
           Credentials({
             id: "dev-login",
