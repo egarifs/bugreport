@@ -42,12 +42,36 @@ QA menulis test case di Google Sheet dari PRD hasil generate AI. Saat test gagal
 - Semua member project punya akses baca (`doc.read`).
 - Upload versi baru butuh `doc.manage` (Admin, QA).
 
-### 2. Test cases
+## Template spreadsheet yang digunakan
 
-- Model: `test_cases (id, project_id, doc_version_id, code, title, precondition, expected_result, component, priority, created_by, updated_at)`
-- Model: `test_case_steps (id, test_case_id, step_num, action, expected)`
-- Import CSV: mapping kolom fleksibel, validasi duplikasi code per project.
-- Export CSV.
+Berdasarkan template aktif `/home/ea/Downloads/Bug_Report_CRM(2).xlsx`:
+- **Sheet**: `TC_<NamaModul>` (contoh: `TC_Paket_RS`), 44 test cases per modul.
+- **Kolom template**:
+  1. `ID` → `test_cases.code` (contoh: `TC-PKT-001`)
+  2. `Area` → `test_cases.component` / module (contoh: `Dashboard`, `Daftar`, `Buat Paket`)
+  3. `Judul Testcase` → `test_cases.title`
+  4. `Prioritas` → `test_cases.priority` (`Critical`, `High`, `Medium`, `Low`)
+  5. `Tipe` → `test_cases.test_type` (`Functional`, `Negative`, `UI`, dll.)
+  6. `Role` → `test_cases.target_role` (contoh: `Marketing RS`, `RS_Finance`)
+  7. `Prasyarat` → `test_cases.precondition`
+  8. `Langkah` → `test_case_steps` (format bertombol `1) ... 2) ...` diparsing otomatis jadi step individual)
+  9. `Expected Result` → `test_cases.expected_result`
+  10. `Referensi Figma` → `test_cases.reference_url` / note
+  11. `Status` → status awal saat dibuat jadi Test Run (`Not Run`, `Pass`, `Fail`, `Blocked`)
+
+Format ini didukung via:
+- Import `.xlsx` langsung (server membaca sheet `TC_*`)
+- Import `.csv` (export dari Google Sheets dengan kolom di atas)
+
+Bridge ke Bug ketika status `Fail`:
+- `title`: `[Fail] <Judul Testcase>`
+- `component`: `<Area>`
+- `priority`: `<Prioritas>`
+- `description`: role `<Role>`, prasyarat `<Prasyarat>`, referensi `<Referensi Figma>`
+- `steps`: `<Langkah>`
+- `expected`: `<Expected Result>`
+- `actual`: diisi tester saat menandai fail
+
 
 ### 3. Test run & bridge to bug
 
