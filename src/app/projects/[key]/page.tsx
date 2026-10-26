@@ -36,6 +36,18 @@ export default async function ProjectDetailPage({
 
   const { status, severity, q } = await searchParams;
 
+  // Aggregate counts for summary header cards (Total, Draft, Open, In Progress, Ready, Closed)
+  const [totalCount, draftCount, openCount, inProgressCount, readyCount, closedCount, myAssignedCount] =
+    await Promise.all([
+      prisma.bug.count({ where: { projectId: project.id } }),
+      prisma.bug.count({ where: { projectId: project.id, status: BugStatus.DRAFT } }),
+      prisma.bug.count({ where: { projectId: project.id, status: BugStatus.OPEN } }),
+      prisma.bug.count({ where: { projectId: project.id, status: BugStatus.IN_PROGRESS } }),
+      prisma.bug.count({ where: { projectId: project.id, status: BugStatus.READY_FOR_VERIFICATION } }),
+      prisma.bug.count({ where: { projectId: project.id, status: BugStatus.CLOSED } }),
+      prisma.bug.count({ where: { projectId: project.id, assigneeId: user.id, status: { not: BugStatus.CLOSED } } }),
+    ]);
+
   const bugs = await prisma.bug.findMany({
     where: {
       projectId: project.id,
@@ -90,6 +102,90 @@ export default async function ProjectDetailPage({
       </header>
 
       <main className="max-w-6xl w-full mx-auto p-6 flex-1">
+        {/* Summary Metric Cards (Bugasura-style) */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
+          <Link
+            href={`/projects/${project.key}`}
+            className={`p-4 bg-white border rounded-lg transition hover:shadow-sm ${
+              !status ? "border-slate-900 ring-1 ring-slate-900" : "border-slate-200"
+            }`}
+          >
+            <div className="text-2xl font-bold text-slate-900">{totalCount}</div>
+            <div className="text-xs font-medium text-slate-500 mt-1 uppercase tracking-wide">
+              Total Bugs
+            </div>
+          </Link>
+
+          <Link
+            href={`/projects/${project.key}?status=DRAFT`}
+            className={`p-4 bg-white border rounded-lg transition hover:shadow-sm ${
+              status === "DRAFT" ? "border-purple-600 ring-1 ring-purple-600" : "border-slate-200"
+            }`}
+          >
+            <div className="text-2xl font-bold text-purple-700">{draftCount}</div>
+            <div className="text-xs font-medium text-slate-500 mt-1 uppercase tracking-wide">
+              Draft / AI
+            </div>
+          </Link>
+
+          <Link
+            href={`/projects/${project.key}?status=OPEN`}
+            className={`p-4 bg-white border rounded-lg transition hover:shadow-sm ${
+              status === "OPEN" ? "border-blue-600 ring-1 ring-blue-600" : "border-slate-200"
+            }`}
+          >
+            <div className="text-2xl font-bold text-blue-700">{openCount}</div>
+            <div className="text-xs font-medium text-slate-500 mt-1 uppercase tracking-wide">
+              Open (New)
+            </div>
+          </Link>
+
+          <Link
+            href={`/projects/${project.key}?status=IN_PROGRESS`}
+            className={`p-4 bg-white border rounded-lg transition hover:shadow-sm ${
+              status === "IN_PROGRESS" ? "border-amber-600 ring-1 ring-amber-600" : "border-slate-200"
+            }`}
+          >
+            <div className="text-2xl font-bold text-amber-700">{inProgressCount}</div>
+            <div className="text-xs font-medium text-slate-500 mt-1 uppercase tracking-wide">
+              In Progress
+            </div>
+          </Link>
+
+          <Link
+            href={`/projects/${project.key}?status=READY_FOR_VERIFICATION`}
+            className={`p-4 bg-white border rounded-lg transition hover:shadow-sm ${
+              status === "READY_FOR_VERIFICATION" ? "border-teal-600 ring-1 ring-teal-600" : "border-slate-200"
+            }`}
+          >
+            <div className="text-2xl font-bold text-teal-700">{readyCount}</div>
+            <div className="text-xs font-medium text-slate-500 mt-1 uppercase tracking-wide">
+              Need Verify
+            </div>
+          </Link>
+
+          <Link
+            href={`/projects/${project.key}?status=CLOSED`}
+            className={`p-4 bg-white border rounded-lg transition hover:shadow-sm ${
+              status === "CLOSED" ? "border-emerald-600 ring-1 ring-emerald-600" : "border-slate-200"
+            }`}
+          >
+            <div className="text-2xl font-bold text-emerald-700">{closedCount}</div>
+            <div className="text-xs font-medium text-slate-500 mt-1 uppercase tracking-wide">
+              Closed
+            </div>
+          </Link>
+        </div>
+
+        {/* Info Banner when user has assigned active bugs */}
+        {myAssignedCount > 0 && (
+          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 text-blue-900 rounded-lg text-xs flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="font-semibold">Info tugas:</span> Ada {myAssignedCount} bug aktif yang ditugaskan kepada Anda.
+            </div>
+          </div>
+        )}
+
         {/* Filter bar */}
         <div className="bg-white border border-slate-200 rounded-lg p-3 mb-4 flex flex-wrap items-center gap-3 text-xs">
           <form className="flex flex-wrap items-center gap-2 flex-1">
