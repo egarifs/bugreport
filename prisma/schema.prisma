@@ -1,0 +1,211 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum UserStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+  REJECTED
+}
+
+enum ProjectRole {
+  ADMIN
+  QA
+  DEVELOPER
+  VENDOR
+  CLIENT
+  VIEWER
+}
+
+enum BugStatus {
+  DRAFT
+  OPEN
+  IN_PROGRESS
+  READY_FOR_VERIFICATION
+  CLOSED
+  REOPENED
+  INVALID
+  DUPLICATE
+  CANNOT_REPRODUCE
+  WONT_FIX
+}
+
+enum BugSeverity {
+  BLOCKER
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum BugPriority {
+  URGENT
+  HIGH
+  NORMAL
+  LOW
+}
+
+enum CommentType {
+  PUBLIC
+  INTERNAL
+}
+
+model User {
+  id            String       @id @default(uuid())
+  email         String       @unique
+  name          String?
+  image         String?
+  status        UserStatus   @default(PENDING)
+  isAdmin       Boolean      @default(false)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  reviewedById  String?
+  reviewedBy    User?        @relation("UserReviewer", fields: [reviewedById], references: [id])
+  reviewedUsers User[]       @relation("UserReviewer")
+  reviewedAt    DateTime?
+
+  memberships   ProjectMember[]
+  reportedBugs  Bug[]        @relation("BugReporter")
+  assignedBugs  Bug[]        @relation("BugAssignee")
+  reviewedBugs  Bug[]        @relation("BugReviewer")
+  comments      BugComment[]
+  auditLogs     AuditLog[]
+
+  @@index([status])
+  @@index([email])
+}
+
+model Project {
+  id          String          @id @default(uuid())
+  key         String          @unique // e.g. "CRM", "PKT"
+  name        String
+  description String?
+  isArchived  Boolean         @default(false)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  members     ProjectMember[]
+  bugs        Bug[]
+  bugSeq      Int             @default(0) // auto-incrementing per project for CRM-1, CRM-2
+  auditLogs   AuditLog[]
+
+  @@index([key])
+}
+
+model ProjectMember {
+  id        String      @id @default(uuid())
+  projectId String
+  project   Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      ProjectRole @default(VIEWER)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  @@unique([projectId, userId])
+  @@index([userId])
+  @@index([projectId, role])
+}
+
+model Bug {
+  id              String         @id @default(uuid())
+  projectId       String
+  project         Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  key             String         @unique // e.g. "CRM-12"
+  number          Int
+
+  title           String
+  description     String
+  stepsToReproduce String
+  expectedResult  String
+  actualResult    String
+
+  severity        BugSeverity
+  priority        BugPriority    @default(NORMAL)
+  status          BugStatus      @default(DRAFT)
+
+  environment     String
+  appVersion      String?
+  buildNumber     String?
+  browserDevice   String?
+  component       String?
+
+  reporterId      String
+  reporter        User           @relation("BugReporter", fields: [reporterId], references: [id])
+  assigneeId      String?
+  assignee        User?          @relation("BugAssignee", fields: [assigneeId], references: [id])
+  reviewedById    String?
+  reviewedBy      User?          @relation("BugReviewer", fields: [reviewedById], references: [id])
+  reviewedAt      DateTime?
+
+  reopenCount     Int            @default(0)
+  reopenReason    String?
+
+  duplicateOfId   String?
+  duplicateOf     Bug?           @relation("BugDuplicates", fields: [duplicateOfId], references: [id])
+  duplicates      Bug[]          @relation("BugDuplicates")
+
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  comments        BugComment[]
+  attachments     BugAttachment[]
+
+  @@unique([projectId, number])
+  @@index([projectId, status])
+  @@index([projectId, severity])
+  @@index([assigneeId])
+  @@index([reporterId])
+}
+
+model BugComment {
+  id        String      @id @default(uuid())
+  bugId     String
+  bug       Bug         @relation(fields: [bugId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User        @relation(fields: [authorId], references: [id])
+  body      String
+  type      CommentType @default(PUBLIC)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  @@index([bugId, type])
+}
+
+model BugAttachment {
+  id          String   @id @default(uuid())
+  bugId       String
+  bug         Bug      @relation(fields: [bugId], references: [id], onDelete: Cascade)
+  fileName    String
+  storedName  String   @unique
+  fileSize    Int
+  mimeType    String
+  uploadedAt  DateTime @default(now())
+
+  @@index([bugId])
+}
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  projectId   String?
+  project     Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  actorId     String?
+  actor       User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  actorEmail  String
+  actorType   String   @default("user") // "user" | "agent" | "system"
+  action      String   // e.g. "bug.create", "bug.status_change", "user.approve"
+  entityType  String   // e.g. "bug", "user", "project_member"
+  entityId    String
+  changes     Json?    // { before: {...}, after: {...} }
+  createdAt   DateTime @default(now())
+
+  @@index([projectId, createdAt])
+  @@index([entityType, entityId])
+  @@index([actorId])
+}

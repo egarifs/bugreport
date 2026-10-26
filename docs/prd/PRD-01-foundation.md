@@ -1,6 +1,6 @@
 # PRD-01 — Foundation: Auth, Approval, Project, Bug CRUD
 
-Status: **Approved**
+Status: **Done**
 Phase: 1
 Depends on: PRD-00 Approved
 
@@ -57,3 +57,5 @@ Relasi (nullable di MVP phase 1, diisi di phase 2B): `test_case_id`, `test_run_i
 |---|---|---|---|---|
 | 2026-10-22 | Draft | - | - | PRD dibuat |
 | 2026-10-23 | Approved | Sesuai scope wawancara | - | Approved user; siap dieksekusi |
+| 2026-10-26 | Done | 19 tests pass (typecheck, lint, unit/service/redact), end-to-end flow verified | None | Phase 1 Foundation selesai |
+
