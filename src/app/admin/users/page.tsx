@@ -1,10 +1,10 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { redirect } from "next/navigation";
-import Link from "next/link";
 import { recordAuditLog } from "@/lib/user-service";
 import { ProjectRole, UserStatus } from "@prisma/client";
 import { revalidatePath } from "next/cache";
+import { AppShell } from "@/components/layout/app-shell";
 
 export default async function AdminUsersPage() {
   const session = await auth();
@@ -39,20 +39,20 @@ export default async function AdminUsersPage() {
   });
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
-      <header className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Link href="/projects" className="text-sm text-slate-500 hover:text-slate-900">
-            ← Kembali ke Projects
-          </Link>
-          <span className="text-slate-300">/</span>
-          <span className="font-semibold text-slate-900 text-sm">
-            Admin: User Approval & Management
-          </span>
-        </div>
-      </header>
+    <AppShell>
+      <div className="min-h-full flex flex-col">
+        <header className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <span className="font-semibold text-slate-900 text-sm">
+              Admin: User Approval & Management
+            </span>
+            <span className="text-xs bg-purple-100 text-purple-700 font-semibold px-2 py-0.5 rounded">
+              Super Admin Area
+            </span>
+          </div>
+        </header>
 
-      <main className="max-w-6xl w-full mx-auto p-6 space-y-8 flex-1">
+        <main className="max-w-6xl w-full mx-auto p-6 space-y-8 flex-1">
         {/* Pending Section */}
         <section>
           <div className="flex items-center gap-2 mb-3">
@@ -262,5 +262,6 @@ export default async function AdminUsersPage() {
         </section>
       </main>
     </div>
+  </AppShell>
   );
 }

@@ -7,6 +7,7 @@ import { BugStatus, CommentType, ProjectRole } from "@prisma/client";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { AppShell } from "@/components/layout/app-shell";
 
 export default async function BugDetailPage({
   params,
@@ -81,23 +82,24 @@ export default async function BugDetailPage({
   );
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
-      <header className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Link
-            href={`/projects/${project.key}`}
-            className="text-sm text-slate-500 hover:text-slate-900"
-          >
-            ← {project.key}
-          </Link>
-          <span className="text-slate-300">/</span>
-          <span className="font-mono font-bold text-xs bg-slate-100 text-slate-700 px-2 py-0.5 rounded">
-            {bug.key}
-          </span>
-          <span className="font-semibold text-slate-900 text-sm truncate max-w-md">
-            {bug.title}
-          </span>
-        </div>
+    <AppShell activeProjectKey={project.key}>
+      <div className="min-h-full flex flex-col">
+        <header className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Link
+              href={`/projects/${project.key}`}
+              className="text-sm text-slate-500 hover:text-slate-900"
+            >
+              ← {project.key}
+            </Link>
+            <span className="text-slate-300">/</span>
+            <span className="font-mono font-bold text-xs bg-slate-100 text-slate-700 px-2 py-0.5 rounded">
+              {bug.key}
+            </span>
+            <span className="font-semibold text-slate-900 text-sm truncate max-w-md">
+              {bug.title}
+            </span>
+          </div>
 
         <div className="flex items-center gap-2">
           <span
@@ -592,5 +594,6 @@ export default async function BugDetailPage({
         </div>
       </main>
     </div>
+  </AppShell>
   );
 }

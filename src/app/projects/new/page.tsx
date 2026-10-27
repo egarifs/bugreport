@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { recordAuditLog } from "@/lib/user-service";
+import { AppShell } from "@/components/layout/app-shell";
 
 export default async function NewProjectPage() {
   const session = await auth();
@@ -13,16 +14,17 @@ export default async function NewProjectPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
-      <header className="bg-white border-b border-slate-200 px-6 py-4 flex items-center gap-3">
-        <Link href="/projects" className="text-sm text-slate-500 hover:text-slate-900">
-          ← Kembali ke Projects
-        </Link>
-        <span className="text-slate-300">/</span>
-        <span className="font-semibold text-slate-900 text-sm">Buat Project Baru</span>
-      </header>
+    <AppShell>
+      <div className="min-h-full flex flex-col">
+        <header className="bg-white border-b border-slate-200 px-6 py-4 flex items-center gap-3">
+          <Link href="/projects" className="text-sm text-slate-500 hover:text-slate-900">
+            ← Kembali ke Projects
+          </Link>
+          <span className="text-slate-300">/</span>
+          <span className="font-semibold text-slate-900 text-sm">Buat Project Baru</span>
+        </header>
 
-      <main className="max-w-xl w-full mx-auto p-6 flex-1">
+        <main className="max-w-xl w-full mx-auto p-6 flex-1">
         <div className="bg-white border border-slate-200 rounded-lg p-6 shadow-sm">
           <h1 className="text-lg font-bold text-slate-900 mb-1">Project Baru</h1>
           <p className="text-xs text-slate-500 mb-6">
@@ -125,5 +127,6 @@ export default async function NewProjectPage() {
         </div>
       </main>
     </div>
+  </AppShell>
   );
 }

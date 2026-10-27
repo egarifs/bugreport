@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { BugSeverity, BugStatus } from "@prisma/client";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { AppShell } from "@/components/layout/app-shell";
 
 export default async function ProjectDetailPage({
   params,
@@ -74,35 +75,32 @@ export default async function ProjectDetailPage({
   const role = userMembership?.role ?? (user.isAdmin ? "ADMIN" : "VIEWER");
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
-      <header className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Link href="/projects" className="text-sm text-slate-500 hover:text-slate-900">
-            ← Projects
-          </Link>
-          <span className="text-slate-300">/</span>
-          <span className="font-mono font-bold text-xs bg-slate-100 text-slate-700 px-2 py-0.5 rounded">
-            {project.key}
-          </span>
-          <span className="font-semibold text-slate-900 text-sm">
-            {project.name}
-          </span>
-          <span className="text-[11px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono">
-            Role: {role}
-          </span>
-        </div>
+    <AppShell activeProjectKey={project.key}>
+      <div className="min-h-full flex flex-col">
+        <header className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <span className="font-mono font-bold text-xs bg-slate-100 text-slate-700 px-2 py-0.5 rounded">
+              {project.key}
+            </span>
+            <span className="font-semibold text-slate-900 text-sm">
+              {project.name}
+            </span>
+            <span className="text-[11px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono">
+              Role: {role}
+            </span>
+          </div>
 
-        <div className="flex items-center gap-3">
-          <Link
-            href={`/projects/${project.key}/bugs/new`}
-            className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-medium rounded"
-          >
-            + Laporkan Bug
-          </Link>
-        </div>
-      </header>
+          <div className="flex items-center gap-3">
+            <Link
+              href={`/projects/${project.key}/bugs/new`}
+              className="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-medium rounded transition"
+            >
+              + Laporkan Bug
+            </Link>
+          </div>
+        </header>
 
-      <main className="max-w-6xl w-full mx-auto p-6 flex-1">
+        <main className="max-w-6xl w-full mx-auto p-6 flex-1">
         {/* Summary Metric Cards (Bugasura-style) */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
           <Link
@@ -346,5 +344,6 @@ export default async function ProjectDetailPage({
         </div>
       </main>
     </div>
+  </AppShell>
   );
 }
