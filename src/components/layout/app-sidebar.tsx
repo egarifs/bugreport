@@ -235,9 +235,32 @@ export function AppSidebar({ user, projects, activeProjectKey }: AppSidebarProps
             </Link>
           ))}
 
+          {/* Developer Tools */}
+          <div className="pt-3 mt-3 border-t border-slate-100">
+            {!collapsed && (
+              <p className="px-3 text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">
+                Developer & Tools
+              </p>
+            )}
+            <Link
+              href="/api-docs"
+              title={collapsed ? "API & Swagger Docs" : undefined}
+              className={`flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium transition ${
+                pathname === "/api-docs"
+                  ? "bg-slate-900 text-white"
+                  : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+              } ${collapsed ? "justify-center px-2" : ""}`}
+            >
+              <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+              </svg>
+              {!collapsed && <span className="flex-1 truncate">API & Swagger Docs</span>}
+            </Link>
+          </div>
+
           {/* Admin Section (Conditional) */}
           {user.isAdmin && (
-            <div className="pt-3 mt-3 border-t border-slate-100">
+            <div className="pt-2 mt-2">
               {!collapsed && (
                 <p className="px-3 text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">
                   Administrator

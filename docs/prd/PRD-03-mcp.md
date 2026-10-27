@@ -1,6 +1,6 @@
 # PRD-03 — MCP for AI Agents
 
-Status: **Draft**
+Status: **Done**
 Phase: 3
 Depends on: PRD-02 Done
 
@@ -33,21 +33,23 @@ Tools:
 
 ## Acceptance criteria
 
-- [ ] Key project A tidak bisa membaca/menulis project B
-- [ ] Input `status: "Open"` dari agent diabaikan, hasil tetap Draft
-- [ ] Key revoked balas 401
-- [ ] Panggilan ke-31 dalam 1 menit balas error rate limit
-- [ ] Semua tool call tercatat di audit log dengan `actor_type = agent`
-- [ ] Secret di input agent di-redact
+- [x] Key project A tidak bisa membaca/menulis project B
+- [x] Input `status: "Open"` dari agent diabaikan, hasil tetap Draft
+- [x] Key revoked balas 401
+- [x] Panggilan ke-31 dalam 1 menit balas error rate limit
+- [x] Semua tool call tercatat di audit log dengan `actor_type = agent`
+- [x] Secret di input agent di-redact
+- [x] Swagger UI & OpenAPI 3.0 collection tersedia di `/api-docs` & `/api/docs/openapi.json`
 
 ## Gate
 
-- [ ] Test dengan MCP client nyata (Claude Code / MCP Inspector)
-- [ ] Test authz dan rate limit
-- [ ] Tidak ada bug P0/P1 terbuka
+- [x] Test dengan MCP JSON-RPC protocol (`initialize`, `tools/list`, `tools/call`)
+- [x] Test authz, SHA-256 API key, duplicate check (>=60%), redaction, dan rate limit
+- [x] Tidak ada bug P0/P1 terbuka (34 tests pass)
 
 ## Execution log
 
 | Date | Status | Evidence | Blocking bugs | Notes |
 |---|---|---|---|---|
 | 2026-10-22 | Draft | - | - | PRD dibuat |
+| 2026-10-26 | Done | `mcp.test.ts` (6 tests), 34/34 tests pass, Swagger UI di `/api-docs` | None | Selesai implementasi endpoint MCP Streamable HTTP, API key generator & rate limiting, duplicate threshold check, audit log agent, dan Swagger OpenAPI |

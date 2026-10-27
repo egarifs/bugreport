@@ -79,6 +79,7 @@ model User {
 
   testRunsCreated   TestRun[]
   testItemsExecuted TestRunItem[]
+  apiKeysCreated    ApiKey[]
 
   @@index([status])
   @@index([email])
@@ -101,6 +102,8 @@ model Project {
   businessDocs BusinessDoc[]
   testCases    TestCase[]
   testRuns     TestRun[]
+  apiKeys      ApiKey[]
+  agentRuns    AgentRun[]
 
   @@index([key])
 }
@@ -161,6 +164,10 @@ model Bug {
   // Phase 2B Bridge
   testRunItemId   String?        @unique
   testRunItem     TestRunItem?   @relation("TestRunItemBug", fields: [testRunItemId], references: [id])
+
+  // Phase 3 Agent Run link
+  agentRunId      String?
+  agentRun        AgentRun?      @relation(fields: [agentRunId], references: [id])
 
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
@@ -349,4 +356,54 @@ model TestRunItem {
 
   @@unique([testRunId, testCaseId])
   @@index([testRunId, status])
+}
+
+// -------------------------------------------------------------
+// Phase 3: MCP & AI Agent Models
+// -------------------------------------------------------------
+
+model ApiKey {
+  id          String    @id @default(uuid())
+  projectId   String
+  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  name        String    // e.g. "Claude Code MCP - QA Regression"
+  keyHash     String    @unique // sha256 hash of plaintext key
+  keyPrefix   String    // e.g. "br_live_abc..."
+  scopes      String[]  // ["bug:read", "bug:create", "bug:comment", "bug:attach"]
+  createdById String
+  createdBy   User      @relation(fields: [createdById], references: [id])
+  revokedAt   DateTime?
+  lastUsedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  agentRuns   AgentRun[]
+
+  @@index([projectId, revokedAt])
+}
+
+model ApiKeyRateLimit {
+  id         String   @id @default(uuid())
+  keyHash    String
+  windowSlot DateTime // e.g. bucketed to 1 minute
+  callCount  Int      @default(0)
+
+  @@unique([keyHash, windowSlot])
+  @@index([windowSlot])
+}
+
+model AgentRun {
+  id         String   @id @default(uuid())
+  projectId  String
+  project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  apiKeyId   String?
+  apiKey     ApiKey?  @relation(fields: [apiKeyId], references: [id], onDelete: SetNull)
+  agentName  String   // e.g. "claude-code", "playwright-reporter"
+  modelName  String?  // e.g. "claude-3-7-sonnet"
+  runId      String   // unique identifier passed by the agent run
+  createdBugs Bug[]
+  createdAt  DateTime @default(now())
+
+  @@unique([projectId, runId])
+  @@index([projectId, createdAt])
 }
