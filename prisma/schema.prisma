@@ -80,6 +80,7 @@ model User {
   testRunsCreated   TestRun[]
   testItemsExecuted TestRunItem[]
   apiKeysCreated    ApiKey[]
+  chatMessages      ChatMessage[]
 
   @@index([status])
   @@index([email])
@@ -104,6 +105,7 @@ model Project {
   testRuns     TestRun[]
   apiKeys      ApiKey[]
   agentRuns    AgentRun[]
+  chatMessages ChatMessage[]
 
   @@index([key])
 }
@@ -406,4 +408,29 @@ model AgentRun {
 
   @@unique([projectId, runId])
   @@index([projectId, createdAt])
+}
+
+// -------------------------------------------------------------
+// Phase 4: Project AI Chat Models
+// -------------------------------------------------------------
+
+enum ChatMessageRole {
+  USER
+  ASSISTANT
+  SYSTEM
+}
+
+model ChatMessage {
+  id         String          @id @default(uuid())
+  projectId  String
+  project    Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role       ChatMessageRole
+  content    String
+  citations  Json?           // [{ type: "bug" | "doc", key: "CRM-1" | "PRD v1" }]
+  tokenUsage Json?           // { inputTokens: 100, outputTokens: 200 }
+  createdAt  DateTime        @default(now())
+
+  @@index([projectId, userId, createdAt])
 }
