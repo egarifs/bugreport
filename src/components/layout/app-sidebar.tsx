@@ -64,6 +64,17 @@ export function AppSidebar({ user, projects, activeProjectKey }: AppSidebarProps
       badge: null,
     },
     {
+      label: "Reports",
+      icon: (
+        <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M9 19v-6m4 6V9m4 10V5M5 19h14" />
+        </svg>
+      ),
+      href: currentKey ? `/projects/${currentKey}/reports` : "/projects",
+      active: pathname.includes("/reports"),
+      badge: null,
+    },
+    {
       label: "Test Cases",
       icon: (
         <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">

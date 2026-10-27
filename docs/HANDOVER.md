@@ -21,7 +21,7 @@ Dokumentasi teknis menyeluruh sistem BugReport untuk tim internal QA, Developer,
 ## 2. Port & Lingkungan Server
 
 - **Web Application**: `http://localhost:3001` (Port dialihkan dari 3000 karena digunakan `testflow-api`).
-- **PostgreSQL**: `localhost:5434` (`postgres:postgres@localhost:5434/bugreport`).
+- **PostgreSQL**: `localhost:5434` (kredensial lihat `DATABASE_URL` di `.env.example`).
 - **Super Admin Accounts**:
   - `admin@local.test` (Local admin)
   - `egarifs@gmail.com`
@@ -29,7 +29,7 @@ Dokumentasi teknis menyeluruh sistem BugReport untuk tim internal QA, Developer,
 
 ---
 
-## 3. Fitur Utama & Modul Selesai (Phase 1 s/d Phase 3)
+## 3. Fitur Utama & Modul Selesai (Phase 1 s/d Phase 5)
 
 ### A. Phase 1 — Foundation & Super Admin
 - **Pending Approval Workflow**: User baru mendaftar default berstatus `PENDING` dan diarahkan ke `/pending`.
@@ -70,6 +70,19 @@ Dokumentasi teknis menyeluruh sistem BugReport untuk tim internal QA, Developer,
   - Dukungan pencabutan akses (*Revoke API key*).
 
 ---
+
+### E. Phase 4 — Project AI Chat (`/projects/[key]/chat`)
+- Claude tool use server-side: `list_bugs`, `get_bug`, `bug_stats`, `search_business_docs` (read-only, scoped ke project aktif).
+- Internal note difilter untuk role tanpa `note.internal.read`.
+- Rate limit 30 pesan/user/jam; riwayat + token usage di tabel `ChatMessage`.
+- `ANTHROPIC_API_KEY` kosong/`mock` → simulation mode (jawaban dari `bug_stats`, tanpa panggil API).
+- Keterbatasan: `search_business_docs` cari di judul/deskripsi dokumen, belum isi chunk PDF; respons belum streaming.
+
+### F. Phase 5 — Reporting & Release Readiness (`/projects/[key]/reports`)
+- Open by severity, by status, jumlah bug pernah reopen, Draft > 3 hari, workload aktif per assignee.
+- Release readiness: `Not ready` jika ada Blocker/High belum selesai; filter target version cocok ke `appVersion` atau `buildNumber`.
+- Export CSV: `GET /api/projects/[key]/export` (member project/admin). Hanya field bug, tanpa komentar/internal note; sel diawali `= + - @` di-prefix `'` (anti formula injection).
+- Benchmark: 10.000 bug → report 93 ms.
 
 ## 4. Panduan Swagger UI & API Collection
 
@@ -115,7 +128,7 @@ docker compose up -d
 # 2. Sinkronisasi Skema Prisma (jika ada migrasi baru)
 npx prisma db push
 
-# 3. Jalankan automated test suite (34 tests)
+# 3. Jalankan automated test suite (44 tests)
 npm test
 
 # 4. Build & Jalankan Production Server di Port 3001
