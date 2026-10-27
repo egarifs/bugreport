@@ -71,6 +71,7 @@ export const ROLE_PERMISSIONS: Record<ProjectRole, readonly Permission[]> = {
     "bug.comment",
     "doc.read",
     "testcase.read",
+    "testrun.execute",
     "chat.ask",
   ],
   CLIENT: [

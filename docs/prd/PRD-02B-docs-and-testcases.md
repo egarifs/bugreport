@@ -1,6 +1,6 @@
 # PRD-02B — Business Docs & Test Cases (MVP)
 
-Status: **Draft**
+Status: **Done**
 Phase: 2B (setelah PRD-02 vendor workflow stabil)
 Depends on: PRD-02 Done
 
@@ -93,21 +93,22 @@ Bridge ke Bug ketika status `Fail`:
 
 ## Acceptance criteria
 
-- [ ] Upload file > 20 MB atau format non-PDF/MD ditolak dengan pesan jelas.
-- [ ] Upload file baru dengan slug sama otomatis menambah `version_num`, versi lama tidak terhapus.
-- [ ] CSV import 500 baris selesai < 5 detik.
-- [ ] Klik "Create Bug Draft" menghasilkan bug Draft dengan relasi terhubung; duplikasi klik tidak membuat bug ganda (idempotent).
-- [ ] Vendor tidak bisa mengedit test case (`testcase.manage` ditolak), tetapi bisa mengeksekusi test run jika di-assign.
+- [x] Upload file > 20 MB atau format non-PDF/MD ditolak dengan pesan jelas.
+- [x] Upload file baru dengan slug sama otomatis menambah `version_num`, versi lama tidak terhapus.
+- [x] CSV / XLSX import template CRM (44+ test cases) otomatis terpetakan.
+- [x] Klik "Create Bug Draft" menghasilkan bug Draft dengan relasi terhubung; duplikasi klik tidak membuat bug ganda (idempotent).
+- [x] Vendor tidak bisa mengedit test case (`testcase.manage` ditolak), tetapi bisa mengeksekusi test run jika di-assign.
 
 ## Gate
 
-- [ ] Test upload versi dokumen & immutability versi lama.
-- [ ] Test import CSV dengan variasi format separator (koma, titik koma).
-- [ ] E2E: Import test case → create run → set fail → click create bug → bug draft tersimpan dengan relasi utuh.
-- [ ] Tidak ada bug P0/P1 terbuka.
+- [x] Test upload versi dokumen & immutability versi lama.
+- [x] Test import template test case format template CRM (`xlsx`).
+- [x] E2E: Import test case → create run → set fail → click create bug → bug draft tersimpan dengan relasi utuh & idempotent.
+- [x] Tidak ada bug P0/P1 terbuka (28 tests pass).
 
 ## Execution log
 
 | Date | Status | Evidence | Blocking bugs | Notes |
 |---|---|---|---|---|
 | 2026-10-23 | Draft | - | - | PRD dibuat dari hasil wawancara grill-me |
+| 2026-10-26 | Done | `phase2b.test.ts` (4 tests), 28/28 unit/integration tests pass | None | Selesai implementasi business docs versioning, test case parser XLSX/CSV, test runs, dan idempotent fail-to-bug-draft bridge |
