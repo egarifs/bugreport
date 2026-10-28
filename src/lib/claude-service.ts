@@ -18,6 +18,9 @@ ATURAN KETAT:
 4. BAHASA:
    - Jawab secara profesional, lugas, dan terstruktur dalam Bahasa Indonesia.`;
 
+// model id retires over time; override via env without rebuild
+const CLAUDE_MODEL = process.env.CLAUDE_MODEL || "claude-sonnet-5-5";
+
 export async function askClaudeProjectChat(
   messages: Array<{ role: "user" | "assistant"; content: string }>,
   ctx: ChatUserContext
@@ -51,7 +54,7 @@ export async function askClaudeProjectChat(
 
   // Initial call with tool definitions
   let response = await client.messages.create({
-    model: "claude-3-5-sonnet-20241022",
+    model: CLAUDE_MODEL,
     max_tokens: 1500,
     system: SYSTEM_PROMPT,
     messages: claudeMessages,
@@ -94,7 +97,7 @@ export async function askClaudeProjectChat(
     });
 
     response = await client.messages.create({
-      model: "claude-3-5-sonnet-20241022",
+      model: CLAUDE_MODEL,
       max_tokens: 1500,
       system: SYSTEM_PROMPT,
       messages: claudeMessages,
