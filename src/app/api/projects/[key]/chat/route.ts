@@ -114,9 +114,10 @@ export async function POST(
       message: savedAssistantMessage,
     });
   } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : String(err);
+    // never echo provider errors to client: may contain request/key details
+    console.error("chat error:", err instanceof Error ? err.name : "unknown");
     return NextResponse.json(
-      { error: `Gagal memproses chat AI: ${errorMsg}` },
+      { error: "Gagal memproses chat AI. Coba lagi nanti." },
       { status: 500 }
     );
   }

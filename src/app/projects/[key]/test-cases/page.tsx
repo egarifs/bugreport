@@ -1,3 +1,4 @@
+import { requireProjectPermission } from "@/lib/authz";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { AppShell } from "@/components/layout/app-shell";
@@ -122,6 +123,7 @@ export default async function TestCasesPage({
                   <form
                     action={async (formData: FormData) => {
                       "use server";
+                      await requireProjectPermission(project.id, "testcase.manage");
                       const file = formData.get("file") as File;
                       if (!file || file.size === 0) return;
                       const buffer = Buffer.from(await file.arrayBuffer());

@@ -1,3 +1,4 @@
+import { requireProjectPermission } from "@/lib/authz";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { AppShell } from "@/components/layout/app-shell";
@@ -52,6 +53,7 @@ export default async function NewTestRunPage({
             <form
               action={async (formData: FormData) => {
                 "use server";
+                const actor = await requireProjectPermission(project.id, "testrun.execute");
                 const name = (formData.get("name") as string)?.trim();
                 const environment = (formData.get("environment") as string)?.trim() || "Staging";
                 const buildVersion = (formData.get("buildVersion") as string)?.trim() || null;
@@ -69,7 +71,7 @@ export default async function NewTestRunPage({
                     name,
                     environment,
                     buildVersion,
-                    createdById: user.id as string,
+                    createdById: actor.id,
                     items: {
                       create: allCases.map((tc) => ({
                         testCaseId: tc.id,

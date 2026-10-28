@@ -1,3 +1,5 @@
+import { hasPermission } from "@/lib/permissions";
+import { requireProjectPermission } from "@/lib/authz";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { redactSecrets } from "@/lib/redact";
@@ -66,7 +68,7 @@ export default async function NewBugPage({
           <form
             action={async (formData) => {
               "use server";
-              const author = (await auth())?.user as { id: string; email: string };
+              const author = await requireProjectPermission(project.id, "bug.create");
               const title = redactSecrets((formData.get("title") as string).trim());
               const component = (formData.get("component") as string)?.trim() || null;
               const severity = formData.get("severity") as BugSeverity;
@@ -100,7 +102,8 @@ export default async function NewBugPage({
 
               const number = updatedProject.bugSeq;
               const bugKey = `${project.key}-${number}`;
-              const initialStatus = asDraft || !canDirectOpen ? BugStatus.DRAFT : BugStatus.OPEN;
+              const initialStatus =
+                asDraft || !hasPermission(author.role, "bug.review", author.isAdmin) ? BugStatus.DRAFT : BugStatus.OPEN;
 
               const bug = await prisma.bug.create({
                 data: {

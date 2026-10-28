@@ -1,3 +1,4 @@
+import { requireProjectPermission } from "@/lib/authz";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { canTransitionBug, hasPermission } from "@/lib/permissions";
@@ -250,9 +251,13 @@ export default async function BugDetailPage({
             <form
               action={async (formData) => {
                 "use server";
-                const actor = (await auth())?.user as { id: string; email: string };
-                const body = redactSecrets((formData.get("body") as string).trim());
-                const type = (formData.get("type") as CommentType) || CommentType.PUBLIC;
+                const actor = await requireProjectPermission(project.id, "bug.comment");
+                const body = redactSecrets(((formData.get("body") as string) ?? "").trim());
+                const type =
+                  formData.get("type") === CommentType.INTERNAL &&
+                  hasPermission(actor.role, "note.internal.read", actor.isAdmin)
+                    ? CommentType.INTERNAL
+                    : CommentType.PUBLIC;
 
                 if (!body) return;
 
@@ -327,13 +332,13 @@ export default async function BugDetailPage({
               <form
                 action={async (formData) => {
                   "use server";
-                  const actor = (await auth())?.user as { id: string; email: string };
+                  const actor = await requireProjectPermission(project.id, "project.read");
                   const targetStatus = formData.get("targetStatus") as BugStatus;
                   const reopenReason = (formData.get("reopenReason") as string)?.trim();
                   const appVersion = (formData.get("appVersion") as string)?.trim();
                   const duplicateOfKey = (formData.get("duplicateOfKey") as string)?.trim();
 
-                  const check = canTransitionBug(bug.status, targetStatus, userRole, user.isAdmin);
+                  const check = canTransitionBug(bug.status, targetStatus, actor.role, actor.isAdmin);
                   if (!check.allowed) return;
 
                   // AC: Reopen without reason rejected
@@ -513,8 +518,9 @@ export default async function BugDetailPage({
             <form
               action={async (formData) => {
                 "use server";
-                const actor = (await auth())?.user as { id: string; email: string };
+                const actor = await requireProjectPermission(project.id, "bug.update");
                 const assigneeId = (formData.get("assigneeId") as string) || null;
+                if (assigneeId && !(await prisma.projectMember.findUnique({ where: { projectId_userId: { projectId: project.id, userId: assigneeId } } }))) return;
 
                 await prisma.bug.update({
                   where: { id: bug.id },

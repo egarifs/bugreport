@@ -1,3 +1,4 @@
+import { requireProjectPermission } from "@/lib/authz";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { AppShell } from "@/components/layout/app-shell";
@@ -95,6 +96,7 @@ export default async function ProjectSettingsPage({
                 <form
                   action={async (formData: FormData) => {
                     "use server";
+                    const actor = await requireProjectPermission(project.id, "project.manage");
                     const name = (formData.get("name") as string)?.trim();
                     if (!name) return;
 
@@ -107,7 +109,7 @@ export default async function ProjectSettingsPage({
                         keyHash,
                         keyPrefix,
                         scopes: ["bug:read", "bug:create", "bug:comment", "bug:attach"],
-                        createdById: user.id as string,
+                        createdById: actor.id,
                       },
                     });
 
@@ -166,6 +168,7 @@ export default async function ProjectSettingsPage({
                       <form
                         action={async () => {
                           "use server";
+                          await requireProjectPermission(project.id, "project.manage");
                           await prisma.apiKey.update({
                             where: { id: k.id },
                             data: { revokedAt: new Date() },

@@ -1,3 +1,4 @@
+import { requireAdmin } from "@/lib/authz";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { redirect } from "next/navigation";
@@ -85,7 +86,7 @@ export default async function AdminUsersPage() {
                   <form
                     action={async (formData) => {
                       "use server";
-                      const reviewer = (await auth())?.user as { id?: string; email?: string };
+                      const reviewer = await requireAdmin();
                       const action = formData.get("action") as string;
                       const projectId = formData.get("projectId") as string;
                       const role = formData.get("role") as string;
@@ -239,6 +240,7 @@ export default async function AdminUsersPage() {
                   <form
                     action={async () => {
                       "use server";
+                      await requireAdmin();
                       const current = u.status;
                       const next = current === "ACTIVE" ? UserStatus.SUSPENDED : UserStatus.ACTIVE;
                       await prisma.user.update({

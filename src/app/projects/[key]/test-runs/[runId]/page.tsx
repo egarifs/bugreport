@@ -1,3 +1,4 @@
+import { requireProjectPermission } from "@/lib/authz";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { AppShell } from "@/components/layout/app-shell";
@@ -161,7 +162,9 @@ export default async function TestRunDetailPage({
                         <form
                           action={async (formData: FormData) => {
                             "use server";
+                            const actor = await requireProjectPermission(project.id, "testrun.execute");
                             const status = formData.get("status") as TestRunItemStatus;
+                            if (!Object.values(TestRunItemStatus).includes(status)) return;
                             const actual = (formData.get("actualResult") as string)?.trim() || null;
 
                             await prisma.testRunItem.update({
@@ -169,7 +172,7 @@ export default async function TestRunDetailPage({
                               data: {
                                 status,
                                 actualResult: actual,
-                                executedById: user.id as string,
+                                executedById: actor.id,
                                 executedAt: new Date(),
                               },
                             });
@@ -227,11 +230,12 @@ export default async function TestRunDetailPage({
                             <form
                               action={async () => {
                                 "use server";
+                                const actor = await requireProjectPermission(project.id, "bug.create");
                                 await createBugDraftFromTestRunItem({
                                   testRunItemId: item.id,
-                                  actorId: user.id as string,
-                                  actorEmail: user.email as string,
-                                  isAdmin: user.isAdmin,
+                                  actorId: actor.id,
+                                  actorEmail: actor.email,
+                                  isAdmin: actor.isAdmin,
                                 });
                                 revalidatePath(`/projects/${project.key}/test-runs/${run.id}`);
                               }}

@@ -1,3 +1,4 @@
+import { requireAdmin } from "@/lib/authz";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { redirect } from "next/navigation";
@@ -34,7 +35,7 @@ export default async function NewProjectPage() {
           <form
             action={async (formData) => {
               "use server";
-              const creator = (await auth())?.user as { id: string; email: string };
+              const creator = await requireAdmin();
               const key = (formData.get("key") as string).trim().toUpperCase();
               const name = (formData.get("name") as string).trim();
               const description = (formData.get("description") as string)?.trim() || null;

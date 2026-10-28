@@ -1,3 +1,4 @@
+import { requireProjectPermission } from "@/lib/authz";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { AppShell } from "@/components/layout/app-shell";
@@ -67,6 +68,7 @@ export default async function BusinessDocsPage({
               <form
                 action={async (formData: FormData) => {
                   "use server";
+                  const actor = await requireProjectPermission(project.id, "doc.manage");
                   const title = (formData.get("title") as string)?.trim();
                   const description = (formData.get("description") as string)?.trim() || null;
                   const file = formData.get("file") as File;
@@ -75,6 +77,10 @@ export default async function BusinessDocsPage({
                   if (file.size > 20 * 1024 * 1024) {
                     throw new Error("File melebihi batas 20 MB.");
                   }
+                  const ext = path.extname(file.name).toLowerCase();
+                  if (ext !== ".pdf" && ext !== ".md") throw new Error("Hanya PDF atau Markdown (.md).");
+                  const head = Buffer.from(await file.slice(0, 5).arrayBuffer()).toString("latin1");
+                  if (ext === ".pdf" && head !== "%PDF-") throw new Error("File bukan PDF valid.");
 
                   const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 
@@ -82,7 +88,6 @@ export default async function BusinessDocsPage({
                   const uploadDir = path.join(process.cwd(), "uploads", project.key, "docs");
                   await fs.mkdir(uploadDir, { recursive: true });
 
-                  const ext = path.extname(file.name);
                   const storedFileName = `${slug}_${Date.now()}${ext}`;
                   const storedFilePath = path.join(uploadDir, storedFileName);
 
@@ -125,7 +130,7 @@ export default async function BusinessDocsPage({
                       fileSize: file.size,
                       mimeType: file.type || "application/octet-stream",
                       isCurrent: true,
-                      uploadedById: user.id,
+                      uploadedById: actor.id,
                     },
                   });
 
