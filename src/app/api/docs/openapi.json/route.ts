@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   const openApiSpec = {
     openapi: "3.0.3",
@@ -15,8 +17,8 @@ export async function GET() {
     },
     servers: [
       {
-        url: "http://localhost:3001",
-        description: "Local Development Server",
+        url: process.env.AUTH_URL ?? process.env.NEXTAUTH_URL ?? "http://localhost:3001",
+        description: "BugReport Server",
       },
     ],
     components: {

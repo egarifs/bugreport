@@ -10,6 +10,7 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith("/_next") ||
     pathname.startsWith("/favicon.ico") ||
     pathname.startsWith("/api/auth") ||
+    pathname === "/api/mcp" || // own Bearer API key auth in route
     pathname.startsWith("/public")
   ) {
     return NextResponse.next();
@@ -19,6 +20,8 @@ export async function middleware(request: NextRequest) {
   const token = await getToken({
     req: request,
     secret: process.env.AUTH_SECRET,
+    // behind TLS-terminating proxy Auth.js names the cookie __Secure-*; match it
+    secureCookie: (process.env.AUTH_URL ?? process.env.NEXTAUTH_URL ?? "").startsWith("https://"),
   });
 
   const user = token as
