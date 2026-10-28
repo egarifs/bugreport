@@ -128,7 +128,7 @@ docker compose up -d
 # 2. Sinkronisasi Skema Prisma (jika ada migrasi baru)
 npx prisma db push
 
-# 3. Jalankan automated test suite (44 tests)
+# 3. Jalankan automated test suite (50 tests)
 npm test
 
 # 4. Build & Jalankan Production Server di Port 3001
