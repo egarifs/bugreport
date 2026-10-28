@@ -140,3 +140,24 @@ PORT=3001 npx next start -p 3001
 - Log background server Next.js tersimpan di: `/tmp/bugreport-server.log`.
 - Periksa port aktif: `ss -ltn | grep ':3001\b'`.
 - Matikan proses gantung: `fuser -k 3001/tcp`.
+
+## 6. Production (home-server1)
+
+- URL: `https://bugreport.kahartos.my.id` (Cloudflare Tunnel `kahartos-production`, ingress di `/etc/cloudflared/config.yml` ke `127.0.0.1:18090`).
+- Stack: `/opt/stacks/bugreport` (`docker-compose.yml` = `deploy/docker-compose.prod.yml`), service `app` + `db` (PG16, volume `bugreport_pgdata`), upload di volume `bugreport_uploads`.
+- Secret: `/opt/secrets/bugreport.env` (600), di-symlink jadi `.env`. `APP_TAG` = git sha image.
+- Backup: `/opt/backups/backup-bugreport.sh` via `/etc/cron.d/bugreport-backup` 02:30, output `/opt/backups/bugreport` (retensi 7 hari, restore test OK).
+
+Deploy rilis baru (dari laptop, tanpa registry):
+
+```bash
+SHA=$(git rev-parse --short HEAD)
+docker build --network host -t bugreport-app:$SHA .
+docker save bugreport-app:$SHA | gzip -1 | ssh root@100.110.252.41 'gunzip | docker load'
+ssh root@100.110.252.41 "/opt/backups/backup-bugreport.sh && cd /opt/stacks/bugreport \
+  && sed -i 's/^APP_TAG=.*/APP_TAG=$SHA/' .env \
+  && docker compose run --rm --no-deps app node_modules/.bin/prisma db push --skip-generate \
+  && docker compose up -d app"
+```
+
+Rollback: set `APP_TAG` ke sha sebelumnya, lalu `docker compose up -d app`. Jika skema berubah, restore dump `db-*.sql.gz` terakhir.
