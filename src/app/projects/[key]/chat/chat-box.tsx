@@ -67,19 +67,19 @@ export function ProjectChatBox({
           onClick={() => sendMessage("Apakah project ini sudah siap release?")}
           className="px-2.5 py-1 bg-white hover:bg-slate-100 border border-slate-200 rounded text-slate-700 transition"
         >
-          🚀 Siap Release?
+          Siap Release?
         </button>
         <button
           onClick={() => sendMessage("Tampilkan ringkasan statistik kesehatan bug saat ini")}
           className="px-2.5 py-1 bg-white hover:bg-slate-100 border border-slate-200 rounded text-slate-700 transition"
         >
-          📊 Ringkasan Statistik
+          Ringkasan Statistik
         </button>
         <button
           onClick={() => sendMessage("Apa saja bug dengan severity BLOCKER atau HIGH yang masih Open?")}
           className="px-2.5 py-1 bg-white hover:bg-slate-100 border border-slate-200 rounded text-slate-700 transition"
         >
-          🔥 Blocker & High Bugs
+          Blocker & High Bugs
         </button>
       </div>
 
@@ -87,9 +87,6 @@ export function ProjectChatBox({
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center text-center p-6 text-slate-400 text-xs">
-            <div className="w-10 h-10 rounded-full bg-purple-100 text-purple-700 flex items-center justify-center text-lg mb-2">
-              ✦
-            </div>
             <p className="font-semibold text-slate-700">Project AI Assistant Siap</p>
             <p className="mt-1 max-w-sm">
               Tanyakan kesiapan release, bug blocker yang belum diselesaikan, atau spesifikasi modul berdasarkan dokumen PRD project ini.
@@ -108,7 +105,7 @@ export function ProjectChatBox({
                     : "bg-slate-50 border border-slate-200 text-slate-900 rounded-bl-none shadow-xs"
                 }`}
               >
-                <div className="font-semibold mb-1 text-[10px] tracking-wide uppercase opacity-75">
+                <div className="font-semibold mb-1 text-xs opacity-75">
                   {m.role === "USER" ? "Anda" : "Claude Assistant"}
                 </div>
                 {m.content}

@@ -119,7 +119,7 @@ export default async function NewProjectPage() {
               </Link>
               <button
                 type="submit"
-                className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded text-xs font-medium"
+                className="px-4 py-2 bg-action hover:bg-action-hover text-white rounded text-xs font-medium"
               >
                 Simpan Project
               </button>

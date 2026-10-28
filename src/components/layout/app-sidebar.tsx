@@ -9,6 +9,8 @@ interface ProjectOption {
   key: string;
   name: string;
   role?: string;
+  // Permissions the user holds in this project; computed server-side, used only to hide menu items.
+  perms: string[];
 }
 
 interface AppSidebarProps {
@@ -52,7 +54,8 @@ export function AppSidebar({ user, projects, activeProjectKey }: AppSidebarProps
 
   const navItems = [
     {
-      label: "Issues / Bugs",
+      label: "Bug",
+      perm: "project.read",
       icon: (
         <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M12 4v1m6 11h2m-6 0h-4m4-7v7m0 0l-3 3m3-3l3 3M4 11h2m2-5a4 4 0 018 0v2H8V6z" />
@@ -64,7 +67,8 @@ export function AppSidebar({ user, projects, activeProjectKey }: AppSidebarProps
       badge: null,
     },
     {
-      label: "Reports",
+      label: "Laporan",
+      perm: "project.read",
       icon: (
         <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M9 19v-6m4 6V9m4 10V5M5 19h14" />
@@ -75,7 +79,8 @@ export function AppSidebar({ user, projects, activeProjectKey }: AppSidebarProps
       badge: null,
     },
     {
-      label: "Test Cases",
+      label: "Test case",
+      perm: "testcase.read",
       icon: (
         <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
@@ -83,10 +88,11 @@ export function AppSidebar({ user, projects, activeProjectKey }: AppSidebarProps
       ),
       href: currentKey ? `/projects/${currentKey}/test-cases` : "/projects",
       active: pathname.includes("/test-cases"),
-      badge: "P2B",
+      badge: null,
     },
     {
-      label: "Business Docs",
+      label: "Dokumen bisnis",
+      perm: "doc.read",
       icon: (
         <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
@@ -94,10 +100,11 @@ export function AppSidebar({ user, projects, activeProjectKey }: AppSidebarProps
       ),
       href: currentKey ? `/projects/${currentKey}/docs` : "/projects",
       active: pathname.includes("/docs"),
-      badge: "P2B",
+      badge: null,
     },
     {
-      label: "AI Assistant",
+      label: "AI Chat",
+      perm: "chat.ask",
       icon: (
         <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
@@ -105,10 +112,11 @@ export function AppSidebar({ user, projects, activeProjectKey }: AppSidebarProps
       ),
       href: currentKey ? `/projects/${currentKey}/chat` : "/projects",
       active: pathname.includes("/chat"),
-      badge: "P4",
+      badge: null,
     },
     {
-      label: "Project Settings",
+      label: "Pengaturan",
+      perm: "project.read",
       icon: (
         <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
@@ -119,7 +127,7 @@ export function AppSidebar({ user, projects, activeProjectKey }: AppSidebarProps
       active: pathname.endsWith("/settings"),
       badge: null,
     },
-  ];
+  ].filter((item) => !currentProject || currentProject.perms.includes(item.perm));
 
   return (
     <>
@@ -169,7 +177,7 @@ export function AppSidebar({ user, projects, activeProjectKey }: AppSidebarProps
                 <p className="font-bold text-xs text-slate-900 truncate">
                   {currentProject ? currentProject.name : "BugReport"}
                 </p>
-                <p className="text-[10px] text-slate-400 font-mono truncate">
+                <p className="text-xs text-slate-400 font-mono truncate">
                   {currentProject ? `Project: ${currentProject.key}` : "Central Tracker"}
                 </p>
               </div>
@@ -200,7 +208,7 @@ export function AppSidebar({ user, projects, activeProjectKey }: AppSidebarProps
         {/* Project Switcher Select (when expanded and has multiple projects) */}
         {!collapsed && projects.length > 0 && (
           <div className="p-3 border-b border-slate-100">
-            <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">
+            <label className="block text-xs font-semibold text-slate-400 mb-1">
               Pilih Project
             </label>
             <select
@@ -239,7 +247,7 @@ export function AppSidebar({ user, projects, activeProjectKey }: AppSidebarProps
                 <span className="flex-1 truncate">{item.label}</span>
               )}
               {!collapsed && item.badge && (
-                <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 uppercase">
+                <span className="text-xs font-mono px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 uppercase">
                   {item.badge}
                 </span>
               )}
@@ -249,7 +257,7 @@ export function AppSidebar({ user, projects, activeProjectKey }: AppSidebarProps
           {/* Developer Tools */}
           <div className="pt-3 mt-3 border-t border-slate-100">
             {!collapsed && (
-              <p className="px-3 text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">
+              <p className="px-3 text-xs font-semibold text-slate-400 mb-1">
                 Developer & Tools
               </p>
             )}
@@ -273,7 +281,7 @@ export function AppSidebar({ user, projects, activeProjectKey }: AppSidebarProps
           {user.isAdmin && (
             <div className="pt-2 mt-2">
               {!collapsed && (
-                <p className="px-3 text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">
+                <p className="px-3 text-xs font-semibold text-slate-400 mb-1">
                   Administrator
                 </p>
               )}
@@ -303,7 +311,7 @@ export function AppSidebar({ user, projects, activeProjectKey }: AppSidebarProps
                 <p className="text-xs font-semibold text-slate-800 truncate">
                   {user.name || user.email}
                 </p>
-                <p className="text-[10px] text-slate-400 truncate">
+                <p className="text-xs text-slate-400 truncate">
                   {user.isAdmin ? "Super Admin" : "Active Member"}
                 </p>
               </div>

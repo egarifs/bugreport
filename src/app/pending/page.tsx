@@ -66,7 +66,7 @@ export default async function PendingPage() {
         >
           <button
             type="submit"
-            className="w-full py-2 px-4 bg-slate-900 hover:bg-slate-800 text-white text-sm font-medium rounded transition"
+            className="w-full py-2 px-4 bg-action hover:bg-action-hover text-white text-sm font-medium rounded transition"
           >
             Keluar (Sign Out)
           </button>

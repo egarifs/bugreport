@@ -26,10 +26,9 @@ Aturan: PRD berikutnya hanya boleh `In Progress` jika PRD sebelumnya `Done`.
 | [PRD-03](PRD-03-mcp.md) | MCP for AI agents | 3 | Draft | 2026-10-23 |
 | [PRD-04](PRD-04-project-chat.md) | Project AI chat (bugs + docs) | 4 | Draft | 2026-10-23 |
 | [PRD-05](PRD-05-reporting.md) | Reporting & release readiness | 5 | Draft | 2026-10-23 |
-| PRD-06 | AI test case generator (from docs) | 6 | Not written | - |
-| PRD-07 | Test runner & Grill Mode | 7 | Not written | - |
-
-PRD-06 dan PRD-07 ditulis setelah PRD-05 `Done`.
+| [PRD-06](PRD-06-ux-ui.md) | UX/UI per peran + master modul | 6 | In Progress | 2026-10-28 |
+| PRD-07 | AI test case generator (from docs) | 7 | Not written | - |
+| PRD-08 | Test runner & Grill Mode | 8 | Not written | - |
 
 ## Status update template
 

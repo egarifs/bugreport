@@ -176,7 +176,7 @@ export default async function BusinessDocsPage({
                 <div className="md:col-span-3 flex justify-end">
                   <button
                     type="submit"
-                    className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-medium rounded transition"
+                    className="px-4 py-2 bg-action hover:bg-action-hover text-white text-xs font-medium rounded transition"
                   >
                     Simpan & Upload Versi Baru
                   </button>
@@ -210,7 +210,7 @@ export default async function BusinessDocsPage({
                             <h3 className="font-semibold text-slate-900 text-sm">
                               {doc.title}
                             </h3>
-                            <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800">
+                            <span className="text-xs font-mono font-semibold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800">
                               v{currentVer?.versionNum ?? 1} (Aktif)
                             </span>
                           </div>
@@ -219,21 +219,21 @@ export default async function BusinessDocsPage({
                               {doc.description}
                             </p>
                           )}
-                          <p className="text-[11px] text-slate-400 mt-2">
+                          <p className="text-xs text-slate-400 mt-2">
                             File: {currentVer?.fileName} • {((currentVer?.fileSize || 0) / 1024).toFixed(1)} KB • Diperbarui {doc.updatedAt.toLocaleDateString()}
                           </p>
                         </div>
 
                         {/* Version history list */}
                         <div className="text-right">
-                          <span className="text-[11px] font-medium text-slate-500">
+                          <span className="text-xs font-medium text-slate-500">
                             Riwayat Versi ({doc.versions.length}):
                           </span>
                           <div className="flex flex-wrap gap-1.5 mt-1 justify-end">
                             {doc.versions.map((ver) => (
                               <span
                                 key={ver.id}
-                                className={`text-[10px] font-mono px-2 py-0.5 rounded border ${
+                                className={`text-xs font-mono px-2 py-0.5 rounded border ${
                                   ver.isCurrent
                                     ? "bg-slate-900 text-white border-slate-900"
                                     : "bg-slate-50 text-slate-600 border-slate-200"

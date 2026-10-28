@@ -28,13 +28,14 @@ export default async function TestRunDetailPage({
 
   if (!project) notFound();
   if (!project.members[0] && !user.isAdmin) redirect("/projects");
+  if (!hasPermission(project.members[0]?.role, "testcase.read", user.isAdmin)) redirect(`/projects/${project.key}`);
 
   const run = await prisma.testRun.findUnique({
     where: { id: runId },
     include: {
       items: {
         include: {
-          testCase: true,
+          testCase: { include: { module: { select: { name: true } } } },
           createdBug: true,
           executedBy: { select: { name: true, email: true } },
         },
@@ -69,11 +70,11 @@ export default async function TestRunDetailPage({
             <span className="font-semibold text-slate-900 text-sm">
               {run.name}
             </span>
-            <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-blue-50 text-blue-700">
+            <span className="text-xs font-mono px-2 py-0.5 rounded bg-blue-50 text-blue-700">
               {run.environment}
             </span>
             {run.buildVersion && (
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-100 text-slate-600">
+              <span className="text-xs font-mono px-2 py-0.5 rounded bg-slate-100 text-slate-600">
                 {run.buildVersion}
               </span>
             )}
@@ -116,16 +117,14 @@ export default async function TestRunDetailPage({
                         <span className="font-mono font-bold text-xs bg-slate-100 text-slate-700 px-2 py-0.5 rounded">
                           {item.testCase.code}
                         </span>
-                        {item.testCase.moduleArea && (
-                          <span className="text-xs text-slate-500">
-                            [{item.testCase.moduleArea}]
-                          </span>
+                        {(item.testCase.module?.name ?? item.testCase.moduleArea) && (
+                          <span className="text-xs text-slate-500">{item.testCase.module?.name ?? item.testCase.moduleArea}</span>
                         )}
                         <span className="font-semibold text-sm text-slate-900">
                           {item.testCase.title}
                         </span>
                         <span
-                          className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
+                          className={`px-2 py-0.5 rounded text-xs font-semibold ${
                             item.status === "PASS"
                               ? "bg-emerald-100 text-emerald-700"
                               : item.status === "FAIL"
@@ -224,7 +223,6 @@ export default async function TestRunDetailPage({
                             >
                               <span>Bug Draft:</span>
                               <span className="font-mono">{item.createdBug.key}</span>
-                              <span>→</span>
                             </Link>
                           ) : (
                             <form

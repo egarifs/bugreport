@@ -86,6 +86,7 @@ export async function createBugDraftFromTestRunItem({
         environment: item.testRun.environment,
         buildNumber: item.testRun.buildVersion || undefined,
         component: item.testCase.moduleArea || undefined,
+        moduleId: item.testCase.moduleId,
         reporterId: actorId,
         testRunItemId: item.id,
       },

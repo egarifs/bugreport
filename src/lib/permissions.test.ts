@@ -67,3 +67,14 @@ describe("canTransitionBug", () => {
     assert.match(res.reason ?? "", /not permitted/);
   });
 });
+
+describe("role menu (PRD-06)", () => {
+  it("blocks AI chat and test cases for client and viewer", () => {
+    for (const r of ["CLIENT", "VIEWER"] as const) {
+      assert.equal(hasPermission(r, "chat.ask", false), false);
+      assert.equal(hasPermission(r, "testcase.read", false), false);
+      assert.equal(hasPermission(r, "doc.read", false), true);
+    }
+    assert.equal(hasPermission("VENDOR", "chat.ask", false), true);
+  });
+});

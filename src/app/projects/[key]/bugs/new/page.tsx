@@ -1,3 +1,5 @@
+import { ActionForm, SubmitButton, type ActionResult } from "@/components/ui/action-form";
+import { activeModules, ownModuleId } from "@/lib/modules";
 import { hasPermission } from "@/lib/permissions";
 import { requireProjectPermission } from "@/lib/authz";
 import { auth } from "@/lib/auth";
@@ -36,6 +38,7 @@ export default async function NewBugPage({
   }
 
   const role = project.members[0]?.role;
+  const modules = await activeModules(project.id);
   // If QA or Admin reports, can start directly as OPEN if preferred, otherwise DRAFT
   const canDirectOpen = user.isAdmin || role === "QA" || role === "ADMIN";
 
@@ -65,15 +68,15 @@ export default async function NewBugPage({
             Pola secret seperti token atau password akan otomatis di-redact.
           </p>
 
-          <form
-            action={async (formData) => {
+          <ActionForm
+            action={async (_prev: ActionResult, formData: FormData): Promise<ActionResult> => {
               "use server";
               const author = await requireProjectPermission(project.id, "bug.create");
-              const title = redactSecrets((formData.get("title") as string).trim());
-              const component = (formData.get("component") as string)?.trim() || null;
+              const title = redactSecrets(((formData.get("title") as string) ?? "").trim());
+              const moduleId = await ownModuleId(project.id, formData.get("moduleId") as string);
               const severity = formData.get("severity") as BugSeverity;
               const priority = (formData.get("priority") as BugPriority) || BugPriority.NORMAL;
-              const environment = (formData.get("environment") as string).trim();
+              const environment = ((formData.get("environment") as string) ?? "").trim();
               const appVersion = (formData.get("appVersion") as string)?.trim() || null;
               const stepsToReproduce = redactSecrets(
                 (formData.get("stepsToReproduce") as string).trim()
@@ -90,8 +93,10 @@ export default async function NewBugPage({
               const asDraft = formData.get("asDraft") === "true";
 
               if (!title || !stepsToReproduce || !expectedResult || !actualResult || !environment) {
-                return;
+                return { error: "Lengkapi judul, environment, langkah reproduksi, expected, dan actual result." };
               }
+              if (!Object.values(BugSeverity).includes(severity)) return { error: "Pilih severity." };
+              if (modules.length > 0 && !moduleId) return { error: "Pilih modul tempat bug terjadi." };
 
               // Atomically increment bugSeq for this project
               const updatedProject = await prisma.project.update({
@@ -111,7 +116,7 @@ export default async function NewBugPage({
                   key: bugKey,
                   number,
                   title,
-                  component,
+                  moduleId,
                   severity,
                   priority,
                   status: initialStatus,
@@ -144,7 +149,7 @@ export default async function NewBugPage({
 
               redirect(`/projects/${project.key}/bugs/${number}`);
             }}
-            className="space-y-4 text-xs"
+            className="space-y-4 text-sm"
           >
             <div>
               <label className="block font-semibold text-slate-700 mb-1">
@@ -164,15 +169,17 @@ export default async function NewBugPage({
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">
-                  Area / Modul
+                <label htmlFor="moduleId" className="block font-bold text-slate-700 mb-1">
+                  Modul{modules.length > 0 && " *"}
                 </label>
-                <input
-                  type="text"
-                  name="component"
-                  placeholder="Access Control, Dashboard, dll."
-                  className="w-full px-3 py-2 border border-slate-300 rounded"
-                />
+                {modules.length === 0 ? (
+                  <p className="text-slate-500 py-2">Belum ada modul. Admin project menambahkannya di Settings.</p>
+                ) : (
+                  <select id="moduleId" name="moduleId" required defaultValue="" className="w-full px-3 py-2 border border-slate-300 rounded bg-white">
+                    <option value="" disabled>Pilih modul</option>
+                    {modules.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+                  </select>
+                )}
               </div>
 
               <div>
@@ -309,15 +316,10 @@ export default async function NewBugPage({
                 >
                   Batal
                 </Link>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded text-xs font-medium"
-                >
-                  Kirim Laporan Bug
-                </button>
+                <SubmitButton pendingText="Mengirim...">Kirim laporan</SubmitButton>
               </div>
             </div>
-          </form>
+          </ActionForm>
         </div>
       </main>
     </div>

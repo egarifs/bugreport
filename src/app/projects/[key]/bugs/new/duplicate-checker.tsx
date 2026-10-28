@@ -68,11 +68,11 @@ export function DuplicateChecker({ projectKey }: { projectKey: string }) {
     <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs space-y-2">
       <div className="flex items-center justify-between">
         <span className="font-semibold text-amber-900 flex items-center gap-1.5">
-          ⚠️ Kemungkinan bug duplikat ditemukan ({duplicates.length})
+          Kemungkinan bug duplikat ditemukan ({duplicates.length})
         </span>
-        {loading && <span className="text-[10px] text-amber-600">Mencari...</span>}
+        {loading && <span className="text-xs text-amber-600">Mencari...</span>}
       </div>
-      <p className="text-[11px] text-amber-700">
+      <p className="text-xs text-amber-700">
         Periksa daftar berikut sebelum membuat laporan baru agar tidak terjadi redundansi:
       </p>
       <ul className="space-y-1.5 divide-y divide-amber-200/50">
@@ -83,10 +83,10 @@ export function DuplicateChecker({ projectKey }: { projectKey: string }) {
               <span className="text-slate-800 truncate">{d.title}</span>
             </div>
             <div className="flex items-center gap-2 shrink-0">
-              <span className="px-1.5 py-0.5 rounded text-[10px] bg-amber-200/60 text-amber-900 font-medium">
+              <span className="px-1.5 py-0.5 rounded text-xs bg-amber-200/60 text-amber-900 font-medium">
                 {d.status}
               </span>
-              <span className="text-[10px] text-amber-700">
+              <span className="text-xs text-amber-700">
                 {(d.similarity * 100).toFixed(0)}% mirip
               </span>
               <Link

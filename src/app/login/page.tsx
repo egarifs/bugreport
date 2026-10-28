@@ -68,7 +68,7 @@ export default async function LoginPage({
 
         {showDevLogin && (
           <div className="mt-8 pt-6 border-t border-dashed border-slate-200">
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
+            <p className="text-xs font-semibold text-slate-500 mb-3">
               Developer Quick Login
             </p>
             <form

@@ -56,26 +56,26 @@ enum CommentType {
 }
 
 model User {
-  id            String       @id @default(uuid())
-  email         String       @unique
-  name          String?
-  image         String?
-  status        UserStatus   @default(PENDING)
-  isAdmin       Boolean      @default(false)
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
+  id        String     @id @default(uuid())
+  email     String     @unique
+  name      String?
+  image     String?
+  status    UserStatus @default(PENDING)
+  isAdmin   Boolean    @default(false)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
 
   reviewedById  String?
-  reviewedBy    User?        @relation("UserReviewer", fields: [reviewedById], references: [id])
-  reviewedUsers User[]       @relation("UserReviewer")
+  reviewedBy    User?     @relation("UserReviewer", fields: [reviewedById], references: [id])
+  reviewedUsers User[]    @relation("UserReviewer")
   reviewedAt    DateTime?
 
-  memberships   ProjectMember[]
-  reportedBugs  Bug[]        @relation("BugReporter")
-  assignedBugs  Bug[]        @relation("BugAssignee")
-  reviewedBugs  Bug[]        @relation("BugReviewer")
-  comments      BugComment[]
-  auditLogs     AuditLog[]
+  memberships  ProjectMember[]
+  reportedBugs Bug[]           @relation("BugReporter")
+  assignedBugs Bug[]           @relation("BugAssignee")
+  reviewedBugs Bug[]           @relation("BugReviewer")
+  comments     BugComment[]
+  auditLogs    AuditLog[]
 
   testRunsCreated   TestRun[]
   testItemsExecuted TestRunItem[]
@@ -87,18 +87,18 @@ model User {
 }
 
 model Project {
-  id          String          @id @default(uuid())
-  key         String          @unique // e.g. "CRM", "PKT"
+  id          String   @id @default(uuid())
+  key         String   @unique // e.g. "CRM", "PKT"
   name        String
   description String?
-  isArchived  Boolean         @default(false)
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
+  isArchived  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  members     ProjectMember[]
-  bugs        Bug[]
-  bugSeq      Int             @default(0) // auto-incrementing per project for CRM-1, CRM-2
-  auditLogs   AuditLog[]
+  members   ProjectMember[]
+  bugs      Bug[]
+  bugSeq    Int             @default(0) // auto-incrementing per project for CRM-1, CRM-2
+  auditLogs AuditLog[]
 
   businessDocs BusinessDoc[]
   testCases    TestCase[]
@@ -106,6 +106,7 @@ model Project {
   apiKeys      ApiKey[]
   agentRuns    AgentRun[]
   chatMessages ChatMessage[]
+  modules      Module[]
 
   @@index([key])
 }
@@ -126,56 +127,58 @@ model ProjectMember {
 }
 
 model Bug {
-  id              String         @id @default(uuid())
-  projectId       String
-  project         Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  key             String         @unique // e.g. "CRM-12"
-  number          Int
+  id        String  @id @default(uuid())
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  key       String  @unique // e.g. "CRM-12"
+  number    Int
 
-  title           String
-  description     String
+  title            String
+  description      String
   stepsToReproduce String
-  expectedResult  String
-  actualResult    String
+  expectedResult   String
+  actualResult     String
 
-  severity        BugSeverity
-  priority        BugPriority    @default(NORMAL)
-  status          BugStatus      @default(DRAFT)
+  severity BugSeverity
+  priority BugPriority @default(NORMAL)
+  status   BugStatus   @default(DRAFT)
 
-  environment     String
-  appVersion      String?
-  buildNumber     String?
-  browserDevice   String?
-  component       String?
+  environment   String
+  appVersion    String?
+  buildNumber   String?
+  browserDevice String?
+  component     String? // legacy free text; replaced by moduleId
+  moduleId      String?
+  module        Module? @relation(fields: [moduleId], references: [id])
 
-  reporterId      String
-  reporter        User           @relation("BugReporter", fields: [reporterId], references: [id])
-  assigneeId      String?
-  assignee        User?          @relation("BugAssignee", fields: [assigneeId], references: [id])
-  reviewedById    String?
-  reviewedBy      User?          @relation("BugReviewer", fields: [reviewedById], references: [id])
-  reviewedAt      DateTime?
+  reporterId   String
+  reporter     User      @relation("BugReporter", fields: [reporterId], references: [id])
+  assigneeId   String?
+  assignee     User?     @relation("BugAssignee", fields: [assigneeId], references: [id])
+  reviewedById String?
+  reviewedBy   User?     @relation("BugReviewer", fields: [reviewedById], references: [id])
+  reviewedAt   DateTime?
 
-  reopenCount     Int            @default(0)
-  reopenReason    String?
+  reopenCount  Int     @default(0)
+  reopenReason String?
 
-  duplicateOfId   String?
-  duplicateOf     Bug?           @relation("BugDuplicates", fields: [duplicateOfId], references: [id])
-  duplicates      Bug[]          @relation("BugDuplicates")
+  duplicateOfId String?
+  duplicateOf   Bug?    @relation("BugDuplicates", fields: [duplicateOfId], references: [id])
+  duplicates    Bug[]   @relation("BugDuplicates")
 
   // Phase 2B Bridge
-  testRunItemId   String?        @unique
-  testRunItem     TestRunItem?   @relation("TestRunItemBug", fields: [testRunItemId], references: [id])
+  testRunItemId String?      @unique
+  testRunItem   TestRunItem? @relation("TestRunItemBug", fields: [testRunItemId], references: [id])
 
   // Phase 3 Agent Run link
-  agentRunId      String?
-  agentRun        AgentRun?      @relation(fields: [agentRunId], references: [id])
+  agentRunId String?
+  agentRun   AgentRun? @relation(fields: [agentRunId], references: [id])
 
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  comments        BugComment[]
-  attachments     BugAttachment[]
+  comments    BugComment[]
+  attachments BugAttachment[]
 
   @@unique([projectId, number])
   @@index([projectId, status])
@@ -199,31 +202,31 @@ model BugComment {
 }
 
 model BugAttachment {
-  id          String   @id @default(uuid())
-  bugId       String
-  bug         Bug      @relation(fields: [bugId], references: [id], onDelete: Cascade)
-  fileName    String
-  storedName  String   @unique
-  fileSize    Int
-  mimeType    String
-  uploadedAt  DateTime @default(now())
+  id         String   @id @default(uuid())
+  bugId      String
+  bug        Bug      @relation(fields: [bugId], references: [id], onDelete: Cascade)
+  fileName   String
+  storedName String   @unique
+  fileSize   Int
+  mimeType   String
+  uploadedAt DateTime @default(now())
 
   @@index([bugId])
 }
 
 model AuditLog {
-  id          String   @id @default(uuid())
-  projectId   String?
-  project     Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  actorId     String?
-  actor       User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
-  actorEmail  String
-  actorType   String   @default("user") // "user" | "agent" | "system"
-  action      String   // e.g. "bug.create", "bug.status_change", "user.approve"
-  entityType  String   // e.g. "bug", "user", "project_member"
-  entityId    String
-  changes     Json?    // { before: {...}, after: {...} }
-  createdAt   DateTime @default(now())
+  id         String   @id @default(uuid())
+  projectId  String?
+  project    Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  actorId    String?
+  actor      User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  actorEmail String
+  actorType  String   @default("user") // "user" | "agent" | "system"
+  action     String // e.g. "bug.create", "bug.status_change", "user.approve"
+  entityType String // e.g. "bug", "user", "project_member"
+  entityId   String
+  changes    Json? // { before: {...}, after: {...} }
+  createdAt  DateTime @default(now())
 
   @@index([projectId, createdAt])
   @@index([entityType, entityId])
@@ -235,35 +238,35 @@ model AuditLog {
 // -------------------------------------------------------------
 
 model BusinessDoc {
-  id          String               @id @default(uuid())
+  id          String   @id @default(uuid())
   projectId   String
-  project     Project              @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
   title       String
   slug        String
   description String?
-  createdAt   DateTime             @default(now())
-  updatedAt   DateTime             @updatedAt
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  versions    BusinessDocVersion[]
+  versions BusinessDocVersion[]
 
   @@unique([projectId, slug])
   @@index([projectId])
 }
 
 model BusinessDocVersion {
-  id          String             @id @default(uuid())
-  docId       String
-  doc         BusinessDoc        @relation(fields: [docId], references: [id], onDelete: Cascade)
-  versionNum  Int
-  fileName    String
-  storedPath  String
-  fileSize    Int
-  mimeType    String
-  isCurrent   Boolean            @default(true)
+  id           String      @id @default(uuid())
+  docId        String
+  doc          BusinessDoc @relation(fields: [docId], references: [id], onDelete: Cascade)
+  versionNum   Int
+  fileName     String
+  storedPath   String
+  fileSize     Int
+  mimeType     String
+  isCurrent    Boolean     @default(true)
   uploadedById String?
-  uploadedAt  DateTime           @default(now())
+  uploadedAt   DateTime    @default(now())
 
-  chunks      BusinessDocChunk[]
+  chunks BusinessDocChunk[]
 
   @@unique([docId, versionNum])
   @@index([docId, isCurrent])
@@ -275,7 +278,7 @@ model BusinessDocChunk {
   version    BusinessDocVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
   chunkIndex Int
   content    String
-  tsv        String?            // TSVector for Phase 4 AI FTS search
+  tsv        String? // TSVector for Phase 4 AI FTS search
 
   @@index([versionId])
 }
@@ -291,20 +294,22 @@ model TestCase {
   id             String           @id @default(uuid())
   projectId      String
   project        Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  code           String           // e.g. "TC-PKT-001"
-  moduleArea     String?          // Area e.g. "Dashboard", "Buat Paket"
+  code           String // e.g. "TC-PKT-001"
+  moduleArea     String? // legacy free text; replaced by moduleId
+  moduleId       String?
+  module         Module?          @relation(fields: [moduleId], references: [id])
   title          String
   priority       TestCasePriority @default(MEDIUM)
-  testType       String?          // e.g. "Functional", "Negative", "UI"
-  targetRole     String?          // e.g. "Marketing RS", "RS_Finance"
+  testType       String? // e.g. "Functional", "Negative", "UI"
+  targetRole     String? // e.g. "Marketing RS", "RS_Finance"
   precondition   String?
-  steps          String           // 1) ... 2) ...
+  steps          String // 1) ... 2) ...
   expectedResult String
-  referenceUrl   String?          // Figma / doc link
+  referenceUrl   String? // Figma / doc link
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
 
-  runItems       TestRunItem[]
+  runItems TestRunItem[]
 
   @@unique([projectId, code])
   @@index([projectId, moduleArea])
@@ -320,16 +325,16 @@ model TestRun {
   id           String        @id @default(uuid())
   projectId    String
   project      Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  name         String        // e.g. "Regression Run - Sprint 14"
-  environment  String        // e.g. "Staging"
-  buildVersion String?       // e.g. "v1.4.2"
+  name         String // e.g. "Regression Run - Sprint 14"
+  environment  String // e.g. "Staging"
+  buildVersion String? // e.g. "v1.4.2"
   status       TestRunStatus @default(IN_PROGRESS)
   createdById  String
   createdBy    User          @relation(fields: [createdById], references: [id])
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
 
-  items        TestRunItem[]
+  items TestRunItem[]
 
   @@index([projectId, status])
 }
@@ -354,7 +359,7 @@ model TestRunItem {
   executedBy   User?             @relation(fields: [executedById], references: [id], onDelete: SetNull)
   executedAt   DateTime?
 
-  createdBug   Bug?              @relation("TestRunItemBug")
+  createdBug Bug? @relation("TestRunItemBug")
 
   @@unique([testRunId, testCaseId])
   @@index([testRunId, status])
@@ -368,10 +373,10 @@ model ApiKey {
   id          String    @id @default(uuid())
   projectId   String
   project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  name        String    // e.g. "Claude Code MCP - QA Regression"
+  name        String // e.g. "Claude Code MCP - QA Regression"
   keyHash     String    @unique // sha256 hash of plaintext key
-  keyPrefix   String    // e.g. "br_live_abc..."
-  scopes      String[]  // ["bug:read", "bug:create", "bug:comment", "bug:attach"]
+  keyPrefix   String // e.g. "br_live_abc..."
+  scopes      String[] // ["bug:read", "bug:create", "bug:comment", "bug:attach"]
   createdById String
   createdBy   User      @relation(fields: [createdById], references: [id])
   revokedAt   DateTime?
@@ -379,7 +384,7 @@ model ApiKey {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
-  agentRuns   AgentRun[]
+  agentRuns AgentRun[]
 
   @@index([projectId, revokedAt])
 }
@@ -395,16 +400,16 @@ model ApiKeyRateLimit {
 }
 
 model AgentRun {
-  id         String   @id @default(uuid())
-  projectId  String
-  project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  apiKeyId   String?
-  apiKey     ApiKey?  @relation(fields: [apiKeyId], references: [id], onDelete: SetNull)
-  agentName  String   // e.g. "claude-code", "playwright-reporter"
-  modelName  String?  // e.g. "claude-3-7-sonnet"
-  runId      String   // unique identifier passed by the agent run
+  id          String   @id @default(uuid())
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  apiKeyId    String?
+  apiKey      ApiKey?  @relation(fields: [apiKeyId], references: [id], onDelete: SetNull)
+  agentName   String // e.g. "claude-code", "playwright-reporter"
+  modelName   String? // e.g. "claude-3-7-sonnet"
+  runId       String // unique identifier passed by the agent run
   createdBugs Bug[]
-  createdAt  DateTime @default(now())
+  createdAt   DateTime @default(now())
 
   @@unique([projectId, runId])
   @@index([projectId, createdAt])
@@ -428,9 +433,25 @@ model ChatMessage {
   user       User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   role       ChatMessageRole
   content    String
-  citations  Json?           // [{ type: "bug" | "doc", key: "CRM-1" | "PRD v1" }]
-  tokenUsage Json?           // { inputTokens: 100, outputTokens: 200 }
+  citations  Json? // [{ type: "bug" | "doc", key: "CRM-1" | "PRD v1" }]
+  tokenUsage Json? // { inputTokens: 100, outputTokens: 200 }
   createdAt  DateTime        @default(now())
 
   @@index([projectId, userId, createdAt])
+}
+
+// Per-project master list of application modules under test. Managed by project admins.
+model Module {
+  id         String     @id @default(uuid())
+  projectId  String
+  project    Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  name       String
+  sortOrder  Int        @default(0)
+  archivedAt DateTime?
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  bugs       Bug[]
+  testCases  TestCase[]
+
+  @@unique([projectId, name])
 }

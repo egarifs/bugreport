@@ -1,3 +1,4 @@
+import { ModulesSection } from "./modules-section";
 import { requireProjectPermission } from "@/lib/authz";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
@@ -69,7 +70,7 @@ export default async function ProjectSettingsPage({
           {newCreatedKey && (
             <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-xs">
               <h3 className="font-bold text-amber-900 mb-1">
-                ⚠️ Simpan API Key Anda Sekarang
+                Simpan API Key Anda Sekarang
               </h3>
               <p className="text-amber-800 mb-2">
                 Key ini hanya ditampilkan sekali. Gunakan untuk otentikasi MCP Server di Claude Code atau agent reporter CI/CD.
@@ -79,6 +80,8 @@ export default async function ProjectSettingsPage({
               </div>
             </div>
           )}
+
+          <ModulesSection projectId={project.id} projectKey={project.key} canManage={canManage} />
 
           {/* AI Agent API Keys Section */}
           <section className="bg-white border border-slate-200 rounded-lg p-6 shadow-sm">
@@ -126,7 +129,7 @@ export default async function ProjectSettingsPage({
                   />
                   <button
                     type="submit"
-                    className="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-medium rounded transition"
+                    className="px-3.5 py-1.5 bg-action hover:bg-action-hover text-white text-xs font-medium rounded transition"
                   >
                     + Generate API Key
                   </button>
@@ -145,20 +148,20 @@ export default async function ProjectSettingsPage({
                     <div>
                       <div className="flex items-center gap-2">
                         <span className="font-semibold text-slate-900 text-xs">{k.name}</span>
-                        <span className="font-mono text-[11px] bg-slate-100 px-2 py-0.5 rounded text-slate-600">
+                        <span className="font-mono text-xs bg-slate-100 px-2 py-0.5 rounded text-slate-600">
                           {k.keyPrefix}...
                         </span>
                         {k.revokedAt ? (
-                          <span className="text-[10px] bg-rose-100 text-rose-700 px-2 py-0.5 rounded font-semibold">
+                          <span className="text-xs bg-rose-100 text-rose-700 px-2 py-0.5 rounded font-semibold">
                             Revoked
                           </span>
                         ) : (
-                          <span className="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded font-semibold">
+                          <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded font-semibold">
                             Active
                           </span>
                         )}
                       </div>
-                      <p className="text-[11px] text-slate-400 mt-1">
+                      <p className="text-xs text-slate-400 mt-1">
                         Dibuat oleh {k.createdBy.name || k.createdBy.email} • Terakhir dipakai:{" "}
                         {k.lastUsedAt ? k.lastUsedAt.toLocaleString() : "Belum pernah"}
                       </p>
@@ -210,7 +213,7 @@ export default async function ProjectSettingsPage({
                     <div>
                       <div className="flex items-center gap-2">
                         <span className="font-semibold text-slate-900 text-xs">{r.agentName}</span>
-                        <span className="font-mono text-[10px] bg-slate-100 px-2 py-0.5 rounded text-slate-600">
+                        <span className="font-mono text-xs bg-slate-100 px-2 py-0.5 rounded text-slate-600">
                           run: {r.runId}
                         </span>
                       </div>
@@ -230,7 +233,7 @@ export default async function ProjectSettingsPage({
                         )}
                       </div>
                     </div>
-                    <span className="text-[11px] text-slate-400">
+                    <span className="text-xs text-slate-400">
                       {r.createdAt.toLocaleString()}
                     </span>
                   </div>

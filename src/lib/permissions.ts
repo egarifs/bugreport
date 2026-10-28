@@ -74,20 +74,17 @@ export const ROLE_PERMISSIONS: Record<ProjectRole, readonly Permission[]> = {
     "testrun.execute",
     "chat.ask",
   ],
+  // Client/Viewer: no AI chat (chat reads all project bugs) and no test cases (internal QA work).
   CLIENT: [
     "project.read",
     "bug.create",
     "bug.reopen",
     "bug.comment",
     "doc.read",
-    "testcase.read",
-    "chat.ask",
   ],
   VIEWER: [
     "project.read",
     "doc.read",
-    "testcase.read",
-    "chat.ask",
   ],
 } as const;
 

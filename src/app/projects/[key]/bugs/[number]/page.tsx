@@ -9,6 +9,9 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { AppShell } from "@/components/layout/app-shell";
+import { SeverityBadge, StatusBadge, STATUS_LABEL } from "@/components/ui/bug-badges";
+import { ActionForm, SubmitButton, type ActionResult } from "@/components/ui/action-form";
+import { activeModules, ownModuleId } from "@/lib/modules";
 
 export default async function BugDetailPage({
   params,
@@ -53,6 +56,7 @@ export default async function BugDetailPage({
       assignee: { select: { id: true, name: true, email: true } },
       reviewedBy: { select: { name: true, email: true } },
       duplicateOf: { select: { key: true, number: true, title: true } },
+      module: { select: { name: true } },
       comments: {
         where: canSeeInternalNotes ? {} : { type: CommentType.PUBLIC },
         orderBy: { createdAt: "asc" },
@@ -69,6 +73,8 @@ export default async function BugDetailPage({
     orderBy: { createdAt: "desc" },
     take: 15,
   });
+
+  const modules = await activeModules(project.id);
 
   const members = await prisma.projectMember.findMany({
     where: { projectId: project.id },
@@ -103,39 +109,9 @@ export default async function BugDetailPage({
           </div>
 
         <div className="flex items-center gap-2">
-          <span
-            className={`px-2.5 py-1 rounded text-xs font-semibold ${
-              bug.severity === "BLOCKER"
-                ? "bg-red-100 text-red-700"
-                : bug.severity === "HIGH"
-                ? "bg-orange-100 text-orange-700"
-                : bug.severity === "MEDIUM"
-                ? "bg-yellow-100 text-yellow-700"
-                : "bg-slate-100 text-slate-600"
-            }`}
-          >
-            {bug.severity}
-          </span>
+          <SeverityBadge severity={bug.severity} />
 
-          <span
-            className={`px-2.5 py-1 rounded text-xs font-semibold ${
-              bug.status === "DRAFT"
-                ? "bg-purple-100 text-purple-700"
-                : bug.status === "OPEN"
-                ? "bg-blue-100 text-blue-700"
-                : bug.status === "IN_PROGRESS"
-                ? "bg-amber-100 text-amber-700"
-                : bug.status === "READY_FOR_VERIFICATION"
-                ? "bg-teal-100 text-teal-700"
-                : bug.status === "CLOSED"
-                ? "bg-emerald-100 text-emerald-700"
-                : bug.status === "REOPENED"
-                ? "bg-rose-100 text-rose-700"
-                : "bg-slate-100 text-slate-500"
-            }`}
-          >
-            {bug.status}
-          </span>
+          <StatusBadge status={bug.status} />
         </div>
       </header>
 
@@ -147,7 +123,7 @@ export default async function BugDetailPage({
 
             <div className="space-y-4 text-xs">
               <div>
-                <h3 className="font-semibold text-slate-700 uppercase tracking-wider text-[11px] mb-1">
+                <h3 className="font-semibold text-slate-700 text-xs mb-1">
                   Langkah Reproduksi
                 </h3>
                 <pre className="bg-slate-50 border border-slate-200 rounded p-3 font-mono whitespace-pre-wrap text-slate-800">
@@ -157,7 +133,7 @@ export default async function BugDetailPage({
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <h3 className="font-semibold text-slate-700 uppercase tracking-wider text-[11px] mb-1">
+                  <h3 className="font-semibold text-slate-700 text-xs mb-1">
                     Hasil yang Diharapkan
                   </h3>
                   <div className="bg-slate-50 border border-slate-200 rounded p-3 text-slate-800">
@@ -166,7 +142,7 @@ export default async function BugDetailPage({
                 </div>
 
                 <div>
-                  <h3 className="font-semibold text-slate-700 uppercase tracking-wider text-[11px] mb-1">
+                  <h3 className="font-semibold text-slate-700 text-xs mb-1">
                     Hasil Aktual
                   </h3>
                   <div className="bg-slate-50 border border-slate-200 rounded p-3 text-slate-800">
@@ -190,7 +166,7 @@ export default async function BugDetailPage({
 
               {bug.description && bug.description !== bug.title && (
                 <div>
-                  <h3 className="font-semibold text-slate-700 uppercase tracking-wider text-[11px] mb-1">
+                  <h3 className="font-semibold text-slate-700 text-xs mb-1">
                     Deskripsi / Catatan Tambahan
                   </h3>
                   <div className="bg-slate-50 border border-slate-200 rounded p-3 text-slate-800 whitespace-pre-wrap">
@@ -232,11 +208,11 @@ export default async function BugDetailPage({
                       </span>
                       <div className="flex items-center gap-2">
                         {c.type === CommentType.INTERNAL && (
-                          <span className="text-[10px] font-semibold bg-amber-200 text-amber-800 px-1.5 py-0.2 rounded">
+                          <span className="text-xs font-semibold bg-amber-200 text-amber-800 px-1.5 py-0.2 rounded">
                             Catatan Internal
                           </span>
                         )}
-                        <span className="text-[10px] text-slate-400">
+                        <span className="text-xs text-slate-400">
                           {c.createdAt.toLocaleString()}
                         </span>
                       </div>
@@ -309,7 +285,7 @@ export default async function BugDetailPage({
 
                 <button
                   type="submit"
-                  className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded text-xs font-medium"
+                  className="px-3 py-1.5 bg-action hover:bg-action-hover text-white rounded text-xs font-medium"
                 >
                   Kirim Komentar
                 </button>
@@ -329,8 +305,8 @@ export default async function BugDetailPage({
                 Tidak ada transisi status yang dapat dilakukan oleh role Anda saat ini.
               </p>
             ) : (
-              <form
-                action={async (formData) => {
+              <ActionForm
+                action={async (_prev: ActionResult, formData: FormData): Promise<ActionResult> => {
                   "use server";
                   const actor = await requireProjectPermission(project.id, "project.read");
                   const targetStatus = formData.get("targetStatus") as BugStatus;
@@ -339,19 +315,22 @@ export default async function BugDetailPage({
                   const duplicateOfKey = (formData.get("duplicateOfKey") as string)?.trim();
 
                   const check = canTransitionBug(bug.status, targetStatus, actor.role, actor.isAdmin);
-                  if (!check.allowed) return;
+                  if (!check.allowed) return { error: "Role Anda tidak bisa mengubah status ke pilihan ini." };
 
-                  // AC: Reopen without reason rejected
                   if (targetStatus === BugStatus.REOPENED && !reopenReason) {
-                    return;
+                    return { error: "Isi alasan reopen sebelum membuka ulang bug." };
                   }
 
-                  // AC: Draft -> Open requires version/build
-                  if (targetStatus === BugStatus.OPEN && bug.status === BugStatus.DRAFT) {
-                    const finalVersion = appVersion || bug.appVersion;
-                    if (!finalVersion) {
-                      return;
-                    }
+                  // Draft -> Open gate: version/build and a module from the project's master list.
+                  const opening = targetStatus === BugStatus.OPEN && bug.status === BugStatus.DRAFT;
+                  const moduleId = opening
+                    ? await ownModuleId(project.id, (formData.get("moduleId") as string) || bug.moduleId)
+                    : undefined;
+                  if (opening && !(appVersion || bug.appVersion)) {
+                    return { error: "Isi versi atau build sebelum membuka bug ini." };
+                  }
+                  if (opening && !moduleId) {
+                    return { error: "Pilih modul sebelum membuka bug ini. Admin project menambah modul di Settings." };
                   }
 
                   // Optional duplicate link
@@ -370,6 +349,7 @@ export default async function BugDetailPage({
                     data: {
                       status: targetStatus,
                       ...(appVersion ? { appVersion } : {}),
+                      ...(moduleId ? { moduleId } : {}),
                       ...(duplicateOfId ? { duplicateOfId } : {}),
                       ...(isReopen
                         ? {
@@ -400,6 +380,7 @@ export default async function BugDetailPage({
                   });
 
                   revalidatePath(`/projects/${project.key}/bugs/${bug.number}`);
+                  return { ok: `Status diubah ke ${STATUS_LABEL[targetStatus]}.` };
                 }}
                 className="space-y-2"
               >
@@ -410,14 +391,30 @@ export default async function BugDetailPage({
                 >
                   {possibleStatuses.map((s) => (
                     <option key={s} value={s}>
-                      → {s}
+                      {STATUS_LABEL[s]}
                     </option>
                   ))}
                 </select>
 
                 {bug.status === BugStatus.DRAFT && (
                   <div>
-                    <label className="block text-[11px] text-slate-500 mb-0.5">
+                    <label htmlFor="moduleId" className="block text-xs text-slate-600 mb-0.5">
+                      Modul (wajib untuk Open)
+                    </label>
+                    {modules.length === 0 ? (
+                      <p className="text-xs text-sev-blocker">Project belum punya modul. Admin perlu menambahkannya di Settings.</p>
+                    ) : (
+                      <select id="moduleId" name="moduleId" defaultValue={bug.moduleId ?? ""} className="w-full px-2 py-1.5 border border-slate-300 rounded bg-white text-sm">
+                        <option value="">Pilih modul</option>
+                        {modules.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+                      </select>
+                    )}
+                  </div>
+                )}
+
+                {bug.status === BugStatus.DRAFT && (
+                  <div>
+                    <label className="block text-xs text-slate-500 mb-0.5">
                       Versi / Build Rilis (wajib untuk Open) *
                     </label>
                     <input
@@ -431,7 +428,7 @@ export default async function BugDetailPage({
                 )}
 
                 <div>
-                  <label className="block text-[11px] text-slate-500 mb-0.5">
+                  <label className="block text-xs text-slate-500 mb-0.5">
                     Alasan Reopen (wajib jika Reopened)
                   </label>
                   <input
@@ -443,7 +440,7 @@ export default async function BugDetailPage({
                 </div>
 
                 <div>
-                  <label className="block text-[11px] text-slate-500 mb-0.5">
+                  <label className="block text-xs text-slate-500 mb-0.5">
                     Tautkan Duplikat (opsional, misal CRM-1)
                   </label>
                   <input
@@ -455,13 +452,10 @@ export default async function BugDetailPage({
                   />
                 </div>
 
-                <button
-                  type="submit"
-                  className="w-full py-1.5 bg-slate-900 hover:bg-slate-800 text-white font-medium rounded text-xs"
-                >
-                  Terapkan Status
-                </button>
-              </form>
+                <SubmitButton pendingText="Menyimpan..." className="w-full py-2 bg-action hover:bg-action-hover text-white font-bold rounded text-sm">
+                  Ubah status
+                </SubmitButton>
+              </ActionForm>
             )}
           </div>
 
@@ -482,12 +476,10 @@ export default async function BugDetailPage({
                 <span className="font-medium text-slate-800">{bug.environment}</span>
               </div>
 
-              {bug.component && (
-                <div className="flex justify-between py-1 border-b border-slate-100">
-                  <span className="text-slate-400">Area</span>
-                  <span className="font-medium text-slate-800">{bug.component}</span>
-                </div>
-              )}
+              <div className="flex justify-between py-1 border-b border-slate-100">
+                <span className="text-slate-500">Modul</span>
+                <span className="font-medium text-slate-800">{bug.module?.name ?? "Belum diisi"}</span>
+              </div>
 
               {bug.appVersion && (
                 <div className="flex justify-between py-1 border-b border-slate-100">
@@ -544,7 +536,7 @@ export default async function BugDetailPage({
               }}
               className="pt-2"
             >
-              <label className="block text-slate-400 text-[11px] mb-1 font-semibold">
+              <label className="block text-slate-400 text-xs mb-1 font-semibold">
                 Assignee
               </label>
               <div className="flex gap-2">
@@ -580,7 +572,7 @@ export default async function BugDetailPage({
                 {timeline.map((item) => (
                   <li key={item.id} className="ml-3">
                     <div className="absolute -left-1.5 mt-1 w-3 h-3 rounded-full border-2 border-white bg-slate-400" />
-                    <p className="font-semibold text-slate-800 text-[11px]">
+                    <p className="font-semibold text-slate-800 text-xs">
                       {item.action === "bug.create" && "Laporan dibuat"}
                       {item.action === "bug.status_change" && "Status diperbarui"}
                       {item.action === "bug.comment" && "Komentar ditambahkan"}
@@ -589,7 +581,7 @@ export default async function BugDetailPage({
                         item.action
                       ) && item.action}
                     </p>
-                    <p className="text-[10px] text-slate-400">
+                    <p className="text-xs text-slate-400">
                       Oleh {item.actorEmail || "Sistem"} • {item.createdAt.toLocaleTimeString()}
                     </p>
                   </li>

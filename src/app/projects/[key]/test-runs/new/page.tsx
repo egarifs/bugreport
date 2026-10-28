@@ -1,3 +1,4 @@
+import { hasPermission } from "@/lib/permissions";
 import { requireProjectPermission } from "@/lib/authz";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
@@ -26,6 +27,7 @@ export default async function NewTestRunPage({
 
   if (!project) notFound();
   if (!project.members[0] && !user.isAdmin) redirect("/projects");
+  if (!hasPermission(project.members[0]?.role, "testrun.execute", user.isAdmin)) redirect(`/projects/${project.key}`);
 
   return (
     <AppShell activeProjectKey={project.key}>
@@ -135,7 +137,7 @@ export default async function NewTestRunPage({
                 </Link>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-medium rounded transition"
+                  className="px-4 py-2 bg-action hover:bg-action-hover text-white text-xs font-medium rounded transition"
                 >
                   Mulai Test Run
                 </button>

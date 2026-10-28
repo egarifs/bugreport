@@ -1,3 +1,4 @@
+import { hasPermission } from "@/lib/permissions";
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
@@ -32,6 +33,9 @@ export async function POST(
   }
 
   const role: ProjectRole = project.members[0]?.role ?? (user.isAdmin ? "ADMIN" : "VIEWER");
+  if (!hasPermission(project.members[0]?.role, "chat.ask", Boolean(user.isAdmin))) {
+    return NextResponse.json({ error: "Role Anda tidak punya akses AI Chat." }, { status: 403 });
+  }
 
   let body: { message?: string };
   try {

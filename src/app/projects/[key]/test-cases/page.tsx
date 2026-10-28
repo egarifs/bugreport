@@ -1,3 +1,5 @@
+import { ActionForm, SubmitButton, type ActionResult } from "@/components/ui/action-form";
+import { activeModules } from "@/lib/modules";
 import { requireProjectPermission } from "@/lib/authz";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
@@ -23,7 +25,7 @@ export default async function TestCasesPage({
     where: { key: key.toUpperCase() },
     include: {
       members: { where: { userId: user.id } },
-      testCases: { orderBy: { createdAt: "desc" } },
+      testCases: { orderBy: { createdAt: "desc" }, include: { module: { select: { name: true } } } },
       testRuns: {
         orderBy: { createdAt: "desc" },
         take: 5,
@@ -36,6 +38,7 @@ export default async function TestCasesPage({
 
   if (!project) notFound();
   if (!project.members[0] && !user.isAdmin) redirect("/projects");
+  if (!hasPermission(project.members[0]?.role, "testcase.read", user.isAdmin)) redirect(`/projects/${project.key}`);
 
   const role: ProjectRole = project.members[0]?.role ?? (user.isAdmin ? "ADMIN" : "VIEWER");
   const canManage = hasPermission(role, "testcase.manage", user.isAdmin);
@@ -89,7 +92,7 @@ export default async function TestCasesPage({
                     >
                       <div className="flex items-start justify-between">
                         <span className="font-semibold text-sm text-slate-900">{r.name}</span>
-                        <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-blue-50 text-blue-700">
+                        <span className="text-xs font-mono px-2 py-0.5 rounded bg-blue-50 text-blue-700">
                           {r.environment}
                         </span>
                       </div>
@@ -120,16 +123,24 @@ export default async function TestCasesPage({
 
               {canManage && (
                 <div className="flex items-center gap-3">
-                  <form
-                    action={async (formData: FormData) => {
+                  <ActionForm
+                    action={async (_prev: ActionResult, formData: FormData): Promise<ActionResult> => {
                       "use server";
                       await requireProjectPermission(project.id, "testcase.manage");
                       const file = formData.get("file") as File;
-                      if (!file || file.size === 0) return;
+                      if (!file || file.size === 0) return { error: "Pilih file XLSX atau CSV." };
                       const buffer = Buffer.from(await file.arrayBuffer());
                       const parsed = parseTestCaseWorkbook(buffer);
+                      if (parsed.length === 0) return { error: "Tidak ada baris test case yang terbaca. Cek header kolom." };
 
+                      // ponytail: report unknown modules after import instead of a full preview step; add preview if mis-mapping becomes common.
+                      const mods = await activeModules(project.id);
+                      const byName = new Map(mods.map((m) => [m.name.toLowerCase(), m.id]));
+                      const unknown = new Set<string>();
                       for (const item of parsed) {
+                        const area = item.moduleArea?.trim();
+                        const moduleId = area ? byName.get(area.toLowerCase()) ?? null : null;
+                        if (area && !moduleId) unknown.add(area);
                         await prisma.testCase.upsert({
                           where: {
                             projectId_code: {
@@ -141,6 +152,7 @@ export default async function TestCasesPage({
                             projectId: project.id,
                             code: item.code,
                             moduleArea: item.moduleArea || null,
+                            moduleId,
                             title: item.title,
                             priority: item.priority,
                             testType: item.testType || null,
@@ -152,6 +164,7 @@ export default async function TestCasesPage({
                           },
                           update: {
                             moduleArea: item.moduleArea || null,
+                            moduleId,
                             title: item.title,
                             priority: item.priority,
                             testType: item.testType || null,
@@ -164,8 +177,12 @@ export default async function TestCasesPage({
                         });
                       }
                       revalidatePath(`/projects/${project.key}/test-cases`);
+                      const msg = `${parsed.length} test case diimpor.`;
+                      return unknown.size
+                        ? { error: `${msg} Modul tidak dikenal, test case dibiarkan tanpa modul: ${[...unknown].join(", ")}. Tambahkan di Settings lalu import ulang.` }
+                        : { ok: msg };
                     }}
-                    className="flex items-center gap-2"
+                    className="flex flex-wrap items-center gap-2 max-w-md"
                   >
                     <input
                       type="file"
@@ -174,13 +191,8 @@ export default async function TestCasesPage({
                       required
                       className="text-xs file:mr-2 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-medium file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 cursor-pointer"
                     />
-                    <button
-                      type="submit"
-                      className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-medium rounded transition"
-                    >
-                      Import XLSX/CSV
-                    </button>
-                  </form>
+                    <SubmitButton pendingText="Mengimpor...">Import XLSX/CSV</SubmitButton>
+                  </ActionForm>
                 </div>
               )}
             </div>
@@ -192,7 +204,7 @@ export default async function TestCasesPage({
             ) : (
               <div className="bg-white border border-slate-200 rounded-lg overflow-x-auto shadow-sm">
                 <table className="w-full text-left text-xs">
-                  <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold uppercase tracking-wider text-[11px]">
+                  <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold text-xs">
                     <tr>
                       <th className="py-3 px-4">Code</th>
                       <th className="py-3 px-4">Area / Modul</th>
@@ -209,14 +221,14 @@ export default async function TestCasesPage({
                           {tc.code}
                         </td>
                         <td className="py-3 px-4 text-slate-600">
-                          {tc.moduleArea || "-"}
+                          {tc.module?.name ?? (tc.moduleArea ? `${tc.moduleArea} (tidak terdaftar)` : "-")}
                         </td>
                         <td className="py-3 px-4 font-medium text-slate-900">
                           {tc.title}
                         </td>
                         <td className="py-3 px-4">
                           <span
-                            className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
+                            className={`px-2 py-0.5 rounded text-xs font-semibold ${
                               tc.priority === "CRITICAL"
                                 ? "bg-red-100 text-red-700"
                                 : tc.priority === "HIGH"

@@ -78,7 +78,7 @@ export default async function ProjectsPage() {
             {user.isAdmin && (
               <Link
                 href="/projects/new"
-                className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-medium rounded"
+                className="px-3 py-1.5 bg-action hover:bg-action-hover text-white text-xs font-medium rounded"
               >
                 + Project Baru
               </Link>
@@ -104,7 +104,7 @@ export default async function ProjectsPage() {
                 >
                   <div className="flex items-start justify-between">
                     <div>
-                      <span className="text-xs font-mono font-semibold text-slate-500 uppercase tracking-wide">
+                      <span className="text-xs font-mono font-semibold text-slate-500">
                         {p.key}
                       </span>
                       <h2 className="text-base font-semibold text-slate-900 mt-1">

@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { redactSecrets } from "@/lib/redact";
 import { recordAuditLog } from "@/lib/user-service";
+import { activeModules, resolveModuleId } from "@/lib/modules";
 import { BugPriority, BugSeverity } from "@prisma/client";
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -14,6 +15,11 @@ export interface McpContext {
 }
 
 export const MCP_TOOLS_DEFINITIONS = [
+  {
+    name: "list_modules",
+    description: "Daftar modul aplikasi aktif di project ini. Pakai nama persis untuk field component di create_bug_draft.",
+    inputSchema: { type: "object", properties: {} },
+  },
   {
     name: "search_bugs",
     description: "Cari daftar bug dalam project berdasarkan query teks atau filter status & severity.",
@@ -53,7 +59,7 @@ export const MCP_TOOLS_DEFINITIONS = [
         priority: { type: "string", enum: ["URGENT", "HIGH", "NORMAL", "LOW"], description: "Prioritas penanganan bug" },
         environment: { type: "string", description: "Environment pengujian, misal: Staging, Production" },
         buildNumber: { type: "string", description: "Nomor build atau commit hash saat bug ditemukan" },
-        component: { type: "string", description: "Area modul atau komponen aplikasi" },
+        component: { type: "string", description: "Nama modul dari list_modules. Nama tak dikenal dikosongkan; QA isi saat review." },
         agentName: { type: "string", description: "Nama automated agent pelapor, misal: playwright-qa" },
         runId: { type: "string", description: "ID run pipeline pengujian CI/CD" },
         force: { type: "boolean", description: "Set true jika ingin tetap membuat bug meski terdeteksi duplikat mirip" },
@@ -95,6 +101,11 @@ export async function executeMcpTool(
 ): Promise<{ content: Array<{ type: "text"; text: string }>; isError?: boolean }> {
   try {
     switch (toolName) {
+      case "list_modules": {
+        const mods = await activeModules(ctx.projectId);
+        return { content: [{ type: "text", text: JSON.stringify(mods.map((m) => m.name)) }] };
+      }
+
       case "search_bugs": {
         const query = typeof args.query === "string" ? args.query.trim() : "";
         const limit = Math.min(Math.max(Number(args.limit) || 10, 1), 50);
@@ -173,6 +184,7 @@ export async function executeMcpTool(
         const environment = String(args.environment || "Staging").trim();
         const buildNumber = args.buildNumber ? String(args.buildNumber).trim() : null;
         const component = args.component ? String(args.component).trim() : null;
+        const moduleId = await resolveModuleId(ctx.projectId, component);
         const severity = (String(args.severity || "MEDIUM").toUpperCase()) as BugSeverity;
         const priority = (String(args.priority || "NORMAL").toUpperCase()) as BugPriority;
         const agentName = String(args.agentName || "mcp-agent");
@@ -270,6 +282,7 @@ export async function executeMcpTool(
               environment,
               buildNumber,
               component,
+              moduleId,
               reporterId: ctx.actorId,
               agentRunId: agentRun.id,
             },

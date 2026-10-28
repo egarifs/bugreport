@@ -1,3 +1,4 @@
+import { hasPermission } from "@/lib/permissions";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { AppShell } from "@/components/layout/app-shell";
@@ -23,6 +24,7 @@ export default async function ProjectChatPage({
 
   if (!project) notFound();
   if (!project.members[0] && !user.isAdmin) redirect("/projects");
+  if (!hasPermission(project.members[0]?.role, "chat.ask", user.isAdmin)) redirect(`/projects/${project.key}`);
 
   const messages = await prisma.chatMessage.findMany({
     where: {
@@ -44,7 +46,7 @@ export default async function ProjectChatPage({
             <span className="font-semibold text-slate-900 text-sm">
               Project AI Assistant (Claude)
             </span>
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-purple-100 text-purple-800">
+            <span className="text-xs font-mono px-2 py-0.5 rounded bg-purple-100 text-purple-800">
               Tool Use Active
             </span>
           </div>

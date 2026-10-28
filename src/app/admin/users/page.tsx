@@ -78,7 +78,7 @@ export default async function AdminUsersPage() {
                       {p.name || "(Tanpa nama)"}
                     </div>
                     <div className="text-xs text-slate-500">{p.email}</div>
-                    <div className="text-[11px] text-slate-400 mt-1">
+                    <div className="text-xs text-slate-400 mt-1">
                       Mendaftar: {p.createdAt.toLocaleString()}
                     </div>
                   </div>
@@ -209,12 +209,12 @@ export default async function AdminUsersPage() {
                   <div className="font-medium text-slate-900 flex items-center gap-2">
                     <span>{u.name || u.email}</span>
                     {u.isAdmin && (
-                      <span className="px-1.5 py-0.2 bg-purple-100 text-purple-700 rounded text-[10px]">
+                      <span className="px-1.5 py-0.2 bg-purple-100 text-purple-700 rounded text-xs">
                         Global Admin
                       </span>
                     )}
                     <span
-                      className={`px-1.5 py-0.2 rounded text-[10px] ${
+                      className={`px-1.5 py-0.2 rounded text-xs ${
                         u.status === "ACTIVE"
                           ? "bg-emerald-100 text-emerald-800"
                           : u.status === "SUSPENDED"
@@ -252,7 +252,7 @@ export default async function AdminUsersPage() {
                   >
                     <button
                       type="submit"
-                      className="px-2.5 py-1 text-[11px] border border-slate-300 rounded hover:bg-slate-50"
+                      className="px-2.5 py-1 text-xs border border-slate-300 rounded hover:bg-slate-50"
                     >
                       {u.status === "ACTIVE" ? "Suspend" : "Activate"}
                     </button>

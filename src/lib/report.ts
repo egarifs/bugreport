@@ -61,7 +61,7 @@ export function csvCell(v: unknown): string {
 
 export const CSV_COLUMNS = [
   "key", "title", "status", "severity", "priority", "environment", "appVersion",
-  "buildNumber", "component", "reporter", "assignee", "reopenCount", "createdAt", "updatedAt",
+  "buildNumber", "module", "reporter", "assignee", "reopenCount", "createdAt", "updatedAt",
 ] as const;
 
 // Export only bug fields; comments (incl. internal notes) never included, so safe for every role.
@@ -72,11 +72,17 @@ export async function exportBugsCsv(projectId: string): Promise<string> {
     include: {
       reporter: { select: { email: true } },
       assignee: { select: { email: true } },
+      module: { select: { name: true } },
     },
   });
   const rows = bugs.map((b) =>
     CSV_COLUMNS.map((c) =>
-      csvCell(c === "reporter" ? b.reporter.email : c === "assignee" ? b.assignee?.email : b[c])
+      csvCell(
+        c === "reporter" ? b.reporter.email
+        : c === "assignee" ? b.assignee?.email
+        : c === "module" ? (b.module?.name ?? b.component)
+        : b[c]
+      )
     ).join(",")
   );
   return [CSV_COLUMNS.join(","), ...rows].join("\r\n");

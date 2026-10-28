@@ -10,7 +10,7 @@ export default function SwaggerDocsPage() {
             <span className="font-semibold text-slate-900 text-sm">
               API Documentation & Swagger UI
             </span>
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-100 text-emerald-800">
+            <span className="text-xs font-mono px-2 py-0.5 rounded bg-emerald-100 text-emerald-800">
               OpenAPI 3.0
             </span>
           </div>
