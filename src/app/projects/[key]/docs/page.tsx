@@ -8,6 +8,7 @@ import { hasPermission } from "@/lib/permissions";
 import { ProjectRole } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import fs from "node:fs/promises";
+import Link from "next/link";
 import path from "node:path";
 
 export default async function BusinessDocsPage({
@@ -207,7 +208,9 @@ export default async function BusinessDocsPage({
                         <div>
                           <div className="flex items-center gap-2">
                             <h3 className="font-semibold text-slate-900 text-sm">
-                              {doc.title}
+                              <Link href={`/projects/${pkey}/docs/${doc.slug}`} className="hover:underline">
+                                {doc.title}
+                              </Link>
                             </h3>
                             <span className="text-xs font-mono font-semibold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800">
                               v{currentVer?.versionNum ?? 1} (Aktif)
@@ -218,7 +221,13 @@ export default async function BusinessDocsPage({
                               {doc.description}
                             </p>
                           )}
-                          <p className="text-xs text-slate-400 mt-2">
+                          <Link
+                            href={`/projects/${pkey}/docs/${doc.slug}`}
+                            className="inline-block mt-3 px-3 py-1.5 bg-slate-900 text-white rounded text-xs font-bold hover:bg-slate-700"
+                          >
+                            Buka dokumen
+                          </Link>
+                          <p className="text-xs text-slate-500 mt-2">
                             File: {currentVer?.fileName} • {((currentVer?.fileSize || 0) / 1024).toFixed(1)} KB • Diperbarui {doc.updatedAt.toLocaleDateString()}
                           </p>
                         </div>
@@ -230,7 +239,8 @@ export default async function BusinessDocsPage({
                           </span>
                           <div className="flex flex-wrap gap-1.5 mt-1 justify-end">
                             {doc.versions.map((ver) => (
-                              <span
+                              <Link
+                                href={`/projects/${pkey}/docs/${doc.slug}?v=${ver.versionNum}`}
                                 key={ver.id}
                                 className={`text-xs font-mono px-2 py-0.5 rounded border ${
                                   ver.isCurrent
@@ -239,7 +249,7 @@ export default async function BusinessDocsPage({
                                 }`}
                               >
                                 v{ver.versionNum}
-                              </span>
+                              </Link>
                             ))}
                           </div>
                         </div>

@@ -1,5 +1,7 @@
 "use client";
 
+import { Markdown } from "@/components/ui/markdown";
+
 import { useState } from "react";
 
 interface MessageItem {
@@ -99,16 +101,16 @@ export function ProjectChatBox({
               className={`flex ${m.role === "USER" ? "justify-end" : "justify-start"}`}
             >
               <div
-                className={`max-w-2xl rounded-lg p-4 text-xs leading-relaxed whitespace-pre-wrap ${
+                className={`max-w-2xl rounded-lg p-4 text-xs leading-relaxed ${
                   m.role === "USER"
-                    ? "bg-slate-900 text-white rounded-br-none"
+                    ? "whitespace-pre-wrap bg-slate-900 text-white rounded-br-none"
                     : "bg-slate-50 border border-slate-200 text-slate-900 rounded-bl-none shadow-xs"
                 }`}
               >
                 <div className="font-semibold mb-1 text-xs opacity-75">
                   {m.role === "USER" ? "Anda" : "Claude Assistant"}
                 </div>
-                {m.content}
+                {m.role === "USER" ? m.content : <Markdown className="text-sm">{m.content}</Markdown>}
               </div>
             </div>
           ))
