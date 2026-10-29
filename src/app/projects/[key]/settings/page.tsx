@@ -6,6 +6,7 @@ import { prisma } from "@/lib/db";
 import { AppShell } from "@/components/layout/app-shell";
 import { notFound, redirect } from "next/navigation";
 import { hasPermission } from "@/lib/permissions";
+import { dailyTokenQuota, projectTokensToday } from "@/lib/chat-quota";
 import { ProjectRole } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { generateApiKey } from "@/lib/mcp-auth";
@@ -51,6 +52,8 @@ export default async function ProjectSettingsPage({
 
   const role: ProjectRole = membership?.role ?? (user.isAdmin ? "ADMIN" : "VIEWER");
   const canManage = hasPermission(role, "project.manage", user.isAdmin);
+  const [aiUsed, aiQuota] = [await projectTokensToday(project.id), dailyTokenQuota()];
+  const aiPct = Math.min(100, Math.round((aiUsed / aiQuota) * 100));
 
   return (
     <AppShell activeProjectKey={project.key}>
@@ -81,6 +84,18 @@ export default async function ProjectSettingsPage({
               </div>
             </div>
           )}
+
+          <section className="bg-white border border-slate-200 rounded-lg p-6 shadow-sm">
+            <h2 className="text-base font-bold text-slate-900">Pemakaian AI Chat hari ini</h2>
+            <p className="text-xs text-slate-500 mb-3">Kuota token per project, reset 00:00 WIB. Ubah lewat env <code>CHAT_DAILY_TOKENS_PER_PROJECT</code>.</p>
+            <div className="flex items-baseline justify-between text-sm mb-1">
+              <span className="font-mono tabular-nums text-slate-900">{aiUsed.toLocaleString("id-ID")} / {aiQuota.toLocaleString("id-ID")} token</span>
+              <span className={aiPct >= 90 ? "font-bold text-rose-700" : "text-slate-500"}>{aiPct}%</span>
+            </div>
+            <div className="h-2 rounded-full bg-slate-100 overflow-hidden" role="progressbar" aria-valuenow={aiPct} aria-valuemin={0} aria-valuemax={100} aria-label="Pemakaian kuota AI">
+              <div className={`h-full ${aiPct >= 90 ? "bg-rose-600" : "bg-slate-900"}`} style={{ width: `${aiPct}%` }} />
+            </div>
+          </section>
 
           <ModulesSection projectId={project.id} projectKey={project.key} canManage={canManage} />
 

@@ -46,7 +46,7 @@ export default async function ProjectChatPage({
             <span className="font-semibold text-slate-900 text-sm">
               Project AI Assistant (Claude)
             </span>
-            <span className="text-xs font-mono px-2 py-0.5 rounded bg-purple-100 text-purple-800">
+            <span className="text-xs font-mono px-2 py-0.5 rounded bg-slate-100 text-slate-700">
               Tool Use Active
             </span>
           </div>

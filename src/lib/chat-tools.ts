@@ -3,7 +3,7 @@ import { hasPermission } from "./permissions";
 import { ProjectRole } from "@prisma/client";
 import { rankSections, readDocText, splitSections } from "./business-docs";
 
-const DOC_READ_MAX = 40_000; // ~10k tokens per doc read
+const DOC_READ_MAX = 12_000; // ~3-4k tokens; search_business_docs finds the rest by section
 
 export interface ChatUserContext {
   userId: string;
@@ -57,7 +57,7 @@ export const CLAUDE_CHAT_TOOLS = [
   },
   {
     name: "read_business_doc",
-    description: "Baca isi lengkap satu dokumen bisnis versi aktif (Markdown). Pakai untuk ringkasan atau pertanyaan umum tentang dokumen. Teks panjang dipotong.",
+    description: "Baca isi satu dokumen bisnis versi aktif (Markdown), mulai dari awal, maks 12.000 karakter, plus daftar isi lengkap. Untuk bagian lain, pakai search_business_docs dengan judul bagian.",
     input_schema: {
       type: "object" as const,
       properties: {
@@ -198,6 +198,7 @@ export async function executeChatTool(
         title: d.title,
         version: `v${d.version.versionNum}`,
         truncated: text.length > DOC_READ_MAX,
+        outline: text.length > DOC_READ_MAX ? splitSections(text).map((s) => s.heading).filter((h, i, a) => a.indexOf(h) === i) : undefined,
         content: text.slice(0, DOC_READ_MAX),
       });
     }

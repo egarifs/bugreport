@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { ProjectRole } from "@prisma/client";
 import { askClaudeProjectChat } from "@/lib/claude-service";
 import { ChatUserContext } from "@/lib/chat-tools";
+import { CHAT_MESSAGE_MAX, dailyTokenQuota, projectTokensToday } from "@/lib/chat-quota";
 
 export async function POST(
   req: NextRequest,
@@ -47,6 +48,16 @@ export async function POST(
   const content = (body.message || "").trim();
   if (!content) {
     return NextResponse.json({ error: "Pesan tidak boleh kosong" }, { status: 400 });
+  }
+  if (content.length > CHAT_MESSAGE_MAX) {
+    return NextResponse.json({ error: `Pesan maksimal ${CHAT_MESSAGE_MAX} karakter.` }, { status: 400 });
+  }
+  // ponytail: check-then-spend; concurrent requests can overshoot quota by a few replies. Add DB lock if it matters.
+  if ((await projectTokensToday(project.id)) >= dailyTokenQuota()) {
+    return NextResponse.json(
+      { error: "Kuota AI project hari ini sudah habis. Reset pukul 00:00 WIB." },
+      { status: 429 }
+    );
   }
 
   // Rate limiter: maks 30 pesan / user / jam di project ini
@@ -96,33 +107,27 @@ export async function POST(
     isAdmin: Boolean(user.isAdmin),
   };
 
-  try {
-    const { reply, inputTokens, outputTokens } = await askClaudeProjectChat(
-      formattedHistory,
-      ctx
-    );
-
-    // 3. Simpan pesan Assistant
-    const savedAssistantMessage = await prisma.chatMessage.create({
-      data: {
-        projectId: project.id,
-        userId: user.id,
-        role: "ASSISTANT",
-        content: reply,
-        tokenUsage: { inputTokens, outputTokens },
-      },
-    });
-
-    return NextResponse.json({
-      success: true,
-      message: savedAssistantMessage,
-    });
-  } catch (err: unknown) {
-    // never echo provider errors to client: may contain request/key details
-    console.error("chat error:", err instanceof Error ? err.name : "unknown");
-    return NextResponse.json(
-      { error: "Gagal memproses chat AI. Coba lagi nanti." },
-      { status: 500 }
-    );
-  }
+  // NDJSON stream: {"step": "..."} lines while tools run, then {"message": {...}} or {"error": "..."}.
+  const enc = new TextEncoder();
+  const stream = new ReadableStream({
+    async start(controller) {
+      const send = (o: object) => controller.enqueue(enc.encode(JSON.stringify(o) + "\n"));
+      try {
+        const { reply, usage } = await askClaudeProjectChat(formattedHistory, ctx, (step) => send({ step }));
+        const message = await prisma.chatMessage.create({
+          data: { projectId: project.id, userId: user.id!, role: "ASSISTANT", content: reply, tokenUsage: { ...usage } },
+        });
+        send({ message });
+      } catch (err: unknown) {
+        // never echo provider errors to client: may contain request/key details
+        console.error("chat error:", err instanceof Error ? err.name : "unknown");
+        send({ error: "Gagal memproses chat AI. Coba lagi nanti." });
+      } finally {
+        controller.close();
+      }
+    },
+  });
+  return new Response(stream, {
+    headers: { "Content-Type": "application/x-ndjson; charset=utf-8", "Cache-Control": "no-store", "X-Accel-Buffering": "no" },
+  });
 }

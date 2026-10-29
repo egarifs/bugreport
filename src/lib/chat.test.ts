@@ -2,7 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { prisma } from "./db";
 import { executeChatTool, ChatUserContext } from "./chat-tools";
-import { askClaudeProjectChat } from "./claude-service";
+import { askClaudeProjectChat, stepLabel } from "./claude-service";
+import { startOfDayWib, projectTokensToday } from "./chat-quota";
 
 test("PRD-04 Project AI Chat (Bugs + Business Docs)", async (t) => {
   // Setup project
@@ -148,12 +149,27 @@ test("PRD-04 Project AI Chat (Bugs + Business Docs)", async (t) => {
       isAdmin: false,
     };
 
+    const steps: string[] = [];
     const res = await askClaudeProjectChat(
       [{ role: "user", content: "Apakah project ini siap release?" }],
-      qaCtx
+      qaCtx,
+      (s) => steps.push(s)
     );
 
+    assert.deepEqual(steps, ["Menghitung statistik bug"]);
     assert.ok(res.reply.includes("BELUM SIAP RILIS"));
     assert.ok(res.reply.includes("Active Blockers: 1"));
+  });
+  await t.test("quota counts today's tokens (cache read = 1/10) and step labels stay short", async () => {
+    await prisma.chatMessage.create({
+      data: { projectId: project.id, userId: userQa.id, role: "ASSISTANT", content: "x", tokenUsage: { inputTokens: 100, outputTokens: 50, cacheReadTokens: 1000, cacheWriteTokens: 10 } },
+    });
+    await prisma.chatMessage.create({
+      data: { projectId: project.id, userId: userQa.id, role: "ASSISTANT", content: "old", tokenUsage: { inputTokens: 99999 }, createdAt: new Date(Date.now() - 2 * 86400_000) },
+    });
+    assert.equal(await projectTokensToday(project.id), 260);
+    // 2026-10-29 17:30Z = 30 Okt 00:30 WIB, so the WIB day began 29 Okt 17:00Z
+    assert.equal(startOfDayWib(new Date("2026-10-29T17:30:00Z")).toISOString(), "2026-10-29T17:00:00.000Z");
+    assert.equal(stepLabel("search_business_docs", { query: "x".repeat(200) }).length, 'Mencari di dokumen: ""'.length + 60);
   });
 });
