@@ -1,5 +1,6 @@
 import { Prisma, UserStatus } from "@prisma/client";
 import { prisma } from "./db";
+import { notifyAdminsPendingUser } from "./notify";
 
 export function getAdminEmails(): string[] {
   const raw = process.env.ADMIN_EMAILS ?? "";
@@ -24,7 +25,7 @@ export async function upsertGoogleUser(profile: {
   const existing = await prisma.user.findUnique({ where: { email } });
 
   if (!existing) {
-    return prisma.user.create({
+    const created = await prisma.user.create({
       data: {
         email,
         name: profile.name ?? null,
@@ -33,6 +34,8 @@ export async function upsertGoogleUser(profile: {
         status: isAdmin ? UserStatus.ACTIVE : UserStatus.PENDING,
       },
     });
+    if (created.status === UserStatus.PENDING) await notifyAdminsPendingUser(created);
+    return created;
   }
 
   // If already exists and is configured admin, ensure isAdmin + ACTIVE

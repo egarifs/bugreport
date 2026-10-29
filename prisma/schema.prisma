@@ -81,6 +81,7 @@ model User {
   testItemsExecuted TestRunItem[]
   apiKeysCreated    ApiKey[]
   chatMessages      ChatMessage[]
+  notifications     Notification[]
 
   @@index([status])
   @@index([email])
@@ -461,4 +462,23 @@ model Module {
   testCases  TestCase[]
 
   @@unique([projectId, name])
+}
+
+// In-app notification. Pruned after 90 days on write (see src/lib/notify.ts).
+model Notification {
+  id        String    @id @default(uuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  projectId String?
+  type      String // assign | comment | status | draft | user_pending
+  title     String
+  body      String    @default("")
+  href      String
+  actorName String    @default("")
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId, readAt])
+  @@index([userId, createdAt])
+  @@index([createdAt])
 }

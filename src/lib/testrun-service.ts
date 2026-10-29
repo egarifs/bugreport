@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { BugSeverity, BugPriority } from "@prisma/client";
+import { notifyBug } from "./notify";
 import { recordAuditLog } from "./user-service";
 
 export interface CreateBugFromTestRunParams {
@@ -108,6 +109,7 @@ export async function createBugDraftFromTestRunItem({
       },
     },
   });
+  await notifyBug(createdBug.id, { id: actorId, email: actorEmail }, { kind: "draft", source: "test_run" });
 
   return { bug: createdBug, created: true };
 }

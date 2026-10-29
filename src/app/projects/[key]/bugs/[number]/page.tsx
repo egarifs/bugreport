@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { canTransitionBug, hasPermission } from "@/lib/permissions";
 import { redactSecrets } from "@/lib/redact";
+import { notifyBug } from "@/lib/notify";
 import { recordAuditLog } from "@/lib/user-service";
 import { BugStatus, CommentType, ProjectRole } from "@prisma/client";
 import Link from "next/link";
@@ -290,6 +291,7 @@ export default async function BugDetailPage({
                   entityId: bug.id,
                   changes: { after: { type, length: body.length } },
                 });
+                await notifyBug(bug.id, actor, { kind: "comment", commentType: type, excerpt: body });
 
                 revalidatePath(`/projects/${project.key}/bugs/${bug.number}`);
               }}
@@ -413,6 +415,7 @@ export default async function BugDetailPage({
                       after: { status: targetStatus, reopenReason, duplicateOfKey, appVersion },
                     },
                   });
+                  await notifyBug(bug.id, actor, { kind: "status", from: bug.status, to: targetStatus });
 
                   revalidatePath(`/projects/${project.key}/bugs/${bug.number}`);
                   return { ok: `Status diubah ke ${STATUS_LABEL[targetStatus]}.` };
@@ -566,6 +569,7 @@ export default async function BugDetailPage({
                     after: { assigneeId },
                   },
                 });
+                if (assigneeId && assigneeId !== bug.assigneeId) await notifyBug(bug.id, actor, { kind: "assign" });
 
                 revalidatePath(`/projects/${project.key}/bugs/${bug.number}`);
               }}

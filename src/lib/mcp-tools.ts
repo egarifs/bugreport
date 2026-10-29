@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { redactSecrets } from "@/lib/redact";
+import { notifyBug } from "./notify";
 import { recordAuditLog } from "@/lib/user-service";
 import { activeModules, resolveModuleId } from "@/lib/modules";
 import { BugPriority, BugSeverity } from "@prisma/client";
@@ -306,6 +307,7 @@ export async function executeMcpTool(
             },
           },
         });
+        await notifyBug(createdBug.id, { id: ctx.actorId, name: `Agent (${ctx.actorEmail})` }, { kind: "draft", source: "mcp" });
 
         return {
           content: [
@@ -365,6 +367,7 @@ export async function executeMcpTool(
           entityId: comment.id,
           changes: { after: { bugKey: bug.key } },
         });
+        await notifyBug(bug.id, { id: ctx.actorId, name: `Agent (${ctx.actorEmail})` }, { kind: "comment", commentType: "PUBLIC", excerpt: body });
 
         return {
           content: [{ type: "text", text: JSON.stringify({ status: "SUCCESS", commentId: comment.id, bugKey: bug.key }) }],

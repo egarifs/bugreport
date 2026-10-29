@@ -5,6 +5,7 @@ import { requireProjectPermission } from "@/lib/authz";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { redactSecrets } from "@/lib/redact";
+import { notifyBug } from "@/lib/notify";
 import { recordAuditLog } from "@/lib/user-service";
 import { BugSeverity, BugPriority, BugStatus } from "@prisma/client";
 import Link from "next/link";
@@ -319,5 +320,6 @@ async function createBug(projectId: string, _prev: ActionResult, formData: FormD
     changes: { after: { key: bug.key, status, severity, title, screenshots: stored.length, related: relatedKeys } },
   });
 
+  if (status === BugStatus.DRAFT) await notifyBug(bug.id, author, { kind: "draft", source: "form" });
   redirect(`/projects/${project.key}/bugs/${bug.number}`);
 }

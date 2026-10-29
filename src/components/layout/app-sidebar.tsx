@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
+import { NotificationBell } from "./notification-bell";
 
 interface ProjectOption {
   id: string;
@@ -145,11 +146,14 @@ export function AppSidebar({ user, projects, activeProjectKey }: AppSidebarProps
           </button>
           <span className="font-bold text-slate-900 text-sm">BugReport</span>
         </div>
-        {currentProject && (
-          <span className="font-mono text-xs font-semibold px-2 py-0.5 bg-slate-100 text-slate-700 rounded">
-            {currentProject.key}
-          </span>
-        )}
+        <div className="flex items-center gap-2">
+          {currentProject && (
+            <span className="font-mono text-xs font-semibold px-2 py-0.5 bg-slate-100 text-slate-700 rounded">
+              {currentProject.key}
+            </span>
+          )}
+          <NotificationBell align="right" />
+        </div>
       </div>
 
       {/* Mobile Drawer Backdrop */}
@@ -188,6 +192,12 @@ export function AppSidebar({ user, projects, activeProjectKey }: AppSidebarProps
             </div>
           )}
 
+          {!collapsed && (
+            <div className="hidden md:block ml-auto mr-1">
+              <NotificationBell />
+            </div>
+          )}
+
           {/* Desktop Collapse Button */}
           <button
             onClick={toggleCollapsed}
@@ -204,6 +214,12 @@ export function AppSidebar({ user, projects, activeProjectKey }: AppSidebarProps
             </svg>
           </button>
         </div>
+
+        {collapsed && (
+          <div className="hidden md:flex justify-center py-2 border-b border-slate-100">
+            <NotificationBell />
+          </div>
+        )}
 
         {/* Project Switcher Select (when expanded and has multiple projects) */}
         {!collapsed && projects.length > 0 && (
