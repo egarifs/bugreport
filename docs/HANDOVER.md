@@ -128,7 +128,7 @@ docker compose up -d
 # 2. Sinkronisasi Skema Prisma (jika ada migrasi baru)
 npx prisma db push
 
-# 3. Jalankan automated test suite (50 tests)
+# 3. Jalankan automated test suite (56 tests)
 npm test
 
 # 4. Build & Jalankan Production Server di Port 3001
@@ -159,5 +159,7 @@ ssh root@100.110.252.41 "/opt/backups/backup-bugreport.sh && cd /opt/stacks/bugr
   && docker compose run --rm --no-deps app node_modules/.bin/prisma db push --skip-generate \
   && docker compose up -d app"
 ```
+
+Skema baru dengan backfill data (mis. `deploy/backfill-modules.sql`, idempotent): `scp` ke server, lalu jalankan `docker exec -i bugreport-db-1 psql -U <user> -d <db> < file.sql` setelah `db push`.
 
 Rollback: set `APP_TAG` ke sha sebelumnya, lalu `docker compose up -d app`. Jika skema berubah, restore dump `db-*.sql.gz` terakhir.

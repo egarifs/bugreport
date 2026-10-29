@@ -1,6 +1,6 @@
 # PRD-06 — UX/UI: tampilan per peran, laporan inspeksi, master modul
 
-**Status:** In Progress (P0 selesai lokal, belum deploy)
+**Status:** In Progress (P0/P1 live di prod `77579df`; P2 + audit kontras tersisa)
 **Sumber:** sesi grill-me Q1–Q5c, 2026-10-28.
 
 ## Tujuan
@@ -59,10 +59,12 @@ Client dan Viewer kehilangan `chat.ask` dan `testcase.read`. Batasan ini ditegak
 - [x] `resolveModuleId` case-insensitive, tidak auto-create, mengabaikan modul diarsipkan, dan menolak modul project lain. `list_modules` juga diuji (`modules.test.ts`).
 - [x] Layar 390px: top bar di atas, kartu bug 2 baris, tanpa scroll horizontal.
 - [ ] Kontras WCAG AA diverifikasi alat (target: semua pasangan token ≥ 4.5:1).
-- [ ] Deploy prod + backfill modul di prod.
+- [x] Deploy prod + backfill modul di prod.
 
 ## Screenshot
 `~/Pictures/Screenshots/prd06/{before,after}-{admin,vendor}-{list,detail,settings,new}-{d,m}.png`.
 
 ## Execution log
 - 2026-10-28: schema `Module` + backfill lokal (12 modul). Token, font, shell, daftar/detail bug, settings modul, MCP `list_modules`, gating peran. Typecheck, lint, 56/56 test, dan build lolos.
+- 2026-10-29: deploy `77579df`. Backup `db-20261029T020938Z.sql.gz` diambil sebelum deploy. `db push` OK, backfill membuat 1 modul dan menautkan 1 bug; 0 baris tersisa tanpa tautan. Container healthy, `/login` 200 (lokal + publik). Rollback ke `66dbde5`.
+  Log berisi `TypeError: controller[kState].transformAlgorithm is not a function` (4x, tidak terkait request uji). Ini noise stream Node 22 + Next 15.2.1 saat client putus; dipantau, belum ditindak.
