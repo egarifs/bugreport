@@ -134,16 +134,23 @@ model Bug {
   number    Int
 
   title            String
-  description      String
-  stepsToReproduce String
-  expectedResult   String
-  actualResult     String
+  description      String @default("")
+  stepsToReproduce String @default("")
+  expectedResult   String @default("")
+  actualResult     String @default("")
+
+  // Evidence & context links (http/https only, validated in src/lib/bug-input.ts)
+  jamUrl  String?
+  taskUrl String?
+  links   String[] @default([])
+  related   Bug[] @relation("BugRelated")
+  relatedBy Bug[] @relation("BugRelated")
 
   severity BugSeverity
   priority BugPriority @default(NORMAL)
   status   BugStatus   @default(DRAFT)
 
-  environment   String
+  environment   String  @default("")
   appVersion    String?
   buildNumber   String?
   browserDevice String?

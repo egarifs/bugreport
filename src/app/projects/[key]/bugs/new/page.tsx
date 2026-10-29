@@ -11,6 +11,16 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { DuplicateChecker } from "./duplicate-checker";
 import { AppShell } from "@/components/layout/app-shell";
+import { ScreenshotInput } from "./screenshot-input";
+import { parseBugKeys, parseLinks, parseUrl, readScreenshots, type Screenshot } from "@/lib/bug-input";
+import { randomUUID } from "node:crypto";
+import fs from "node:fs/promises";
+import path from "node:path";
+
+const LABEL = "block font-bold text-slate-700 mb-1";
+const INPUT = "w-full px-3 py-2 border border-slate-300 rounded bg-white focus:outline-none focus:ring-2 focus:ring-action";
+const TEXTAREA = `${INPUT} resize-y min-h-20`;
+const HINT = "mt-1 text-xs text-slate-500";
 
 export default async function NewBugPage({
   params,
@@ -64,256 +74,149 @@ export default async function NewBugPage({
             Form Laporan Bug
           </h1>
           <p className="text-xs text-slate-500 mb-6">
-            Laporan dibuat di project <strong>{project.name}</strong> ({project.key}).
-            Pola secret seperti token atau password akan otomatis di-redact.
+            Project <strong>{project.name}</strong> ({project.key}). Kolom bertanda * wajib.
+            Pola secret seperti token atau password otomatis di-redact.
           </p>
 
-          <ActionForm
-            action={async (_prev: ActionResult, formData: FormData): Promise<ActionResult> => {
-              "use server";
-              const author = await requireProjectPermission(project.id, "bug.create");
-              const title = redactSecrets(((formData.get("title") as string) ?? "").trim());
-              const moduleId = await ownModuleId(project.id, formData.get("moduleId") as string);
-              const severity = formData.get("severity") as BugSeverity;
-              const priority = (formData.get("priority") as BugPriority) || BugPriority.NORMAL;
-              const environment = ((formData.get("environment") as string) ?? "").trim();
-              const appVersion = (formData.get("appVersion") as string)?.trim() || null;
-              const stepsToReproduce = redactSecrets(
-                (formData.get("stepsToReproduce") as string).trim()
-              );
-              const expectedResult = redactSecrets(
-                (formData.get("expectedResult") as string).trim()
-              );
-              const actualResult = redactSecrets(
-                (formData.get("actualResult") as string).trim()
-              );
-              const description = redactSecrets(
-                (formData.get("description") as string)?.trim() || title
-              );
-              const asDraft = formData.get("asDraft") === "true";
-
-              if (!title || !stepsToReproduce || !expectedResult || !actualResult || !environment) {
-                return { error: "Lengkapi judul, environment, langkah reproduksi, expected, dan actual result." };
-              }
-              if (!Object.values(BugSeverity).includes(severity)) return { error: "Pilih severity." };
-              if (modules.length > 0 && !moduleId) return { error: "Pilih modul tempat bug terjadi." };
-
-              // Atomically increment bugSeq for this project
-              const updatedProject = await prisma.project.update({
-                where: { id: project.id },
-                data: { bugSeq: { increment: 1 } },
-                select: { bugSeq: true },
-              });
-
-              const number = updatedProject.bugSeq;
-              const bugKey = `${project.key}-${number}`;
-              const initialStatus =
-                asDraft || !hasPermission(author.role, "bug.review", author.isAdmin) ? BugStatus.DRAFT : BugStatus.OPEN;
-
-              const bug = await prisma.bug.create({
-                data: {
-                  projectId: project.id,
-                  key: bugKey,
-                  number,
-                  title,
-                  moduleId,
-                  severity,
-                  priority,
-                  status: initialStatus,
-                  environment,
-                  appVersion,
-                  description,
-                  stepsToReproduce,
-                  expectedResult,
-                  actualResult,
-                  reporterId: author.id,
-                },
-              });
-
-              await recordAuditLog({
-                projectId: project.id,
-                actorId: author.id,
-                actorEmail: author.email,
-                action: "bug.create",
-                entityType: "bug",
-                entityId: bug.id,
-                changes: {
-                  after: {
-                    key: bugKey,
-                    status: initialStatus,
-                    severity,
-                    title,
-                  },
-                },
-              });
-
-              redirect(`/projects/${project.key}/bugs/${number}`);
-            }}
-            className="space-y-4 text-sm"
-          >
-            <div>
-              <label className="block font-semibold text-slate-700 mb-1">
-                Judul Bug *
-              </label>
-              <input
-                id="bug-title-input"
-                type="text"
-                name="title"
-                required
-                placeholder="Contoh: Halaman Complaint bisa dibuka user tanpa hak akses via URL langsung"
-                className="w-full text-sm px-3 py-2 border border-slate-300 rounded focus:outline-none focus:ring-1 focus:ring-slate-900"
-              />
-            </div>
-
-            <DuplicateChecker projectKey={project.key} />
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <ActionForm action={createBug.bind(null, project.id)} className="space-y-6 text-sm">
+            <fieldset className="space-y-3">
+              <legend className="text-xs font-bold text-slate-500 mb-2">Ringkasan (wajib)</legend>
               <div>
-                <label htmlFor="moduleId" className="block font-bold text-slate-700 mb-1">
-                  Modul{modules.length > 0 && " *"}
-                </label>
-                {modules.length === 0 ? (
-                  <p className="text-slate-500 py-2">Belum ada modul. Admin project menambahkannya di Settings.</p>
-                ) : (
-                  <select id="moduleId" name="moduleId" required defaultValue="" className="w-full px-3 py-2 border border-slate-300 rounded bg-white">
-                    <option value="" disabled>Pilih modul</option>
-                    {modules.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+                <label htmlFor="bug-title-input" className={LABEL}>Judul bug *</label>
+                <input
+                  id="bug-title-input"
+                  type="text"
+                  name="title"
+                  required
+                  maxLength={200}
+                  placeholder="[Modul] Apa yang salah, di mana. Contoh: Complaint bisa dibuka user tanpa hak akses via URL"
+                  className={INPUT}
+                />
+              </div>
+
+              <DuplicateChecker projectKey={project.key} />
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div>
+                  <label htmlFor="moduleId" className={LABEL}>Modul{modules.length > 0 && " *"}</label>
+                  {modules.length === 0 ? (
+                    <p className="text-slate-500 py-2">Belum ada modul. Admin project menambahkannya di Settings.</p>
+                  ) : (
+                    <select id="moduleId" name="moduleId" required defaultValue="" className={INPUT}>
+                      <option value="" disabled>Pilih modul</option>
+                      {modules.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+                    </select>
+                  )}
+                </div>
+                <div>
+                  <label htmlFor="severity" className={LABEL}>Severity *</label>
+                  <select id="severity" name="severity" required defaultValue="" className={INPUT}>
+                    <option value="" disabled>Pilih dampak</option>
+                    <option value={BugSeverity.BLOCKER}>Blocker: sistem/alur utama lumpuh</option>
+                    <option value={BugSeverity.HIGH}>High: fungsi penting gagal</option>
+                    <option value={BugSeverity.MEDIUM}>Medium: terganggu, ada workaround</option>
+                    <option value={BugSeverity.LOW}>Low: minor, teks/tampilan</option>
                   </select>
-                )}
+                </div>
+                <div>
+                  <label htmlFor="priority" className={LABEL}>Priority</label>
+                  <select id="priority" name="priority" defaultValue={BugPriority.NORMAL} className={INPUT}>
+                    <option value={BugPriority.URGENT}>Urgent</option>
+                    <option value={BugPriority.HIGH}>High</option>
+                    <option value={BugPriority.NORMAL}>Normal</option>
+                    <option value={BugPriority.LOW}>Low</option>
+                  </select>
+                </div>
               </div>
+            </fieldset>
 
+            <fieldset className="space-y-3 pt-5 border-t border-slate-200">
+              <legend className="text-xs font-bold text-slate-500 mb-2">Detail (opsional, tapi mempercepat perbaikan)</legend>
+              <p className="text-xs text-slate-500 -mt-1">Tarik sudut kanan bawah kotak teks untuk memperbesar.</p>
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">
-                  Severity *
-                </label>
-                <select
-                  name="severity"
-                  required
-                  defaultValue={BugSeverity.HIGH}
-                  className="w-full px-3 py-2 border border-slate-300 rounded bg-white"
-                >
-                  <option value={BugSeverity.BLOCKER}>BLOCKER (Sistem lumpuh)</option>
-                  <option value={BugSeverity.HIGH}>HIGH (Fungsi penting gagal)</option>
-                  <option value={BugSeverity.MEDIUM}>MEDIUM (Terganggu, ada workaround)</option>
-                  <option value={BugSeverity.LOW}>LOW (Minor, teks/tampilan)</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block font-semibold text-slate-700 mb-1">
-                  Priority
-                </label>
-                <select
-                  name="priority"
-                  defaultValue={BugPriority.NORMAL}
-                  className="w-full px-3 py-2 border border-slate-300 rounded bg-white"
-                >
-                  <option value={BugPriority.URGENT}>URGENT</option>
-                  <option value={BugPriority.HIGH}>HIGH</option>
-                  <option value={BugPriority.NORMAL}>NORMAL</option>
-                  <option value={BugPriority.LOW}>LOW</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div>
-                <label className="block font-semibold text-slate-700 mb-1">
-                  Environment *
-                </label>
-                <input
-                  type="text"
-                  name="environment"
-                  required
-                  defaultValue="Staging"
-                  placeholder="Staging, Production, dll."
-                  className="w-full px-3 py-2 border border-slate-300 rounded"
-                />
-              </div>
-
-              <div>
-                <label className="block font-semibold text-slate-700 mb-1">
-                  Versi / Build Aplikasi (Opsional)
-                </label>
-                <input
-                  type="text"
-                  name="appVersion"
-                  placeholder="v1.4.2 atau 2026.10.23"
-                  className="w-full px-3 py-2 border border-slate-300 rounded"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block font-semibold text-slate-700 mb-1">
-                Langkah Reproduksi (Steps to Reproduce) *
-              </label>
-              <textarea
-                name="stepsToReproduce"
-                required
-                rows={4}
-                placeholder="1. Login sebagai user X&#10;2. Buka URL /dashboard/complaint&#10;3. Klik tombol Y"
-                className="w-full px-3 py-2 border border-slate-300 rounded font-mono text-xs"
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div>
-                <label className="block font-semibold text-slate-700 mb-1">
-                  Hasil yang Diharapkan (Expected Result) *
-                </label>
+                <label htmlFor="description" className={LABEL}>Deskripsi</label>
                 <textarea
-                  name="expectedResult"
-                  required
-                  rows={3}
-                  placeholder="Diarahkan ke 403 atau dashboard karena user tidak punya hak akses"
-                  className="w-full px-3 py-2 border border-slate-300 rounded"
+                  id="description"
+                  name="description"
+                  rows={4}
+                  placeholder="Konteks: siapa terdampak, seberapa sering terjadi, endpoint atau data terkait."
+                  className={TEXTAREA}
                 />
               </div>
-
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">
-                  Hasil Aktual (Actual Result) *
-                </label>
+                <label htmlFor="stepsToReproduce" className={LABEL}>Langkah reproduksi</label>
                 <textarea
-                  name="actualResult"
-                  required
-                  rows={3}
-                  placeholder="Halaman terbuka dan menampilkan data daftar complaint"
-                  className="w-full px-3 py-2 border border-slate-300 rounded"
+                  id="stepsToReproduce"
+                  name="stepsToReproduce"
+                  rows={5}
+                  placeholder={"1. Login sebagai user X\n2. Buka URL /dashboard/complaint\n3. Klik tombol Y"}
+                  className={`${TEXTAREA} font-mono text-xs`}
                 />
               </div>
-            </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <label htmlFor="expectedResult" className={LABEL}>Hasil yang diharapkan</label>
+                  <textarea id="expectedResult" name="expectedResult" rows={3} placeholder="Diarahkan ke 403 karena user tidak punya hak akses" className={TEXTAREA} />
+                </div>
+                <div>
+                  <label htmlFor="actualResult" className={LABEL}>Hasil aktual</label>
+                  <textarea id="actualResult" name="actualResult" rows={3} placeholder="Halaman terbuka dan menampilkan daftar complaint" className={TEXTAREA} />
+                </div>
+              </div>
+            </fieldset>
 
-            <div>
-              <label className="block font-semibold text-slate-700 mb-1">
-                Catatan / Deskripsi Tambahan (Opsional)
-              </label>
-              <textarea
-                name="description"
-                rows={2}
-                placeholder="Catatan modul, endpoint, konteks tambahan..."
-                className="w-full px-3 py-2 border border-slate-300 rounded"
-              />
-            </div>
+            <fieldset className="space-y-3 pt-5 border-t border-slate-200">
+              <legend className="text-xs font-bold text-slate-500 mb-2">Bukti</legend>
+              <ScreenshotInput />
+              <div>
+                <label htmlFor="jamUrl" className={LABEL}>Rekaman jam.dev</label>
+                <input id="jamUrl" type="url" name="jamUrl" placeholder="https://jam.dev/c/..." className={INPUT} />
+                <p className={HINT}>Rekaman layar + console + network dari ekstensi Jam.</p>
+              </div>
+            </fieldset>
 
-            <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
-              <label className="flex items-center gap-2 text-slate-600 cursor-pointer">
-                <input
-                  type="checkbox"
-                  name="asDraft"
-                  value="true"
-                  defaultChecked={!canDirectOpen}
-                  className="rounded"
-                />
+            <fieldset className="space-y-3 pt-5 border-t border-slate-200">
+              <legend className="text-xs font-bold text-slate-500 mb-2">Konteks & tautan</legend>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <label htmlFor="environment" className={LABEL}>Environment</label>
+                  <input id="environment" type="text" name="environment" list="env-options" placeholder="Staging, Production, ..." className={INPUT} />
+                  <datalist id="env-options">
+                    <option value="Production" />
+                    <option value="Staging" />
+                    <option value="UAT" />
+                    <option value="Development" />
+                  </datalist>
+                </div>
+                <div>
+                  <label htmlFor="appVersion" className={LABEL}>Versi / build</label>
+                  <input id="appVersion" type="text" name="appVersion" placeholder="v1.4.2 atau 2026.10.23" className={INPUT} />
+                  <p className={HINT}>Wajib sebelum bug Draft dibuka (Open).</p>
+                </div>
+                <div>
+                  <label htmlFor="taskUrl" className={LABEL}>Link task</label>
+                  <input id="taskUrl" type="url" name="taskUrl" placeholder="https://... (Jira, ClickUp, Trello, dll.)" className={INPUT} />
+                </div>
+                <div>
+                  <label htmlFor="relatedKeys" className={LABEL}>Terkait bug lain</label>
+                  <input id="relatedKeys" type="text" name="relatedKeys" placeholder={`${project.key}-12, ${project.key}-15`} className={`${INPUT} font-mono`} />
+                  <p className={HINT}>ID bug di project ini, pisahkan dengan koma.</p>
+                </div>
+              </div>
+              <div>
+                <label htmlFor="links" className={LABEL}>Tautan lain</label>
+                <textarea id="links" name="links" rows={2} placeholder={"https://figma.com/...\nhttps://docs.google.com/..."} className={`${TEXTAREA} font-mono text-xs`} />
+                <p className={HINT}>Satu URL per baris, maksimal 10.</p>
+              </div>
+            </fieldset>
+
+            <div className="pt-4 border-t border-slate-200 flex flex-wrap items-center justify-between gap-3">
+              <label className="flex items-center gap-2 text-slate-700 cursor-pointer">
+                <input type="checkbox" name="asDraft" value="true" defaultChecked={!canDirectOpen} className="rounded" />
                 Simpan sebagai Draft (menunggu review QA)
               </label>
-
               <div className="flex gap-2">
-                <Link
-                  href={`/projects/${project.key}`}
-                  className="px-4 py-2 border border-slate-300 rounded text-xs font-medium text-slate-700 hover:bg-slate-50"
-                >
+                <Link href={`/projects/${project.key}`} className="px-4 py-2 border border-slate-300 rounded text-sm font-medium text-slate-700 hover:bg-slate-50">
                   Batal
                 </Link>
                 <SubmitButton pendingText="Mengirim...">Kirim laporan</SubmitButton>
@@ -325,4 +228,96 @@ export default async function NewBugPage({
     </div>
   </AppShell>
   );
+}
+
+const text = (fd: FormData, k: string) => redactSecrets(((fd.get(k) as string) ?? "").trim());
+
+// Module-level (not inline) so Next 15.2.1 keeps bound args; projectId is client-visible and re-checked by authz.
+async function createBug(projectId: string, _prev: ActionResult, formData: FormData): Promise<ActionResult> {
+  "use server";
+  const author = await requireProjectPermission(projectId, "bug.create");
+  const project = await prisma.project.findUniqueOrThrow({ where: { id: projectId }, select: { key: true } });
+
+  const title = text(formData, "title");
+  const severity = formData.get("severity") as BugSeverity;
+  const priority = Object.values(BugPriority).includes(formData.get("priority") as BugPriority)
+    ? (formData.get("priority") as BugPriority)
+    : BugPriority.NORMAL;
+  if (!title) return { error: "Isi judul bug." };
+  if (title.length > 200) return { error: "Judul maksimal 200 karakter." };
+  if (!Object.values(BugSeverity).includes(severity)) return { error: "Pilih severity." };
+  const moduleId = await ownModuleId(projectId, formData.get("moduleId") as string);
+  if (!moduleId && (await activeModules(projectId)).length > 0) return { error: "Pilih modul tempat bug terjadi." };
+
+  let jamUrl: string | null, taskUrl: string | null, links: string[], relatedKeys: string[], shots: Screenshot[];
+  try {
+    jamUrl = parseUrl(formData.get("jamUrl"), "Link jam.dev");
+    taskUrl = parseUrl(formData.get("taskUrl"), "Link task");
+    links = parseLinks(formData.get("links"));
+    relatedKeys = parseBugKeys(formData.get("relatedKeys"));
+    shots = await readScreenshots(formData.getAll("screenshots"));
+  } catch (e) {
+    return { error: (e as Error).message };
+  }
+  const related = relatedKeys.length
+    ? await prisma.bug.findMany({ where: { projectId, key: { in: relatedKeys } }, select: { id: true, key: true } })
+    : [];
+  const missing = relatedKeys.filter((k) => !related.some((r) => r.key === k));
+  if (missing.length) return { error: `Bug ${missing.join(", ")} tidak ada di project ini.` };
+
+  const dir = path.join(process.cwd(), "uploads", project.key, "attachments");
+  const stored = shots.map((s) => ({ ...s, storedName: `${randomUUID()}.${s.ext}` }));
+  if (stored.length) await fs.mkdir(dir, { recursive: true });
+  await Promise.all(stored.map((s) => fs.writeFile(path.join(dir, s.storedName), s.bytes)));
+
+  const asDraft = formData.get("asDraft") === "true";
+  const status = asDraft || !hasPermission(author.role, "bug.review", author.isAdmin) ? BugStatus.DRAFT : BugStatus.OPEN;
+  let bug;
+  try {
+    bug = await prisma.$transaction(async (tx) => {
+      const { bugSeq: number } = await tx.project.update({ where: { id: projectId }, data: { bugSeq: { increment: 1 } }, select: { bugSeq: true } });
+      return tx.bug.create({
+        data: {
+          projectId,
+          key: `${project.key}-${number}`,
+          number,
+          title,
+          moduleId,
+          severity,
+          priority,
+          status,
+          environment: text(formData, "environment"),
+          appVersion: text(formData, "appVersion") || null,
+          description: text(formData, "description"),
+          stepsToReproduce: text(formData, "stepsToReproduce"),
+          expectedResult: text(formData, "expectedResult"),
+          actualResult: text(formData, "actualResult"),
+          jamUrl,
+          taskUrl,
+          links,
+          related: { connect: related.map((r) => ({ id: r.id })) },
+          reporterId: author.id,
+          attachments: {
+            create: stored.map((s) => ({ fileName: s.name, storedName: s.storedName, fileSize: s.bytes.length, mimeType: s.mime })),
+          },
+        },
+      });
+    });
+  } catch (e) {
+    // No orphan files when the DB write fails.
+    await Promise.all(stored.map((s) => fs.rm(path.join(dir, s.storedName), { force: true })));
+    throw e;
+  }
+
+  await recordAuditLog({
+    projectId,
+    actorId: author.id,
+    actorEmail: author.email,
+    action: "bug.create",
+    entityType: "bug",
+    entityId: bug.id,
+    changes: { after: { key: bug.key, status, severity, title, screenshots: stored.length, related: relatedKeys } },
+  });
+
+  redirect(`/projects/${project.key}/bugs/${bug.number}`);
 }

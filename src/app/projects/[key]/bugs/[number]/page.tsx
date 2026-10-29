@@ -57,6 +57,9 @@ export default async function BugDetailPage({
       reviewedBy: { select: { name: true, email: true } },
       duplicateOf: { select: { key: true, number: true, title: true } },
       module: { select: { name: true } },
+      attachments: { orderBy: { uploadedAt: "asc" } },
+      related: { select: { key: true, number: true, title: true } },
+      relatedBy: { select: { key: true, number: true, title: true } },
       comments: {
         where: canSeeInternalNotes ? {} : { type: CommentType.PUBLIC },
         orderBy: { createdAt: "asc" },
@@ -66,6 +69,8 @@ export default async function BugDetailPage({
   });
 
   if (!bug) notFound();
+  // Relation is stored one-way; show both directions.
+  const allRelated = [...bug.related, ...bug.relatedBy].filter((r, i, a) => a.findIndex((x) => x.key === r.key) === i);
 
   // Audit timeline for activity
   const timeline = await prisma.auditLog.findMany({
@@ -122,34 +127,75 @@ export default async function BugDetailPage({
             <h1 className="text-lg font-bold text-slate-900 mb-4">{bug.title}</h1>
 
             <div className="space-y-4 text-xs">
-              <div>
-                <h3 className="font-semibold text-slate-700 text-xs mb-1">
-                  Langkah Reproduksi
-                </h3>
-                <pre className="bg-slate-50 border border-slate-200 rounded p-3 font-mono whitespace-pre-wrap text-slate-800">
-                  {bug.stepsToReproduce}
-                </pre>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {bug.description && bug.description !== bug.title && (
                 <div>
-                  <h3 className="font-semibold text-slate-700 text-xs mb-1">
-                    Hasil yang Diharapkan
-                  </h3>
-                  <div className="bg-slate-50 border border-slate-200 rounded p-3 text-slate-800">
-                    {bug.expectedResult}
+                  <h3 className="font-semibold text-slate-700 text-xs mb-1">Deskripsi</h3>
+                  <div className="bg-slate-50 border border-slate-200 rounded p-3 text-slate-800 whitespace-pre-wrap">
+                    {bug.description}
                   </div>
                 </div>
+              )}
 
+              {bug.stepsToReproduce && (
                 <div>
-                  <h3 className="font-semibold text-slate-700 text-xs mb-1">
-                    Hasil Aktual
-                  </h3>
-                  <div className="bg-slate-50 border border-slate-200 rounded p-3 text-slate-800">
-                    {bug.actualResult}
+                  <h3 className="font-semibold text-slate-700 text-xs mb-1">Langkah Reproduksi</h3>
+                  <pre className="bg-slate-50 border border-slate-200 rounded p-3 font-mono whitespace-pre-wrap text-slate-800">
+                    {bug.stepsToReproduce}
+                  </pre>
+                </div>
+              )}
+
+              {(bug.expectedResult || bug.actualResult) && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <h3 className="font-semibold text-slate-700 text-xs mb-1">Hasil yang Diharapkan</h3>
+                    <div className="bg-slate-50 border border-slate-200 rounded p-3 text-slate-800 whitespace-pre-wrap">
+                      {bug.expectedResult || "-"}
+                    </div>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-slate-700 text-xs mb-1">Hasil Aktual</h3>
+                    <div className="bg-slate-50 border border-slate-200 rounded p-3 text-slate-800 whitespace-pre-wrap">
+                      {bug.actualResult || "-"}
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
+
+              {bug.attachments.length > 0 && (
+                <div>
+                  <h3 className="font-semibold text-slate-700 text-xs mb-1">Screenshot ({bug.attachments.length})</h3>
+                  <ul className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                    {bug.attachments.map((a) => (
+                      <li key={a.id}>
+                        <a href={`/api/projects/${project.key}/attachments/${a.id}`} target="_blank" rel="noopener" className="block border border-slate-200 rounded overflow-hidden hover:ring-2 hover:ring-action">
+                          {/* eslint-disable-next-line @next/next/no-img-element -- authenticated route, not optimizable */}
+                          <img src={`/api/projects/${project.key}/attachments/${a.id}`} alt={a.fileName} className="w-full h-32 object-cover bg-slate-50" loading="lazy" />
+                          <span className="block px-2 py-1 truncate text-slate-600">{a.fileName}</span>
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {(bug.jamUrl || bug.taskUrl || bug.links.length > 0 || allRelated.length > 0) && (
+                <div>
+                  <h3 className="font-semibold text-slate-700 text-xs mb-1">Tautan</h3>
+                  <ul className="space-y-1">
+                    {bug.jamUrl && <LinkRow label="Rekaman jam.dev" href={bug.jamUrl} />}
+                    {bug.taskUrl && <LinkRow label="Task" href={bug.taskUrl} />}
+                    {bug.links.map((l) => <LinkRow key={l} label="Tautan" href={l} />)}
+                    {allRelated.map((r) => (
+                      <li key={r.key} className="flex gap-2">
+                        <span className="w-28 shrink-0 text-slate-500">Terkait</span>
+                        <Link href={`/projects/${project.key}/bugs/${r.number}`} className="font-mono font-bold text-action hover:underline">{r.key}</Link>
+                        <span className="truncate">{r.title}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
 
               {bug.duplicateOf && (
                 <div className="bg-amber-50 border border-amber-200 rounded p-3 text-amber-900">
@@ -161,17 +207,6 @@ export default async function BugDetailPage({
                     {bug.duplicateOf.key}
                   </Link>{" "}
                   - {bug.duplicateOf.title}
-                </div>
-              )}
-
-              {bug.description && bug.description !== bug.title && (
-                <div>
-                  <h3 className="font-semibold text-slate-700 text-xs mb-1">
-                    Deskripsi / Catatan Tambahan
-                  </h3>
-                  <div className="bg-slate-50 border border-slate-200 rounded p-3 text-slate-800 whitespace-pre-wrap">
-                    {bug.description}
-                  </div>
                 </div>
               )}
 
@@ -473,7 +508,7 @@ export default async function BugDetailPage({
 
               <div className="flex justify-between py-1 border-b border-slate-100">
                 <span className="text-slate-400">Environment</span>
-                <span className="font-medium text-slate-800">{bug.environment}</span>
+                <span className="font-medium text-slate-800">{bug.environment || "Belum diisi"}</span>
               </div>
 
               <div className="flex justify-between py-1 border-b border-slate-100">
@@ -593,5 +628,15 @@ export default async function BugDetailPage({
       </main>
     </div>
   </AppShell>
+  );
+}
+
+function LinkRow({ label, href }: { label: string; href: string }) {
+  // href validated as http(s) on write (src/lib/bug-input.ts).
+  return (
+    <li className="flex gap-2">
+      <span className="w-28 shrink-0 text-slate-500">{label}</span>
+      <a href={href} target="_blank" rel="noopener noreferrer" className="text-action hover:underline break-all">{href}</a>
+    </li>
   );
 }
