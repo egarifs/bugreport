@@ -52,7 +52,7 @@ export default async function ProjectChatPage({
           </div>
         </header>
 
-        <main className="max-w-5xl w-full mx-auto p-4 flex-1">
+        <main className="p-4 flex-1">
           <ProjectChatBox
             projectKey={project.key}
             initialMessages={messages.map((m) => ({

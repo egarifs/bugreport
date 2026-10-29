@@ -1,3 +1,4 @@
+import { ActionForm, SubmitButton, type ActionResult } from "@/components/ui/action-form";
 import { requireAdmin } from "@/lib/authz";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
@@ -21,26 +22,28 @@ export default async function NewProjectPage() {
           <Link href="/projects" className="text-sm text-slate-500 hover:text-slate-900">
             ← Kembali ke Projects
           </Link>
-          <span className="text-slate-300">/</span>
+          <span aria-hidden="true" className="text-slate-300">/</span>
           <span className="font-semibold text-slate-900 text-sm">Buat Project Baru</span>
         </header>
 
-        <main className="max-w-xl w-full mx-auto p-6 flex-1">
+        <main className="p-6 flex-1">
         <div className="bg-white border border-slate-200 rounded-lg p-6 shadow-sm">
           <h1 className="text-lg font-bold text-slate-900 mb-1">Project Baru</h1>
           <p className="text-xs text-slate-500 mb-6">
             Project key digunakan sebagai prefix ID bug (misal: CRM-1, CRM-2).
           </p>
 
-          <form
-            action={async (formData) => {
+          <ActionForm
+            action={async (_prev: ActionResult, formData: FormData): Promise<ActionResult> => {
               "use server";
               const creator = await requireAdmin();
               const key = (formData.get("key") as string).trim().toUpperCase();
               const name = (formData.get("name") as string).trim();
               const description = (formData.get("description") as string)?.trim() || null;
 
-              if (!key || !name) return;
+              if (!key || !name) return { error: "Key dan nama project wajib diisi." };
+              if (!/^[A-Z0-9]{1,6}$/.test(key)) return { error: "Key maksimal 6 karakter, hanya huruf kapital dan angka." };
+              if (await prisma.project.findUnique({ where: { key } })) return { error: `Key ${key} sudah dipakai project lain.` };
 
               const project = await prisma.project.create({
                 data: {
@@ -117,14 +120,9 @@ export default async function NewProjectPage() {
               >
                 Batal
               </Link>
-              <button
-                type="submit"
-                className="px-4 py-2 bg-action hover:bg-action-hover text-white rounded text-xs font-medium"
-              >
-                Simpan Project
-              </button>
+              <SubmitButton pendingText="Menyimpan...">Simpan project</SubmitButton>
             </div>
-          </form>
+          </ActionForm>
         </div>
       </main>
     </div>

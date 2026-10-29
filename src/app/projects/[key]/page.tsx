@@ -113,7 +113,7 @@ export default async function ProjectDetailPage({
           )}
         </header>
 
-        <main className="max-w-6xl w-full mx-auto p-4 md:p-6 flex-1">
+        <main className="p-4 md:p-6 flex-1">
           <nav aria-label="Tampilan bug" className="flex gap-1 border-b border-slate-200 mb-4 overflow-x-auto">
             {tabs.filter((t) => t.show).map((t) => (
               <Link

@@ -1,3 +1,4 @@
+import { SubmitButton } from "@/components/ui/action-form";
 import { ModulesSection } from "./modules-section";
 import { requireProjectPermission } from "@/lib/authz";
 import { auth } from "@/lib/auth";
@@ -65,7 +66,7 @@ export default async function ProjectSettingsPage({
           </div>
         </header>
 
-        <main className="max-w-5xl w-full mx-auto p-6 space-y-8 flex-1">
+        <main className="p-6 space-y-8 flex-1">
           {/* Freshly Generated API Key Notice */}
           {newCreatedKey && (
             <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-xs">
@@ -127,12 +128,9 @@ export default async function ProjectSettingsPage({
                     placeholder="Nama agent, misal: Claude Code QA"
                     className="text-xs px-3 py-1.5 border border-slate-300 rounded outline-none w-48"
                   />
-                  <button
-                    type="submit"
-                    className="px-3.5 py-1.5 bg-action hover:bg-action-hover text-white text-xs font-medium rounded transition"
-                  >
-                    + Generate API Key
-                  </button>
+                  <SubmitButton pendingText="Membuat..." className="px-3.5 py-1.5 bg-action hover:bg-action-hover text-white text-xs font-bold rounded">
+                    Buat API key
+                  </SubmitButton>
                 </form>
               )}
             </div>

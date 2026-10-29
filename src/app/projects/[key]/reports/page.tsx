@@ -4,6 +4,8 @@ import { AppShell } from "@/components/layout/app-shell";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { getProjectReport } from "@/lib/report";
+import { SEVERITY_STYLE, STATUS_LABEL, SeverityBadge } from "@/components/ui/bug-badges";
+import type { BugSeverity, BugStatus } from "@prisma/client";
 
 const SEVERITIES = ["BLOCKER", "HIGH", "MEDIUM", "LOW"] as const;
 
@@ -32,12 +34,12 @@ export default async function ReportsPage({
 
   return (
     <AppShell activeProjectKey={project.key}>
-      <div className="p-6 max-w-6xl mx-auto space-y-6">
+      <div className="p-6 space-y-6">
         <header className="flex flex-wrap items-center justify-between gap-3">
-          <h1 className="text-lg font-semibold text-slate-900">{project.key} — Health & Release Readiness</h1>
+          <h1 className="text-lg font-semibold text-slate-900">Laporan kesiapan rilis</h1>
           <a
             href={`/api/projects/${project.key}/export`}
-            className="px-3 py-1.5 text-xs font-medium rounded bg-slate-900 text-white hover:bg-slate-800"
+            className="px-3.5 py-2 text-sm font-bold rounded bg-white border border-slate-300 text-slate-800 hover:bg-slate-100"
           >
             Export CSV
           </a>
@@ -58,21 +60,21 @@ export default async function ReportsPage({
           <div
             role="status"
             className={`rounded p-3 text-sm font-semibold ${
-              r.releaseReady ? "bg-emerald-50 text-emerald-800" : "bg-rose-50 text-rose-800"
+              r.releaseReady ? "bg-emerald-50 text-emerald-800" : "bg-sev-blocker-bg text-sev-blocker"
             }`}
           >
             {r.releaseReady
-              ? "Ready — tidak ada Blocker/High aktif"
-              : `Not ready — ${r.releaseBlockers.length} Blocker/High belum Closed`}
+              ? "Siap rilis: tidak ada Blocker/High aktif"
+              : `Belum siap: ${r.releaseBlockers.length} bug Blocker/High belum ditutup`}
           </div>
           {r.releaseBlockers.length > 0 && (
             <ul className="text-xs space-y-1">
               {r.releaseBlockers.map((b) => (
                 <li key={b.key}>
-                  <Link href={`/projects/${project.key}/bugs/${b.key.split("-").pop()}`} className="font-mono text-blue-600 hover:underline">
+                  <Link href={`/projects/${project.key}/bugs/${b.key.split("-").pop()}`} className="font-mono font-bold text-action hover:underline">
                     {b.key}
                   </Link>{" "}
-                  [{b.severity} / {b.status}] {b.title}
+                  <SeverityBadge severity={b.severity as BugSeverity} />{" "}<span className="text-slate-500">{STATUS_LABEL[b.status as BugStatus] ?? b.status}</span> {b.title}
                 </li>
               ))}
             </ul>
@@ -81,14 +83,14 @@ export default async function ReportsPage({
 
         <div className="grid gap-4 md:grid-cols-2">
           <section className="bg-white border border-slate-200 rounded-lg p-4">
-            <h2 className="text-sm font-semibold mb-3">Open by severity</h2>
+            <h2 className="text-sm font-semibold mb-3">Bug aktif per severity</h2>
             {SEVERITIES.map((s) => {
               const n = r.openBySeverity[s] ?? 0;
               return (
                 <div key={s} className="flex items-center gap-2 text-xs mb-1.5">
-                  <span className="w-16">{s}</span>
+                  <span className="w-16">{SEVERITY_STYLE[s].label}</span>
                   <div className="flex-1 bg-slate-100 rounded h-3">
-                    <div className="bg-slate-800 h-3 rounded" style={{ width: `${(n / maxSev) * 100}%` }} />
+                    <div className={`h-3 rounded ${SEVERITY_STYLE[s].strip}`} style={{ width: `${(n / maxSev) * 100}%` }} />
                   </div>
                   <span className="w-8 text-right font-mono">{n}</span>
                 </div>
@@ -97,12 +99,12 @@ export default async function ReportsPage({
           </section>
 
           <section className="bg-white border border-slate-200 rounded-lg p-4">
-            <h2 className="text-sm font-semibold mb-3">By status</h2>
+            <h2 className="text-sm font-semibold mb-3">Per status</h2>
             <table className="w-full text-xs">
               <tbody>
                 {Object.entries(r.byStatus).map(([s, n]) => (
                   <tr key={s} className="border-b border-slate-100">
-                    <td className="py-1">{s}</td>
+                    <td className="py-1">{STATUS_LABEL[s as BugStatus] ?? s}</td>
                     <td className="py-1 text-right font-mono">{n}</td>
                   </tr>
                 ))}

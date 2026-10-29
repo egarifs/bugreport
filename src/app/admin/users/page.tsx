@@ -1,3 +1,4 @@
+import { ActionForm, type ActionResult } from "@/components/ui/action-form";
 import { requireAdmin } from "@/lib/authz";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
@@ -47,13 +48,13 @@ export default async function AdminUsersPage() {
             <span className="font-semibold text-slate-900 text-sm">
               Admin: User Approval & Management
             </span>
-            <span className="text-xs bg-purple-100 text-purple-700 font-semibold px-2 py-0.5 rounded">
+            <span className="text-xs bg-slate-100 text-slate-700 font-semibold px-2 py-0.5 rounded">
               Super Admin Area
             </span>
           </div>
         </header>
 
-        <main className="max-w-6xl w-full mx-auto p-6 space-y-8 flex-1">
+        <main className="p-6 space-y-8 flex-1">
         {/* Pending Section */}
         <section>
           <div className="flex items-center gap-2 mb-3">
@@ -83,13 +84,17 @@ export default async function AdminUsersPage() {
                     </div>
                   </div>
 
-                  <form
-                    action={async (formData) => {
+                  <ActionForm
+                    action={async (_prev: ActionResult, formData: FormData): Promise<ActionResult> => {
                       "use server";
                       const reviewer = await requireAdmin();
                       const action = formData.get("action") as string;
                       const projectId = formData.get("projectId") as string;
                       const role = formData.get("role") as string;
+                      if (action !== "approve" && action !== "reject") return { error: "Aksi tidak dikenal." };
+                      if (action === "approve" && !projectId) return { error: "Pilih project awal sebelum menyetujui." };
+                      if (action === "approve" && !(Object.values(ProjectRole) as string[]).includes(role)) return { error: "Role tidak valid." };
+                      if (projectId && !(await prisma.project.findUnique({ where: { id: projectId }, select: { id: true } }))) return { error: "Project tidak ditemukan." };
 
                       if (action === "approve") {
                         await prisma.user.update({
@@ -145,6 +150,7 @@ export default async function AdminUsersPage() {
                         });
                       }
                       revalidatePath("/admin/users");
+                      return { ok: action === "approve" ? `${p.email} disetujui.` : `${p.email} ditolak.` };
                     }}
                     className="flex flex-wrap items-center gap-2"
                   >
@@ -178,7 +184,7 @@ export default async function AdminUsersPage() {
                       type="submit"
                       name="action"
                       value="approve"
-                      className="text-xs px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded"
+                      className="text-xs px-3 py-1.5 bg-action hover:bg-action-hover text-white font-bold rounded"
                     >
                       Setujui
                     </button>
@@ -186,11 +192,11 @@ export default async function AdminUsersPage() {
                       type="submit"
                       name="action"
                       value="reject"
-                      className="text-xs px-3 py-1.5 bg-slate-100 hover:bg-red-50 hover:text-red-600 text-slate-700 font-medium rounded"
+                      className="text-xs px-3 py-1.5 bg-slate-100 hover:bg-sev-blocker-bg hover:text-sev-blocker text-slate-700 font-medium rounded"
                     >
                       Tolak
                     </button>
-                  </form>
+                  </ActionForm>
                 </div>
               ))}
             </div>
@@ -209,7 +215,7 @@ export default async function AdminUsersPage() {
                   <div className="font-medium text-slate-900 flex items-center gap-2">
                     <span>{u.name || u.email}</span>
                     {u.isAdmin && (
-                      <span className="px-1.5 py-0.2 bg-purple-100 text-purple-700 rounded text-xs">
+                      <span className="px-1.5 py-0.2 bg-slate-100 text-slate-700 rounded text-xs">
                         Global Admin
                       </span>
                     )}

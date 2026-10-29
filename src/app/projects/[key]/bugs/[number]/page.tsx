@@ -99,7 +99,7 @@ export default async function BugDetailPage({
             >
               ← {project.key}
             </Link>
-            <span className="text-slate-300">/</span>
+            <span aria-hidden="true" className="text-slate-300">/</span>
             <span className="font-mono font-bold text-xs bg-slate-100 text-slate-700 px-2 py-0.5 rounded">
               {bug.key}
             </span>
@@ -115,7 +115,7 @@ export default async function BugDetailPage({
         </div>
       </header>
 
-      <main className="max-w-6xl w-full mx-auto p-6 flex-1 grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <main className="p-6 flex-1 grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left: Detail content & comments */}
         <div className="lg:col-span-2 space-y-6">
           <div className="bg-white border border-slate-200 rounded-lg p-6 shadow-sm">

@@ -290,8 +290,8 @@ export function AppSidebar({ user, projects, activeProjectKey }: AppSidebarProps
                 title={collapsed ? "Approval Queue" : undefined}
                 className={`flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium transition ${
                   pathname.startsWith("/admin")
-                    ? "bg-purple-900 text-white"
-                    : "text-purple-700 hover:bg-purple-50"
+                    ? "bg-slate-900 text-white"
+                    : "text-slate-700 hover:bg-slate-100"
                 } ${collapsed ? "justify-center px-2" : ""}`}
               >
                 <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">

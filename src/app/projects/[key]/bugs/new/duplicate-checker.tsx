@@ -70,7 +70,7 @@ export function DuplicateChecker({ projectKey }: { projectKey: string }) {
         <span className="font-semibold text-amber-900 flex items-center gap-1.5">
           Kemungkinan bug duplikat ditemukan ({duplicates.length})
         </span>
-        {loading && <span className="text-xs text-amber-600">Mencari...</span>}
+        {loading && <span className="text-xs text-amber-700">Mencari...</span>}
       </div>
       <p className="text-xs text-amber-700">
         Periksa daftar berikut sebelum membuat laporan baru agar tidak terjadi redundansi:

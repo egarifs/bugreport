@@ -66,7 +66,7 @@ export default async function TestCasesPage({
           </div>
         </header>
 
-        <main className="max-w-6xl w-full mx-auto p-6 space-y-8 flex-1">
+        <main className="p-6 space-y-8 flex-1">
           {/* Active Test Runs section */}
           <section>
             <div className="flex items-center justify-between mb-3">
@@ -100,7 +100,7 @@ export default async function TestCasesPage({
                       <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
                         <span className="text-slate-600">{total} test cases</span>
                         <div className="flex items-center gap-2">
-                          <span className="text-emerald-600 font-medium">{passCount} Pass</span>
+                          <span className="text-emerald-700 font-medium">{passCount} Pass</span>
                           <span className="text-rose-600 font-medium">{failCount} Fail</span>
                         </div>
                       </div>

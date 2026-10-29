@@ -1,3 +1,4 @@
+import { ActionForm, SubmitButton, type ActionResult } from "@/components/ui/action-form";
 import { requireProjectPermission } from "@/lib/authz";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
@@ -36,6 +37,9 @@ export default async function BusinessDocsPage({
 
   if (!project) notFound();
   if (!project.members[0] && !user.isAdmin) redirect("/projects");
+  // Bind primitives: server action closures must not capture the narrowed prisma object.
+  const pid = project.id;
+  const pkey = project.key;
 
   const role: ProjectRole = project.members[0]?.role ?? (user.isAdmin ? "ADMIN" : "VIEWER");
   const canManage = hasPermission(role, "doc.manage", user.isAdmin);
@@ -54,7 +58,7 @@ export default async function BusinessDocsPage({
           </div>
         </header>
 
-        <main className="max-w-5xl w-full mx-auto p-6 space-y-8 flex-1">
+        <main className="p-6 space-y-8 flex-1">
           {/* Upload Document Section */}
           {canManage && (
             <div className="bg-white border border-slate-200 rounded-lg p-5 shadow-sm">
@@ -65,27 +69,26 @@ export default async function BusinessDocsPage({
                 Mendukung PDF & Markdown (.md) hingga 20 MB. Upload dengan judul yang sama otomatis menghasilkan versi baru (v1, v2, dst).
               </p>
 
-              <form
-                action={async (formData: FormData) => {
+              <ActionForm
+                action={async (_prev: ActionResult, formData: FormData): Promise<ActionResult> => {
                   "use server";
-                  const actor = await requireProjectPermission(project.id, "doc.manage");
+                  const actor = await requireProjectPermission(pid, "doc.manage");
                   const title = (formData.get("title") as string)?.trim();
                   const description = (formData.get("description") as string)?.trim() || null;
                   const file = formData.get("file") as File;
 
-                  if (!title || !file || file.size === 0) return;
-                  if (file.size > 20 * 1024 * 1024) {
-                    throw new Error("File melebihi batas 20 MB.");
-                  }
+                  if (!title || !file || file.size === 0) return { error: "Judul dan file wajib diisi." };
+                  if (file.size > 20 * 1024 * 1024) return { error: "File melebihi batas 20 MB." };
                   const ext = path.extname(file.name).toLowerCase();
-                  if (ext !== ".pdf" && ext !== ".md") throw new Error("Hanya PDF atau Markdown (.md).");
+                  if (ext !== ".pdf" && ext !== ".md") return { error: "Hanya PDF atau Markdown (.md)." };
                   const head = Buffer.from(await file.slice(0, 5).arrayBuffer()).toString("latin1");
-                  if (ext === ".pdf" && head !== "%PDF-") throw new Error("File bukan PDF valid.");
+                  if (ext === ".pdf" && head !== "%PDF-") return { error: "File bukan PDF valid." };
 
                   const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+                  if (!slug) return { error: "Judul harus memuat huruf atau angka." };
 
                   // Ensure upload directory exists
-                  const uploadDir = path.join(process.cwd(), "uploads", project.key, "docs");
+                  const uploadDir = path.join(process.cwd(), "uploads", pkey, "docs");
                   await fs.mkdir(uploadDir, { recursive: true });
 
                   const storedFileName = `${slug}_${Date.now()}${ext}`;
@@ -96,7 +99,7 @@ export default async function BusinessDocsPage({
 
                   // Upsert document record
                   let doc = await prisma.businessDoc.findUnique({
-                    where: { projectId_slug: { projectId: project.id, slug } },
+                    where: { projectId_slug: { projectId: pid, slug } },
                     include: { versions: { orderBy: { versionNum: "desc" }, take: 1 } },
                   });
 
@@ -111,7 +114,7 @@ export default async function BusinessDocsPage({
                   } else {
                     doc = await prisma.businessDoc.create({
                       data: {
-                        projectId: project.id,
+                        projectId: pid,
                         title,
                         slug,
                         description,
@@ -134,7 +137,8 @@ export default async function BusinessDocsPage({
                     },
                   });
 
-                  revalidatePath(`/projects/${project.key}/docs`);
+                  revalidatePath(`/projects/${pkey}/docs`);
+                  return { ok: `${title} tersimpan sebagai v${nextVersion}.` };
                 }}
                 className="grid grid-cols-1 md:grid-cols-3 gap-4"
               >
@@ -174,14 +178,9 @@ export default async function BusinessDocsPage({
                   />
                 </div>
                 <div className="md:col-span-3 flex justify-end">
-                  <button
-                    type="submit"
-                    className="px-4 py-2 bg-action hover:bg-action-hover text-white text-xs font-medium rounded transition"
-                  >
-                    Simpan & Upload Versi Baru
-                  </button>
+                  <SubmitButton pendingText="Mengunggah...">Simpan versi baru</SubmitButton>
                 </div>
-              </form>
+              </ActionForm>
             </div>
           )}
 

@@ -66,7 +66,7 @@ export default async function ProjectsPage() {
           </div>
         </header>
 
-        <main className="max-w-5xl w-full mx-auto p-6 flex-1">
+        <main className="p-6 flex-1">
           <div className="flex items-center justify-between mb-6">
             <div>
               <h1 className="text-xl font-bold text-slate-900">Daftar Project</h1>

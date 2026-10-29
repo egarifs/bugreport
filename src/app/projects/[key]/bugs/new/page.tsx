@@ -52,13 +52,13 @@ export default async function NewBugPage({
           >
             ← Kembali ke {project.key}
           </Link>
-          <span className="text-slate-300">/</span>
+          <span aria-hidden="true" className="text-slate-300">/</span>
           <span className="font-semibold text-slate-900 text-sm">
             Laporkan Bug Baru
           </span>
         </header>
 
-        <main className="max-w-3xl w-full mx-auto p-6 flex-1">
+        <main className="p-6 flex-1">
         <div className="bg-white border border-slate-200 rounded-lg p-6 shadow-sm">
           <h1 className="text-lg font-bold text-slate-900 mb-1">
             Form Laporan Bug

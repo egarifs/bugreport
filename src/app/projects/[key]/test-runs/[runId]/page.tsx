@@ -66,7 +66,7 @@ export default async function TestRunDetailPage({
             >
               ← Test Runs
             </Link>
-            <span className="text-slate-300">/</span>
+            <span aria-hidden="true" className="text-slate-300">/</span>
             <span className="font-semibold text-slate-900 text-sm">
               {run.name}
             </span>
@@ -81,7 +81,7 @@ export default async function TestRunDetailPage({
           </div>
         </header>
 
-        <main className="max-w-6xl w-full mx-auto p-6 space-y-6 flex-1">
+        <main className="p-6 space-y-6 flex-1">
           {/* Summary status cards */}
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
             <div className="bg-white border border-slate-200 rounded-lg p-3">
@@ -89,7 +89,7 @@ export default async function TestRunDetailPage({
               <p className="text-xl font-bold text-slate-900 mt-0.5">{total}</p>
             </div>
             <div className="bg-white border border-emerald-200 rounded-lg p-3">
-              <span className="text-xs text-emerald-600">Passed</span>
+              <span className="text-xs text-emerald-700">Passed</span>
               <p className="text-xl font-bold text-emerald-700 mt-0.5">{passCount}</p>
             </div>
             <div className="bg-white border border-rose-200 rounded-lg p-3">
@@ -97,7 +97,7 @@ export default async function TestRunDetailPage({
               <p className="text-xl font-bold text-rose-700 mt-0.5">{failCount}</p>
             </div>
             <div className="bg-white border border-amber-200 rounded-lg p-3">
-              <span className="text-xs text-amber-600">Blocked</span>
+              <span className="text-xs text-amber-700">Blocked</span>
               <p className="text-xl font-bold text-amber-700 mt-0.5">{blockedCount}</p>
             </div>
             <div className="bg-white border border-slate-200 rounded-lg p-3">

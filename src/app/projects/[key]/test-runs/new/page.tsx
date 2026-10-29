@@ -1,3 +1,4 @@
+import { ActionForm, SubmitButton, type ActionResult } from "@/components/ui/action-form";
 import { hasPermission } from "@/lib/permissions";
 import { requireProjectPermission } from "@/lib/authz";
 import { auth } from "@/lib/auth";
@@ -28,6 +29,8 @@ export default async function NewTestRunPage({
   if (!project) notFound();
   if (!project.members[0] && !user.isAdmin) redirect("/projects");
   if (!hasPermission(project.members[0]?.role, "testrun.execute", user.isAdmin)) redirect(`/projects/${project.key}`);
+  const pid = project.id;
+  const pkey = project.key;
 
   return (
     <AppShell activeProjectKey={project.key}>
@@ -39,53 +42,21 @@ export default async function NewTestRunPage({
           >
             ← Kembali ke Test Cases
           </Link>
-          <span className="text-slate-300">/</span>
+          <span aria-hidden="true" className="text-slate-300">/</span>
           <span className="font-semibold text-slate-900 text-sm">
             Buat Test Run Baru
           </span>
         </header>
 
-        <main className="max-w-xl w-full mx-auto p-6 flex-1">
+        <main className="p-6 flex-1">
           <div className="bg-white border border-slate-200 rounded-lg p-6 shadow-sm">
             <h1 className="text-lg font-bold text-slate-900 mb-1">Test Run Baru</h1>
             <p className="text-xs text-slate-500 mb-6">
               Test run akan mengikutsertakan semua ({project.testCases.length}) test case aktif di project ini untuk dieksekusi.
             </p>
 
-            <form
-              action={async (formData: FormData) => {
-                "use server";
-                const actor = await requireProjectPermission(project.id, "testrun.execute");
-                const name = (formData.get("name") as string)?.trim();
-                const environment = (formData.get("environment") as string)?.trim() || "Staging";
-                const buildVersion = (formData.get("buildVersion") as string)?.trim() || null;
-
-                if (!name) return;
-
-                const allCases = await prisma.testCase.findMany({
-                  where: { projectId: project.id },
-                  select: { id: true },
-                });
-
-                const testRun = await prisma.testRun.create({
-                  data: {
-                    projectId: project.id,
-                    name,
-                    environment,
-                    buildVersion,
-                    createdById: actor.id,
-                    items: {
-                      create: allCases.map((tc) => ({
-                        testCaseId: tc.id,
-                        status: "NOT_RUN",
-                      })),
-                    },
-                  },
-                });
-
-                revalidatePath(`/projects/${project.key}/test-cases`);
-                redirect(`/projects/${project.key}/test-runs/${testRun.id}`);
-              }}
+            <ActionForm
+              action={createTestRun.bind(null, pid)}
               className="space-y-4"
             >
               <div>
@@ -130,22 +101,55 @@ export default async function NewTestRunPage({
 
               <div className="pt-4 flex justify-end gap-3 border-t border-slate-100">
                 <Link
-                  href={`/projects/${project.key}/test-cases`}
+                  href={`/projects/${pkey}/test-cases`}
                   className="px-4 py-2 border border-slate-300 text-slate-700 text-xs font-medium rounded hover:bg-slate-50"
                 >
                   Batal
                 </Link>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-action hover:bg-action-hover text-white text-xs font-medium rounded transition"
-                >
-                  Mulai Test Run
-                </button>
+                <SubmitButton pendingText="Membuat...">Mulai test run</SubmitButton>
               </div>
-            </form>
+            </ActionForm>
           </div>
         </main>
       </div>
     </AppShell>
   );
+}
+
+// Module-level action: Next 15.2.1 dropped closure vars from this page's inline action.
+async function createTestRun(pid: string, _prev: ActionResult, formData: FormData): Promise<ActionResult> {
+  "use server";
+  // pid is bound client-side and can be tampered with; requireProjectPermission re-checks it.
+  const actor = await requireProjectPermission(pid, "testrun.execute");
+  const { key: pkey } = await prisma.project.findUniqueOrThrow({ where: { id: pid }, select: { key: true } });
+  const name = (formData.get("name") as string)?.trim();
+  const environment = (formData.get("environment") as string)?.trim() || "Staging";
+  const buildVersion = (formData.get("buildVersion") as string)?.trim() || null;
+
+  if (!name) return { error: "Nama test run wajib diisi." };
+
+  const allCases = await prisma.testCase.findMany({
+    where: { projectId: pid },
+    select: { id: true },
+  });
+  if (allCases.length === 0) return { error: "Project belum punya test case. Import test case dulu." };
+
+  const testRun = await prisma.testRun.create({
+    data: {
+      projectId: pid,
+      name,
+      environment,
+      buildVersion,
+      createdById: actor.id,
+      items: {
+        create: allCases.map((tc) => ({
+          testCaseId: tc.id,
+          status: "NOT_RUN",
+        })),
+      },
+    },
+  });
+
+  revalidatePath(`/projects/${pkey}/test-cases`);
+  redirect(`/projects/${pkey}/test-runs/${testRun.id}`);
 }
