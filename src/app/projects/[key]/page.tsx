@@ -7,6 +7,11 @@ import { AppShell } from "@/components/layout/app-shell";
 import { hasPermission } from "@/lib/permissions";
 import { activeModules } from "@/lib/modules";
 import { SEVERITY_STYLE, STATUS_LABEL, SeverityBadge, StatusBadge, ageDays } from "@/components/ui/bug-badges";
+import { BugImportModal } from "./bugs/import/bug-import-modal";
+import { parseMarkdownBugs } from "@/lib/markdown-importer";
+import { requireProjectPermission } from "@/lib/authz";
+import { revalidatePath } from "next/cache";
+import type { ActionResult } from "@/components/ui/action-form";
 
 type View = "review" | "mine" | "all";
 const DONE: BugStatus[] = ["CLOSED", "INVALID", "DUPLICATE", "CANNOT_REPRODUCE", "WONT_FIX"];
@@ -93,6 +98,58 @@ export default async function ProjectDetailPage({
     : view === "mine" ? "Tidak ada bug aktif yang ditugaskan ke Anda."
     : "Belum ada bug di project ini.";
 
+  const projectId = project.id;
+  const projectKey = project.key;
+  const userId = user.id;
+
+  async function handleImportMarkdownBugs(_prev: ActionResult, formData: FormData): Promise<ActionResult> {
+    "use server";
+    await requireProjectPermission(projectId, "bug.create");
+    const file = formData.get("file") as File;
+    if (!file || file.size === 0) return { error: "Pilih file Markdown (.md)." };
+
+    const text = await file.text();
+    const parsed = parseMarkdownBugs(text);
+    if (parsed.length === 0) return { error: "Tidak ada bug yang terbaca. Cek format tabel / heading file Markdown." };
+
+    const mods = await activeModules(projectId);
+    const byName = new Map(mods.map((m) => [m.name.toLowerCase(), m.id]));
+
+    // Sequential bug numbering
+    let createdCount = 0;
+    for (const b of parsed) {
+      const area = b.moduleArea?.trim();
+      const moduleId = area ? byName.get(area.toLowerCase()) ?? null : null;
+
+      const lastBug = await prisma.bug.findFirst({
+        where: { projectId },
+        orderBy: { number: "desc" },
+        select: { number: true },
+      });
+      const nextNumber = (lastBug?.number ?? 0) + 1;
+
+      await prisma.bug.create({
+        data: {
+          projectId,
+          key: `${projectKey}-${nextNumber}`,
+          number: nextNumber,
+          title: b.title.slice(0, 200),
+          severity: b.severity,
+          status: BugStatus.DRAFT,
+          reporterId: userId!,
+          moduleId,
+          stepsToReproduce: b.stepsToReproduce || "-",
+          actualResult: b.actualResult || "-",
+          expectedResult: b.expectedResult || "-",
+        },
+      });
+      createdCount++;
+    }
+
+    revalidatePath(`/projects/${projectKey}`);
+    return { ok: `Berhasil mengimpor ${createdCount} bug sebagai Draft.` };
+  }
+
   return (
     <AppShell activeProjectKey={project.key}>
       <div className="min-h-full flex flex-col">
@@ -104,12 +161,15 @@ export default async function ProjectDetailPage({
             </p>
           </div>
           {canCreate && (
-            <Link
-              href={`/projects/${project.key}/bugs/new`}
-              className="shrink-0 px-3.5 py-2 bg-action hover:bg-action-hover text-white text-sm font-bold rounded"
-            >
-              Laporkan bug
-            </Link>
+            <div className="flex items-center gap-2">
+              <BugImportModal importAction={handleImportMarkdownBugs} />
+              <Link
+                href={`/projects/${project.key}/bugs/new`}
+                className="shrink-0 px-3.5 py-2 bg-action hover:bg-action-hover text-white text-sm font-bold rounded"
+              >
+                Laporkan bug
+              </Link>
+            </div>
           )}
         </header>
 

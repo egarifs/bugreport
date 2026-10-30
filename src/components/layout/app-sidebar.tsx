@@ -4,6 +4,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 import { NotificationBell } from "./notification-bell";
+import { CommandPalette } from "./command-palette";
+import { UserProfileMenu } from "./user-profile-menu";
+import { handleSignOut } from "./auth-actions";
 
 interface ProjectOption {
   id: string;
@@ -68,18 +71,6 @@ export function AppSidebar({ user, projects, activeProjectKey }: AppSidebarProps
       badge: null,
     },
     {
-      label: "Laporan",
-      perm: "project.read",
-      icon: (
-        <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M9 19v-6m4 6V9m4 10V5M5 19h14" />
-        </svg>
-      ),
-      href: currentKey ? `/projects/${currentKey}/reports` : "/projects",
-      active: pathname.includes("/reports"),
-      badge: null,
-    },
-    {
       label: "Test case",
       perm: "testcase.read",
       icon: (
@@ -113,6 +104,18 @@ export function AppSidebar({ user, projects, activeProjectKey }: AppSidebarProps
       ),
       href: currentKey ? `/projects/${currentKey}/chat` : "/projects",
       active: pathname.includes("/chat"),
+      badge: null,
+    },
+    {
+      label: "Laporan",
+      perm: "project.read",
+      icon: (
+        <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M9 19v-6m4 6V9m4 10V5M5 19h14" />
+        </svg>
+      ),
+      href: currentKey ? `/projects/${currentKey}/reports` : "/projects",
+      active: pathname.includes("/reports"),
       badge: null,
     },
     {
@@ -234,7 +237,7 @@ export function AppSidebar({ user, projects, activeProjectKey }: AppSidebarProps
                   window.location.href = `/projects/${e.target.value}`;
                 }
               }}
-              className="w-full text-xs px-2 py-1.5 border border-slate-300 rounded bg-white text-slate-800 font-medium truncate focus:outline-none focus:ring-1 focus:ring-slate-900"
+              className="w-full text-xs px-2 py-1.5 border border-slate-300 rounded bg-white text-slate-800 font-medium truncate focus:outline-none focus:ring-1 focus:ring-slate-900 mb-2"
             >
               {projects.map((p) => (
                 <option key={p.id} value={p.key}>
@@ -242,6 +245,11 @@ export function AppSidebar({ user, projects, activeProjectKey }: AppSidebarProps
                 </option>
               ))}
             </select>
+            <CommandPalette
+              projects={projects.map((p) => ({ key: p.key, name: p.name, role: p.role }))}
+              activeProjectKey={currentKey}
+              isAdmin={user.isAdmin}
+            />
           </div>
         )}
 
@@ -319,38 +327,13 @@ export function AppSidebar({ user, projects, activeProjectKey }: AppSidebarProps
           )}
         </nav>
 
-        {/* Footer: User Profile & Logout */}
-        <div className="p-3 border-t border-slate-200">
-          {!collapsed ? (
-            <div className="flex items-center justify-between gap-2">
-              <div className="min-w-0">
-                <p className="text-xs font-semibold text-slate-800 truncate">
-                  {user.name || user.email}
-                </p>
-                <p className="text-xs text-slate-400 truncate">
-                  {user.isAdmin ? "Super Admin" : "Active Member"}
-                </p>
-              </div>
-              <Link
-                href="/projects"
-                title="All Projects"
-                className="p-1.5 text-slate-400 hover:text-slate-700 rounded hover:bg-slate-100"
-              >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
-                </svg>
-              </Link>
-            </div>
-          ) : (
-            <div className="flex justify-center">
-              <div
-                className="w-7 h-7 rounded-full bg-slate-200 text-slate-700 font-bold text-xs flex items-center justify-center cursor-default"
-                title={user.name || user.email || "User"}
-              >
-                {(user.name || user.email || "U")[0].toUpperCase()}
-              </div>
-            </div>
-          )}
+        {/* Footer: User Profile & Multi-Theme Menu */}
+        <div className="p-2 border-t border-slate-200">
+          <UserProfileMenu
+            user={user}
+            collapsed={collapsed}
+            onSignOut={handleSignOut}
+          />
         </div>
       </aside>
     </>

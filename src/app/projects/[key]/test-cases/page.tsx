@@ -10,6 +10,7 @@ import { hasPermission } from "@/lib/permissions";
 import { ProjectRole } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { parseTestCaseWorkbook } from "@/lib/testcase-importer";
+import { parseMarkdownTestCases } from "@/lib/markdown-importer";
 import { TestCaseManagementSection } from "./test-case-modal";
 
 export default async function TestCasesPage({
@@ -116,16 +117,23 @@ export default async function TestCasesPage({
           {/* Import XLSX bar (secondary utility) */}
           {canManage && (
             <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 flex flex-wrap items-center justify-between gap-3 text-xs">
-              <span className="text-slate-600 font-medium">Impor massal dari spreadsheet:</span>
+              <span className="text-slate-600 font-medium">Impor massal dari spreadsheet atau Markdown (.md):</span>
               <ActionForm
                 action={async (_prev: ActionResult, formData: FormData): Promise<ActionResult> => {
                   "use server";
                   await requireProjectPermission(project.id, "testcase.manage");
                   const file = formData.get("file") as File;
-                  if (!file || file.size === 0) return { error: "Pilih file XLSX atau CSV." };
-                  const buffer = Buffer.from(await file.arrayBuffer());
-                  const parsed = parseTestCaseWorkbook(buffer);
-                  if (parsed.length === 0) return { error: "Tidak ada baris test case yang terbaca. Cek header kolom." };
+                  if (!file || file.size === 0) return { error: "Pilih file XLSX, CSV, atau Markdown (.md)." };
+                  const fileName = file.name.toLowerCase();
+                  let parsed;
+                  if (fileName.endsWith(".md") || fileName.endsWith(".markdown")) {
+                    const text = await file.text();
+                    parsed = parseMarkdownTestCases(text);
+                  } else {
+                    const buffer = Buffer.from(await file.arrayBuffer());
+                    parsed = parseTestCaseWorkbook(buffer);
+                  }
+                  if (parsed.length === 0) return { error: "Tidak ada baris test case yang terbaca. Cek format tabel/header file." };
 
                   const mods = await activeModules(project.id);
                   const byName = new Map(mods.map((m) => [m.name.toLowerCase(), m.id]));
@@ -180,12 +188,12 @@ export default async function TestCasesPage({
                 <input
                   type="file"
                   name="file"
-                  accept=".xlsx,.csv"
+                  accept=".xlsx,.csv,.md,.markdown"
                   required
                   className="text-xs file:mr-2 file:py-1 file:px-2.5 file:rounded file:border-0 file:text-xs file:font-medium file:bg-white file:border-slate-300 file:border file:text-slate-700 hover:file:bg-slate-100 cursor-pointer"
                 />
                 <SubmitButton pendingText="Mengimpor..." className="press-snappy px-3 py-1 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-medium rounded">
-                  Upload XLSX/CSV
+                  Upload XLSX/CSV/MD
                 </SubmitButton>
               </ActionForm>
             </div>
