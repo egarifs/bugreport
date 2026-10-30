@@ -29,7 +29,7 @@ test("PRD-06 module master list", async (t) => {
       assert.equal(await ownModuleId(a.id, old.id), null);
     });
     await t.test("MCP list_modules returns only this project's active names", async () => {
-      const r = await executeMcpTool("list_modules", {}, { projectId: a.id, projectKey: a.key, apiKeyId: "x", actorEmail: "a@x", actorId: "x" });
+      const r = await executeMcpTool("list_modules", {}, { projectId: a.id, projectKey: a.key, apiKeyId: "x", actorEmail: "a@x", actorId: "x", role: "QA" });
       assert.deepEqual(JSON.parse(r.content[0].text), ["Billing", "Login"]);
     });
   } finally {

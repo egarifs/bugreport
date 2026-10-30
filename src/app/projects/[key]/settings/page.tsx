@@ -99,18 +99,24 @@ export default async function ProjectSettingsPage({
 
           <ModulesSection projectId={project.id} projectKey={project.key} canManage={canManage} />
 
-          {/* AI Agent API Keys Section */}
+          {/* AI Agent API Keys Section (CRUD vs View Only Mode) */}
           <section className="bg-white border border-slate-200 rounded-lg p-6 shadow-sm">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5 border-b border-slate-100 pb-4">
               <div>
-                <h2 className="text-base font-bold text-slate-900">
-                  AI Agent API Keys (MCP Protocol)
-                </h2>
-                <p className="text-xs text-slate-500">
-                  Key khusus untuk agent testing (misal Claude Code / Playwright). Rate limit 30 request/menit.
+                <div className="flex items-center gap-2">
+                  <h2 className="text-base font-bold text-slate-900">
+                    AI Agent API Keys (MCP Protocol)
+                  </h2>
+                  <span className={`text-[11px] font-semibold px-2 py-0.5 rounded ${canManage ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-600"}`}>
+                    {canManage ? "Mode CRUD (Admin)" : "Mode View Only"}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Kunci akses MCP CLI agent (Claude Code / Pi CLI / Playwright). Rate limit 30 req/mnt.
                 </p>
               </div>
 
+              {/* Mode Create: Hanya untuk Admin / project.manage */}
               {canManage && (
                 <form
                   action={async (formData: FormData) => {
@@ -119,7 +125,20 @@ export default async function ProjectSettingsPage({
                     const name = (formData.get("name") as string)?.trim();
                     if (!name) return;
 
+                    const roleStr = (formData.get("role") as string) || "QA";
+                    const role = (["QA", "DEVELOPER", "VENDOR", "VIEWER"].includes(roleStr) ? roleStr : "QA") as ProjectRole;
+
+                    const expireDays = Number(formData.get("expireDays")) || 30;
+                    let expiresAt: Date | null = null;
+                    if (expireDays > 0) {
+                      expiresAt = new Date(Date.now() + expireDays * 86400_000);
+                    }
+
                     const { rawKey, keyHash, keyPrefix } = generateApiKey();
+
+                    const scopes = role === "QA"
+                      ? ["bug:read", "bug:create", "bug:comment", "bug:attach", "testcase:create", "testcase:read", "doc:read", "doc:manage"]
+                      : ["bug:read", "bug:comment", "testcase:read", "doc:read"];
 
                     await prisma.apiKey.create({
                       data: {
@@ -127,81 +146,124 @@ export default async function ProjectSettingsPage({
                         name,
                         keyHash,
                         keyPrefix,
-                        scopes: ["bug:read", "bug:create", "bug:comment", "bug:attach", "testcase:create"],
+                        role,
+                        expiresAt,
+                        scopes,
                         createdById: actor.id,
                       },
                     });
 
                     redirect(`/projects/${project.key}/settings?newKey=${rawKey}`);
                   }}
-                  className="flex items-center gap-2"
+                  className="flex flex-wrap items-center gap-2"
                 >
                   <input
                     type="text"
                     name="name"
                     required
-                    placeholder="Nama agent, misal: Claude Code QA"
-                    className="text-xs px-3 py-1.5 border border-slate-300 rounded outline-none w-48"
+                    placeholder="Nama agent (misal: Pi CLI QA)"
+                    className="text-xs px-3 py-1.5 border border-slate-300 rounded outline-none w-44"
                   />
+                  <select
+                    name="role"
+                    className="text-xs px-2.5 py-1.5 border border-slate-300 rounded bg-white text-slate-700 outline-none"
+                    title="Akses Role Agent"
+                  >
+                    <option value="QA">Role: QA (Full CRUD)</option>
+                    <option value="DEVELOPER">Role: Non-QA (View & Comment)</option>
+                  </select>
+                  <select
+                    name="expireDays"
+                    defaultValue="30"
+                    className="text-xs px-2.5 py-1.5 border border-slate-300 rounded bg-white text-slate-700 outline-none"
+                    title="Masa Berlaku Key"
+                  >
+                    <option value="7">Berlaku 7 hari</option>
+                    <option value="30">Berlaku 30 hari</option>
+                    <option value="90">Berlaku 90 hari</option>
+                    <option value="0">Tanpa batas (Never)</option>
+                  </select>
                   <SubmitButton pendingText="Membuat..." className="px-3.5 py-1.5 bg-action hover:bg-action-hover text-white text-xs font-bold rounded">
-                    Buat API key
+                    + Buat Key
                   </SubmitButton>
                 </form>
               )}
             </div>
 
             {project.apiKeys.length === 0 ? (
-              <div className="text-xs text-slate-400 p-6 text-center border border-dashed rounded">
-                Belum ada API Key dibuat. Buat API key untuk menghubungkan agent pelapor bug otomatis.
+              <div className="text-xs text-slate-400 p-8 text-center border border-dashed rounded">
+                Belum ada API Key dibuat di project ini.
               </div>
             ) : (
               <div className="divide-y divide-slate-100">
-                {project.apiKeys.map((k) => (
-                  <div key={k.id} className="py-3 flex items-center justify-between">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold text-slate-900 text-xs">{k.name}</span>
-                        <span className="font-mono text-xs bg-slate-100 px-2 py-0.5 rounded text-slate-600">
-                          {k.keyPrefix}...
-                        </span>
-                        {k.revokedAt ? (
-                          <span className="text-xs bg-rose-100 text-rose-700 px-2 py-0.5 rounded font-semibold">
-                            Revoked
-                          </span>
-                        ) : (
-                          <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded font-semibold">
-                            Active
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-xs text-slate-400 mt-1">
-                        Dibuat oleh {k.createdBy.name || k.createdBy.email} • Terakhir dipakai:{" "}
-                        {k.lastUsedAt ? k.lastUsedAt.toLocaleString() : "Belum pernah"}
-                      </p>
-                    </div>
+                {project.apiKeys.map((k) => {
+                  const isRevoked = Boolean(k.revokedAt);
+                  const isExpired = !isRevoked && Boolean(k.expiresAt && k.expiresAt < new Date());
+                  const isActive = !isRevoked && !isExpired;
 
-                    {!k.revokedAt && canManage && (
-                      <form
-                        action={async () => {
-                          "use server";
-                          await requireProjectPermission(project.id, "project.manage");
-                          await prisma.apiKey.update({
-                            where: { id: k.id },
-                            data: { revokedAt: new Date() },
-                          });
-                          revalidatePath(`/projects/${project.key}/settings`);
-                        }}
-                      >
-                        <button
-                          type="submit"
-                          className="text-xs text-rose-600 hover:text-rose-800 font-medium px-2 py-1 rounded hover:bg-rose-50"
+                  return (
+                    <div key={k.id} className="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="font-semibold text-slate-900 text-xs">{k.name}</span>
+                          <span className="font-mono text-xs bg-slate-100 px-2 py-0.5 rounded text-slate-600">
+                            {k.keyPrefix}...
+                          </span>
+                          <span className={`text-[11px] font-semibold px-2 py-0.5 rounded ${
+                            k.role === "QA" ? "bg-blue-100 text-blue-800" : "bg-slate-100 text-slate-700"
+                          }`}>
+                            {k.role === "QA" ? "QA (CRUD)" : "Non-QA (View)"}
+                          </span>
+                          {isRevoked ? (
+                            <span className="text-[11px] bg-rose-100 text-rose-700 px-2 py-0.5 rounded font-semibold">
+                              Revoked
+                            </span>
+                          ) : isExpired ? (
+                            <span className="text-[11px] bg-amber-100 text-amber-800 px-2 py-0.5 rounded font-semibold">
+                              Expired
+                            </span>
+                          ) : (
+                            <span className="text-[11px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded font-semibold">
+                              Active
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-slate-500 mt-1">
+                          Pembuat: <span className="font-medium text-slate-700">{k.createdBy.name || k.createdBy.email}</span>
+                          {" • "}
+                          Kadaluwarsa:{" "}
+                          <span className={isExpired ? "text-rose-600 font-semibold" : "text-slate-700"}>
+                            {k.expiresAt ? k.expiresAt.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }) : "Tanpa batas"}
+                          </span>
+                          {" • "}
+                          Terakhir dipakai: {k.lastUsedAt ? k.lastUsedAt.toLocaleString("id-ID") : "Belum pernah"}
+                        </p>
+                      </div>
+
+                      {/* Mode Aksi: Revoke hanya di Mode CRUD & status Active */}
+                      {canManage && isActive && (
+                        <form
+                          action={async () => {
+                            "use server";
+                            await requireProjectPermission(project.id, "project.manage");
+                            await prisma.apiKey.update({
+                              where: { id: k.id },
+                              data: { revokedAt: new Date() },
+                            });
+                            revalidatePath(`/projects/${project.key}/settings`);
+                          }}
                         >
-                          Revoke Key
-                        </button>
-                      </form>
-                    )}
-                  </div>
-                ))}
+                          <button
+                            type="submit"
+                            className="text-xs text-rose-600 hover:text-rose-800 font-medium px-2 py-1 rounded hover:bg-rose-50"
+                          >
+                            Revoke Key
+                          </button>
+                        </form>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
           </section>

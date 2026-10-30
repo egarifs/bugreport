@@ -32,6 +32,10 @@ export async function verifyApiKey(rawKey: string, requiredScope?: string) {
     return { valid: false, error: "API key telah dicabut (revoked)", status: 401 };
   }
 
+  if (apiKey.expiresAt && apiKey.expiresAt < new Date()) {
+    return { valid: false, error: "API key telah kedaluwarsa (expired)", status: 401 };
+  }
+
   if (apiKey.project.isArchived) {
     return { valid: false, error: "Project telah diarsipkan", status: 403 };
   }

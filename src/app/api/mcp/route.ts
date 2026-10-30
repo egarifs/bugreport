@@ -45,6 +45,7 @@ export async function POST(req: NextRequest) {
     apiKeyId: apiKey.id,
     actorEmail: apiKey.createdBy.email,
     actorId: apiKey.createdById,
+    role: apiKey.role,
   };
 
   // 1. Initialize MCP Handshake
@@ -87,6 +88,9 @@ export async function POST(req: NextRequest) {
     if (toolName === "add_bug_comment") requiredScope = "bug:comment";
     if (toolName === "attach_bug_screenshot") requiredScope = "bug:attach";
     if (toolName === "create_test_cases") requiredScope = "testcase:create";
+    if (toolName === "upload_business_doc") requiredScope = "doc:manage";
+    if (toolName === "search_test_cases" || toolName === "get_test_case") requiredScope = "testcase:read";
+    if (toolName === "list_business_docs" || toolName === "read_business_doc") requiredScope = "doc:read";
 
     if (!apiKey.scopes.includes(requiredScope) && !apiKey.scopes.includes("*")) {
       return NextResponse.json({

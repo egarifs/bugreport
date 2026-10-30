@@ -39,6 +39,7 @@ test("PRD-03 MCP Server & AI Agent Integration", async (t) => {
     apiKeyId: apiKey.id,
     actorEmail: user.email,
     actorId: user.id,
+    role: "QA",
   };
 
   await t.test("API Key validation and hashing", async () => {
@@ -191,6 +192,95 @@ test("PRD-03 MCP Server & AI Agent Integration", async (t) => {
     assert.equal(updateData.items[0].action, "UPDATED");
   });
 
+  await t.test("Expired API key returns 401", async () => {
+    // create expired key
+    const exp = generateApiKey();
+    await prisma.apiKey.create({
+      data: {
+        projectId: project.id,
+        name: "Expired Key",
+        keyHash: exp.keyHash,
+        keyPrefix: exp.keyPrefix,
+        expiresAt: new Date(Date.now() - 10_000), // 10 seconds ago
+        createdById: user.id,
+      },
+    });
+
+    const check = await verifyApiKey(exp.rawKey);
+    assert.equal(check.valid, false);
+    assert.equal(check.status, 401);
+    assert.match(String(check.error), /kedaluwarsa/);
+  });
+
+  await t.test("Non-QA agent is rejected from create/upload tools, but can search/read", async () => {
+    const devCtx: McpContext = {
+      ...ctx,
+      role: "DEVELOPER",
+    };
+
+    // Attempt create bug draft with DEVELOPER role
+    const bugRes = await executeMcpTool("create_bug_draft", { title: "Test", stepsToReproduce: "steps", expectedResult: "ok", actualResult: "fail" }, devCtx);
+    assert.equal(bugRes.isError, true);
+    assert.match(bugRes.content[0].text, /hanya dapat dijalankan oleh agent dengan role QA/);
+
+    // Attempt create test case with DEVELOPER role
+    const tcRes = await executeMcpTool("create_test_cases", { testCases: [{ title: "T", steps: "s", expectedResult: "e" }] }, devCtx);
+    assert.equal(tcRes.isError, true);
+    assert.match(tcRes.content[0].text, /hanya dapat dijalankan oleh agent dengan role QA/);
+
+    // Attempt upload business doc with DEVELOPER role
+    const docRes = await executeMcpTool("upload_business_doc", { title: "D", slug: "d", contentMarkdown: "md" }, devCtx);
+    assert.equal(docRes.isError, true);
+    assert.match(docRes.content[0].text, /hanya dapat dijalankan oleh agent dengan role QA/);
+
+    // Can search test cases
+    const listTcRes = await executeMcpTool("search_test_cases", {}, devCtx);
+    assert.equal(listTcRes.isError, undefined);
+    const tcList = JSON.parse(listTcRes.content[0].text);
+    assert.ok(Array.isArray(tcList));
+
+    // Can get single test case
+    const getTcRes = await executeMcpTool("get_test_case", { code: "TC-TEST-MCP-001" }, devCtx);
+    assert.equal(getTcRes.isError, undefined);
+    const tcDetail = JSON.parse(getTcRes.content[0].text);
+    assert.equal(tcDetail.code, "TC-TEST-MCP-001");
+  });
+
+  await t.test("QA agent can upload and read business docs via MCP", async () => {
+    // Upload doc
+    const uploadRes = await executeMcpTool(
+      "upload_business_doc",
+      {
+        title: "Spesifikasi Auth & Login",
+        slug: "spec-auth",
+        description: "PRD alur autentikasi",
+        contentMarkdown: "# Alur Auth\n\n1. Masuk Google\n2. Verifikasi Bearer secret_doc_token_12345",
+      },
+      ctx
+    );
+
+    assert.equal(uploadRes.isError, undefined);
+    const upData = JSON.parse(uploadRes.content[0].text);
+    assert.equal(upData.status, "SUCCESS");
+    assert.equal(upData.slug, "spec-auth");
+    assert.equal(upData.version, 1);
+
+    // List docs
+    const listRes = await executeMcpTool("list_business_docs", {}, ctx);
+    const docs = JSON.parse(listRes.content[0].text);
+    const found = docs.find((d: { slug: string }) => d.slug === "spec-auth");
+    assert.ok(found);
+    assert.equal(found.currentVersion, 1);
+
+    // Read doc
+    const readRes = await executeMcpTool("read_business_doc", { slug: "spec-auth" }, ctx);
+    assert.equal(readRes.isError, undefined);
+    const readData = JSON.parse(readRes.content[0].text);
+    assert.equal(readData.slug, "spec-auth");
+    assert.ok(readData.content.includes("Alur Auth"));
+    assert.ok(!readData.content.includes("secret_doc_token_12345"));
+    assert.ok(readData.content.includes("[REDACTED]"));
+  });
   await t.test("Revoked API key returns 401", async () => {
     await prisma.apiKey.update({
       where: { id: apiKey.id },

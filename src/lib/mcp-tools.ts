@@ -3,7 +3,8 @@ import { redactSecrets } from "@/lib/redact";
 import { notifyBug } from "./notify";
 import { recordAuditLog } from "@/lib/user-service";
 import { activeModules, resolveModuleId } from "@/lib/modules";
-import { BugPriority, BugSeverity, TestCasePriority } from "@prisma/client";
+import { BugPriority, BugSeverity, ProjectRole, TestCasePriority } from "@prisma/client";
+import { readDocText } from "./business-docs";
 import fs from "node:fs/promises";
 import path from "node:path";
 
@@ -13,6 +14,7 @@ export interface McpContext {
   apiKeyId: string;
   actorEmail: string;
   actorId: string;
+  role: ProjectRole;
 }
 
 export const MCP_TOOLS_DEFINITIONS = [
@@ -94,6 +96,60 @@ export const MCP_TOOLS_DEFINITIONS = [
     },
   },
   {
+    name: "search_test_cases",
+    description: "Cari daftar test cases dalam project berdasarkan query teks judul atau modul.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        query: { type: "string", description: "Kata kunci pencarian judul atau prasyarat" },
+        module: { type: "string", description: "Filter nama modul" },
+        priority: { type: "string", enum: ["CRITICAL", "HIGH", "MEDIUM", "LOW"] },
+        limit: { type: "number", description: "Batas jumlah data (default: 20, max: 100)" },
+      },
+    },
+  },
+  {
+    name: "get_test_case",
+    description: "Ambil detail lengkap satu test case berdasarkan kode (misal: TC-AUTH-001).",
+    inputSchema: {
+      type: "object",
+      properties: {
+        code: { type: "string", description: "Kode test case" },
+      },
+      required: ["code"],
+    },
+  },
+  {
+    name: "list_business_docs",
+    description: "Daftar dokumen bisnis/PRD aktif dalam project.",
+    inputSchema: { type: "object", properties: {} },
+  },
+  {
+    name: "read_business_doc",
+    description: "Baca isi teks lengkap dokumen bisnis (Markdown/PRD) versi aktif berdasarkan slug dokumen.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        slug: { type: "string", description: "Slug dokumen (misal: prd, user-flow)" },
+      },
+      required: ["slug"],
+    },
+  },
+  {
+    name: "upload_business_doc",
+    description: "Upload atau update dokumen bisnis Markdown/PRD baru (v+1) dalam project. Khusus role QA.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        title: { type: "string", description: "Judul dokumen bisnis" },
+        slug: { type: "string", description: "Slug dokumen unik (misal: prd-checkout)" },
+        description: { type: "string", description: "Deskripsi singkat dokumen" },
+        contentMarkdown: { type: "string", description: "Isi lengkap dokumen dalam format Markdown" },
+      },
+      required: ["title", "slug", "contentMarkdown"],
+    },
+  },
+  {
     name: "create_test_cases",
     description: "Buat atau update test cases dalam batch (atau single) dari hasil analisa dokumen PRD/Figma. Jika code sudah ada, otomatis update (upsert).",
     inputSchema: {
@@ -131,6 +187,18 @@ export async function executeMcpTool(
   ctx: McpContext
 ): Promise<{ content: Array<{ type: "text"; text: string }>; isError?: boolean }> {
   try {
+  const qaOnlyTools = ["create_bug_draft", "attach_bug_screenshot", "create_test_cases", "upload_business_doc"];
+  if (qaOnlyTools.includes(toolName) && ctx.role !== "QA" && ctx.role !== "ADMIN") {
+    return {
+      content: [
+        {
+          type: "text",
+          text: `Akses ditolak: Tool '${toolName}' hanya dapat dijalankan oleh agent dengan role QA. Role key Anda: ${ctx.role}. Non-QA hanya memiliki akses view & comment.`,
+        },
+      ],
+      isError: true,
+    };
+  }
     switch (toolName) {
       case "list_modules": {
         const mods = await activeModules(ctx.projectId);
@@ -538,6 +606,280 @@ export async function executeMcpTool(
 
         return {
           content: [{ type: "text", text: JSON.stringify({ status: "SUCCESS", count: results.length, items: results }) }],
+        };
+      }
+
+      case "search_test_cases": {
+        const query = typeof args.query === "string" ? args.query.trim() : "";
+        const modName = typeof args.module === "string" ? args.module.trim() : "";
+        const priority = typeof args.priority === "string" ? (args.priority as TestCasePriority) : undefined;
+        const limit = Math.min(100, Math.max(1, Number(args.limit) || 20));
+
+        const where: Record<string, unknown> = { projectId: ctx.projectId };
+        if (priority) where.priority = priority;
+        if (query) {
+          where.OR = [
+            { title: { contains: query, mode: "insensitive" } },
+            { steps: { contains: query, mode: "insensitive" } },
+          ];
+        }
+        if (modName) {
+          const modId = await resolveModuleId(ctx.projectId, modName);
+          where.OR = [
+            ...(Array.isArray(where.OR) ? where.OR : []),
+            { moduleArea: { equals: modName, mode: "insensitive" } },
+            ...(modId ? [{ moduleId: modId }] : []),
+          ];
+        }
+
+        const cases = await prisma.testCase.findMany({
+          where,
+          take: limit,
+          orderBy: { code: "asc" },
+          select: {
+            id: true,
+            code: true,
+            title: true,
+            priority: true,
+            testType: true,
+            moduleArea: true,
+            module: { select: { name: true } },
+            referenceUrl: true,
+          },
+        });
+
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(
+                cases.map((c) => ({
+                  id: c.id,
+                  code: c.code,
+                  title: c.title,
+                  priority: c.priority,
+                  testType: c.testType,
+                  module: c.module?.name || c.moduleArea || null,
+                  referenceUrl: c.referenceUrl,
+                }))
+              ),
+            },
+          ],
+        };
+      }
+
+      case "get_test_case": {
+        const code = String(args.code || "").trim().toUpperCase();
+        if (!code) {
+          return { content: [{ type: "text", text: "Parameter 'code' wajib diisi." }], isError: true };
+        }
+
+        const tc = await prisma.testCase.findUnique({
+          where: { projectId_code: { projectId: ctx.projectId, code } },
+          include: { module: { select: { name: true } } },
+        });
+
+        if (!tc) {
+          return { content: [{ type: "text", text: `Test case '${code}' tidak ditemukan.` }], isError: true };
+        }
+
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({
+                code: tc.code,
+                title: tc.title,
+                priority: tc.priority,
+                testType: tc.testType,
+                targetRole: tc.targetRole,
+                precondition: tc.precondition,
+                steps: tc.steps,
+                expectedResult: tc.expectedResult,
+                referenceUrl: tc.referenceUrl,
+                module: tc.module?.name || tc.moduleArea,
+              }),
+            },
+          ],
+        };
+      }
+
+      case "list_business_docs": {
+        const docs = await prisma.businessDoc.findMany({
+          where: { projectId: ctx.projectId },
+          include: {
+            versions: {
+              where: { isCurrent: true },
+              select: { versionNum: true, fileName: true, fileSize: true, uploadedAt: true },
+            },
+          },
+          orderBy: { title: "asc" },
+        });
+
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(
+                docs.map((d) => ({
+                  title: d.title,
+                  slug: d.slug,
+                  description: d.description,
+                  currentVersion: d.versions[0]?.versionNum || null,
+                  fileName: d.versions[0]?.fileName || null,
+                  fileSize: d.versions[0]?.fileSize || null,
+                  updatedAt: d.versions[0]?.uploadedAt || d.updatedAt,
+                }))
+              ),
+            },
+          ],
+        };
+      }
+
+      case "read_business_doc": {
+        const slug = String(args.slug || "").trim().toLowerCase();
+        if (!slug) {
+          return { content: [{ type: "text", text: "Parameter 'slug' wajib diisi." }], isError: true };
+        }
+
+        const doc = await prisma.businessDoc.findUnique({
+          where: { projectId_slug: { projectId: ctx.projectId, slug } },
+          include: {
+            versions: {
+              where: { isCurrent: true },
+              select: { storedPath: true, fileName: true, versionNum: true },
+            },
+          },
+        });
+
+        if (!doc) {
+          return { content: [{ type: "text", text: `Dokumen dengan slug '${slug}' tidak ditemukan.` }], isError: true };
+        }
+
+        const currVer = doc.versions[0];
+        if (!currVer) {
+          return { content: [{ type: "text", text: `Dokumen '${doc.title}' belum memiliki versi aktif.` }], isError: true };
+        }
+
+        const textContent = await readDocText(ctx.projectKey, currVer);
+        if (textContent === null) {
+          return {
+            content: [
+              {
+                type: "text",
+                text: `File versi aktif '${currVer.fileName}' bukan file Markdown atau tidak dapat dibaca langsung sebagai teks.`,
+              },
+            ],
+            isError: true,
+          };
+        }
+
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({
+                title: doc.title,
+                slug: doc.slug,
+                version: currVer.versionNum,
+                fileName: currVer.fileName,
+                content: textContent,
+              }),
+            },
+          ],
+        };
+      }
+
+      case "upload_business_doc": {
+        const title = redactSecrets(String(args.title || "").trim());
+        const rawSlug = String(args.slug || "").trim().toLowerCase().replace(/[^a-z0-9_-]/g, "-");
+        const description = args.description ? redactSecrets(String(args.description).trim()) : null;
+        const content = redactSecrets(String(args.contentMarkdown || "").trim());
+
+        if (!title || !rawSlug || !content) {
+          return {
+            content: [{ type: "text", text: "Parameter 'title', 'slug', dan 'contentMarkdown' wajib diisi." }],
+            isError: true,
+          };
+        }
+
+        const fileName = `${rawSlug}.md`;
+        const uploadDir = path.join(process.cwd(), "uploads", ctx.projectKey, "docs");
+        await fs.mkdir(uploadDir, { recursive: true });
+
+        const storedName = `${Date.now()}_${fileName}`;
+        const storedPath = path.join(uploadDir, storedName);
+        await fs.writeFile(storedPath, content, "utf8");
+
+        const resultDoc = await prisma.$transaction(async (tx) => {
+          let doc = await tx.businessDoc.findUnique({
+            where: { projectId_slug: { projectId: ctx.projectId, slug: rawSlug } },
+            include: { versions: { orderBy: { versionNum: "desc" }, take: 1 } },
+          });
+
+          let nextVersion = 1;
+          if (doc) {
+            nextVersion = (doc.versions[0]?.versionNum || 0) + 1;
+            await tx.businessDocVersion.updateMany({
+              where: { docId: doc.id },
+              data: { isCurrent: false },
+            });
+            await tx.businessDoc.update({
+              where: { id: doc.id },
+              data: { title, description: description ?? doc.description },
+            });
+          } else {
+            doc = await tx.businessDoc.create({
+              data: {
+                projectId: ctx.projectId,
+                title,
+                slug: rawSlug,
+                description,
+              },
+              include: { versions: true },
+            });
+          }
+
+          const version = await tx.businessDocVersion.create({
+            data: {
+              docId: doc.id,
+              versionNum: nextVersion,
+              fileName,
+              storedPath,
+              fileSize: Buffer.byteLength(content, "utf8"),
+              mimeType: "text/markdown",
+              isCurrent: true,
+              uploadedById: ctx.actorId,
+            },
+          });
+
+          return { doc, version };
+        });
+
+        await recordAuditLog({
+          projectId: ctx.projectId,
+          actorId: ctx.actorId,
+          actorEmail: ctx.actorEmail,
+          actorType: "agent",
+          action: "doc.manage",
+          entityType: "business_doc",
+          entityId: resultDoc.doc.id,
+          changes: { after: { slug: rawSlug, version: resultDoc.version.versionNum, title } },
+        });
+
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({
+                status: "SUCCESS",
+                docId: resultDoc.doc.id,
+                slug: rawSlug,
+                version: resultDoc.version.versionNum,
+                title,
+              }),
+            },
+          ],
         };
       }
 
