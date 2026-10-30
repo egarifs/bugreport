@@ -39,7 +39,7 @@ export default async function ReportsPage({
           <h1 className="text-lg font-semibold text-slate-900">Laporan kesiapan rilis</h1>
           <a
             href={`/api/projects/${project.key}/export`}
-            className="px-3.5 py-2 text-sm font-bold rounded bg-white border border-slate-300 text-slate-800 hover:bg-slate-100"
+            className="press-snappy px-3.5 py-2 text-sm font-bold rounded bg-white border border-slate-300 text-slate-800 hover:bg-slate-50 hover:border-slate-400 shadow-xs"
           >
             Export CSV
           </a>
@@ -59,79 +59,118 @@ export default async function ReportsPage({
           </form>
           <div
             role="status"
-            className={`rounded p-3 text-sm font-semibold ${
-              r.releaseReady ? "bg-emerald-50 text-emerald-800" : "bg-sev-blocker-bg text-sev-blocker"
+            className={`rounded-lg p-4 text-sm font-semibold flex items-center justify-between border transition-all duration-200 ${
+              r.releaseReady 
+                ? "bg-emerald-50/80 border-emerald-200 text-emerald-900" 
+                : "bg-rose-50/90 border-rose-200 text-rose-900"
             }`}
           >
-            {r.releaseReady
-              ? "Siap rilis: tidak ada Blocker/High aktif"
-              : `Belum siap: ${r.releaseBlockers.length} bug Blocker/High belum ditutup`}
+            <div className="flex items-center gap-3">
+              <span className={`w-3 h-3 rounded-full shrink-0 ${r.releaseReady ? "bg-emerald-500 ready-pulse" : "bg-rose-600"}`} aria-hidden="true" />
+              <span>
+                {r.releaseReady
+                  ? "Siap rilis: tidak ada Blocker atau High yang aktif"
+                  : `Belum siap rilis: masih ada ${r.releaseBlockers.length} bug Blocker/High yang belum selesai`}
+              </span>
+            </div>
+            <span className={`text-xs px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider ${
+              r.releaseReady ? "bg-emerald-100 text-emerald-800" : "bg-rose-100 text-rose-800"
+            }`}>
+              {r.releaseReady ? "Ready" : "Blocked"}
+            </span>
           </div>
           {r.releaseBlockers.length > 0 && (
             <ul className="text-xs space-y-1">
               {r.releaseBlockers.map((b) => (
                 <li key={b.key}>
-                  <Link href={`/projects/${project.key}/bugs/${b.key.split("-").pop()}`} className="font-mono font-bold text-action hover:underline">
-                    {b.key}
-                  </Link>{" "}
-                  <SeverityBadge severity={b.severity as BugSeverity} />{" "}<span className="text-slate-500">{STATUS_LABEL[b.status as BugStatus] ?? b.status}</span> {b.title}
+                  <Link 
+                    href={`/projects/${project.key}/bugs/${b.key.split("-").pop()}`} 
+                    className="flex items-center gap-2 p-1.5 rounded hover:bg-slate-50 border border-transparent hover:border-slate-200 transition-colors duration-100"
+                  >
+                    <span className="font-mono font-bold text-action hover:underline shrink-0">{b.key}</span>
+                    <SeverityBadge severity={b.severity as BugSeverity} />
+                    <span className="text-slate-500 shrink-0">[{STATUS_LABEL[b.status as BugStatus] ?? b.status}]</span>
+                    <span className="text-slate-900 truncate">{b.title}</span>
+                  </Link>
                 </li>
               ))}
             </ul>
           )}
         </section>
 
-        <div className="grid gap-4 md:grid-cols-2">
-          <section className="bg-white border border-slate-200 rounded-lg p-4">
-            <h2 className="text-sm font-semibold mb-3">Bug aktif per severity</h2>
-            {SEVERITIES.map((s) => {
-              const n = r.openBySeverity[s] ?? 0;
-              return (
-                <div key={s} className="flex items-center gap-2 text-xs mb-1.5">
-                  <span className="w-16">{SEVERITY_STYLE[s].label}</span>
-                  <div className="flex-1 bg-slate-100 rounded h-3">
-                    <div className={`h-3 rounded ${SEVERITY_STYLE[s].strip}`} style={{ width: `${(n / maxSev) * 100}%` }} />
+        <div className="grid gap-5 md:grid-cols-2">
+          {/* Card 1: Severity Progress Bar */}
+          <section className="bg-white border border-slate-200 rounded-lg p-5 shadow-xs hover:border-slate-300 transition-colors duration-150">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-sm font-bold text-slate-900">Bug aktif per severity</h2>
+              <span className="text-xs text-slate-500 font-mono">Beban rilis</span>
+            </div>
+            <div className="space-y-3">
+              {SEVERITIES.map((s, idx) => {
+                const n = r.openBySeverity[s] ?? 0;
+                const pct = (n / maxSev) * 100;
+                return (
+                  <div key={s} className="group">
+                    <div className="flex justify-between items-center text-xs mb-1">
+                      <span className="font-medium text-slate-700">{SEVERITY_STYLE[s].label}</span>
+                      <span className="font-mono font-semibold text-slate-900 tabular-nums">{n}</span>
+                    </div>
+                    <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+                      <div
+                        className={`h-2.5 rounded-full ${SEVERITY_STYLE[s].strip} bar-animate`}
+                        style={{
+                          width: `${pct}%`,
+                          animationDelay: `${idx * 75}ms`,
+                        }}
+                      />
+                    </div>
                   </div>
-                  <span className="w-8 text-right font-mono">{n}</span>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </section>
 
-          <section className="bg-white border border-slate-200 rounded-lg p-4">
-            <h2 className="text-sm font-semibold mb-3">Per status</h2>
+          {/* Card 2: Status Breakdown */}
+          <section className="bg-white border border-slate-200 rounded-lg p-5 shadow-xs hover:border-slate-300 transition-colors duration-150">
+            <h2 className="text-sm font-bold text-slate-900 mb-4">Distribusi status bug</h2>
             <table className="w-full text-xs">
-              <tbody>
+              <tbody className="divide-y divide-slate-100">
                 {Object.entries(r.byStatus).map(([s, n]) => (
-                  <tr key={s} className="border-b border-slate-100">
-                    <td className="py-1">{STATUS_LABEL[s as BugStatus] ?? s}</td>
-                    <td className="py-1 text-right font-mono">{n}</td>
+                  <tr key={s} className="hover:bg-slate-50 transition-colors duration-100">
+                    <td className="py-2 text-slate-700 font-medium">{STATUS_LABEL[s as BugStatus] ?? s}</td>
+                    <td className="py-2 text-right font-mono font-bold text-slate-900 tabular-nums">{n}</td>
                   </tr>
                 ))}
-                <tr>
-                  <td className="py-1 text-slate-500">Pernah reopen</td>
-                  <td className="py-1 text-right font-mono">{r.reopened}</td>
+                <tr className="hover:bg-slate-50 transition-colors duration-100">
+                  <td className="py-2 text-slate-500">Pernah reopen (terdeteksi regresi)</td>
+                  <td className="py-2 text-right font-mono font-semibold text-amber-700 tabular-nums">{r.reopened}</td>
                 </tr>
               </tbody>
             </table>
           </section>
 
-          <section className="bg-white border border-slate-200 rounded-lg p-4">
-            <h2 className="text-sm font-semibold mb-3">Workload aktif per assignee</h2>
-            <table className="w-full text-xs">
-              <tbody>
-                {r.workload.map((w) => (
-                  <tr key={w.assignee} className="border-b border-slate-100">
-                    <td className="py-1">{w.assignee}</td>
-                    <td className="py-1 text-right font-mono">{w.count}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          {/* Card 3: Workload per Assignee */}
+          <section className="bg-white border border-slate-200 rounded-lg p-5 shadow-xs hover:border-slate-300 transition-colors duration-150">
+            <h2 className="text-sm font-bold text-slate-900 mb-4">Workload aktif per assignee</h2>
+            {r.workload.length === 0 ? (
+              <p className="text-xs text-slate-400">Belum ada bug aktif yang ditugaskan.</p>
+            ) : (
+              <table className="w-full text-xs">
+                <tbody className="divide-y divide-slate-100">
+                  {r.workload.map((w) => (
+                    <tr key={w.assignee} className="hover:bg-slate-50 transition-colors duration-100">
+                      <td className="py-2 text-slate-700 font-medium">{w.assignee}</td>
+                      <td className="py-2 text-right font-mono font-bold text-slate-900 tabular-nums">{w.count} bug</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </section>
 
-          <section className="bg-white border border-slate-200 rounded-lg p-4">
-            <h2 className="text-sm font-semibold mb-3">Draft &gt; 3 hari belum direview</h2>
+          {/* Card 4: Stale Drafts */}
+          <section className="bg-white border border-slate-200 rounded-lg p-5 shadow-xs hover:border-slate-300 transition-colors duration-150">
+            <h2 className="text-sm font-bold text-slate-900 mb-4">Draft &gt; 3 hari belum direview</h2>
             {r.staleDrafts.length === 0 ? (
               <p className="text-xs text-slate-500">Tidak ada.</p>
             ) : (

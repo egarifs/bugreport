@@ -183,8 +183,8 @@ export default async function ProjectDetailPage({
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {bugs.map((b) => (
-                    <tr key={b.id} className="hover:bg-slate-50">
-                      <td className={`p-0 ${SEVERITY_STYLE[b.severity].strip}`} />
+                    <tr key={b.id} className="row-interactive hover:bg-slate-50/80">
+                      <td className={`p-0 ${SEVERITY_STYLE[b.severity].strip} strip-accent`} />
                       <td className="py-2 px-3 font-bold whitespace-nowrap">
                         <Link href={bugHref(b.number)} className="text-action hover:underline">{b.key}</Link>
                       </td>
@@ -209,7 +209,7 @@ export default async function ProjectDetailPage({
               <ul className="md:hidden space-y-2">
                 {bugs.map((b) => (
                   <li key={b.id}>
-                    <Link href={bugHref(b.number)} className="flex bg-white border border-slate-200 rounded overflow-hidden">
+                    <Link href={bugHref(b.number)} className="press-snappy flex bg-white border border-slate-200 hover:border-slate-300 rounded overflow-hidden shadow-xs">
                       <span className={`w-[3px] shrink-0 ${SEVERITY_STYLE[b.severity].strip}`} aria-hidden />
                       <span className="p-3 min-w-0 flex-1">
                         <span className="flex flex-wrap items-center gap-2 mb-1">

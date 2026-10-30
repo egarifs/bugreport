@@ -52,7 +52,40 @@ body {
   -webkit-background-clip: text; background-clip: text; color: transparent;
   animation: shimmer 2s infinite linear;
 }
+
+/* Interactive & Report Micro-motions */
+@keyframes bar-grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes status-pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .75; transform: scale(1.04); } }
+
+.bar-animate {
+  transform-origin: left;
+  animation: bar-grow .45s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.ready-pulse {
+  animation: status-pulse 3s infinite ease-in-out;
+}
+
+/* Snappy press feedback */
+.press-snappy {
+  transition: transform .08s ease-out, background-color .12s ease-out, border-color .12s ease-out;
+}
+.press-snappy:active {
+  transform: scale(0.98);
+}
+
+/* Smooth row hover with micro displacement */
+.row-interactive {
+  transition: background-color .12s ease-out;
+}
+.row-interactive:hover .strip-accent {
+  transform: translateX(2px);
+  transition: transform .12s ease-out;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .chat-in, .typing-dots i, .progress-slide, .shimmer-text { animation: none; }
+  .chat-in, .typing-dots i, .progress-slide, .shimmer-text, .bar-animate, .ready-pulse { animation: none; }
+  .press-snappy:active { transform: none; }
+  .row-interactive:hover .strip-accent { transform: none; }
   .shimmer-text { color: #0f172a; background: none; }
 }
