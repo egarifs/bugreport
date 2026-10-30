@@ -15,9 +15,12 @@ import { TestCaseManagementSection } from "./test-case-modal";
 
 export default async function TestCasesPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ key: string }>;
+  searchParams: Promise<{ tab?: string }>;
 }) {
+  const tab = (await searchParams).tab === "runs" ? "runs" : "cases";
   const session = await auth();
   const user = session?.user as { id?: string; email?: string; isAdmin?: boolean } | undefined;
   if (!user?.id || !user.email) redirect("/login");
@@ -60,6 +63,96 @@ export default async function TestCasesPage({
           </div>
 
           <div className="flex items-center gap-3">
+            {/* Import: secondary utility, tucked into native <details> dropdown */}
+            {canManage && (
+              <details className="relative">
+                <summary className="list-none cursor-pointer select-none px-3.5 py-1.5 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-medium rounded transition">
+                  Impor ▾
+                </summary>
+                <div className="absolute right-0 mt-1 z-30 w-80 bg-white border border-slate-200 rounded-lg shadow-lg p-3 space-y-2 text-xs">
+                <p className="text-slate-600 font-medium">Impor massal: XLSX, CSV, atau Markdown (.md). Code yang sama akan di-update.</p>
+                <ActionForm
+                  action={async (_prev: ActionResult, formData: FormData): Promise<ActionResult> => {
+                    "use server";
+                    await requireProjectPermission(project.id, "testcase.manage");
+                    const file = formData.get("file") as File;
+                    if (!file || file.size === 0) return { error: "Pilih file XLSX, CSV, atau Markdown (.md)." };
+                    const fileName = file.name.toLowerCase();
+                    let parsed;
+                    if (fileName.endsWith(".md") || fileName.endsWith(".markdown")) {
+                      const text = await file.text();
+                      parsed = parseMarkdownTestCases(text);
+                    } else {
+                      const buffer = Buffer.from(await file.arrayBuffer());
+                      parsed = parseTestCaseWorkbook(buffer);
+                    }
+                    if (parsed.length === 0) return { error: "Tidak ada baris test case yang terbaca. Cek format tabel/header file." };
+
+                    const mods = await activeModules(project.id);
+                    const byName = new Map(mods.map((m) => [m.name.toLowerCase(), m.id]));
+                    const unknown = new Set<string>();
+                    for (const item of parsed) {
+                      const area = item.moduleArea?.trim();
+                      const moduleId = area ? byName.get(area.toLowerCase()) ?? null : null;
+                      if (area && !moduleId) unknown.add(area);
+                      await prisma.testCase.upsert({
+                        where: {
+                          projectId_code: {
+                            projectId: project.id,
+                            code: item.code,
+                          },
+                        },
+                        create: {
+                          projectId: project.id,
+                          code: item.code,
+                          moduleArea: item.moduleArea || null,
+                          moduleId,
+                          title: item.title,
+                          priority: item.priority,
+                          testType: item.testType || null,
+                          targetRole: item.targetRole || null,
+                          precondition: item.precondition || null,
+                          steps: item.steps || "-",
+                          expectedResult: item.expectedResult || "-",
+                          referenceUrl: item.referenceUrl || null,
+                        },
+                        update: {
+                          moduleArea: item.moduleArea || null,
+                          moduleId,
+                          title: item.title,
+                          priority: item.priority,
+                          testType: item.testType || null,
+                          targetRole: item.targetRole || null,
+                          precondition: item.precondition || null,
+                          steps: item.steps || "-",
+                          expectedResult: item.expectedResult || "-",
+                          referenceUrl: item.referenceUrl || null,
+                        },
+                      });
+                    }
+                    revalidatePath(`/projects/${project.key}/test-cases`);
+                    const msg = `${parsed.length} test case diimpor.`;
+                    return unknown.size
+                      ? { error: `${msg} Modul tidak dikenal: ${[...unknown].join(", ")}.` }
+                      : { ok: msg };
+                  }}
+                  className="flex flex-col items-start gap-2"
+                >
+                  <input
+                    type="file"
+                    name="file"
+                    accept=".xlsx,.csv,.md,.markdown"
+                    required
+                    className="text-xs file:mr-2 file:py-1 file:px-2.5 file:rounded file:border-0 file:text-xs file:font-medium file:bg-white file:border-slate-300 file:border file:text-slate-700 hover:file:bg-slate-100 cursor-pointer"
+                  />
+                  <SubmitButton pendingText="Mengimpor..." className="press-snappy px-3 py-1 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-medium rounded">
+                    Upload XLSX/CSV/MD
+                  </SubmitButton>
+                </ActionForm>
+                </div>
+              </details>
+            )}
+
             <Link
               href={`/projects/${project.key}/test-runs/new`}
               className="px-3.5 py-1.5 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-medium rounded transition"
@@ -69,12 +162,25 @@ export default async function TestCasesPage({
           </div>
         </header>
 
-        <main className="p-6 space-y-8 flex-1">
-          {/* Active Test Runs section */}
+        <nav className="bg-white border-b border-slate-200 px-6 flex gap-5 text-sm" aria-label="Test case tabs">
+          {([["cases", `Repository (${project.testCases.length})`], ["runs", `Test Runs (${project.testRuns.length})`]] as const).map(([t, label]) => (
+            <Link
+              key={t}
+              href={`/projects/${project.key}/test-cases${t === "runs" ? "?tab=runs" : ""}`}
+              aria-current={tab === t ? "page" : undefined}
+              className={`py-2.5 border-b-2 -mb-px ${tab === t ? "border-slate-900 font-semibold text-slate-900" : "border-transparent text-slate-500 hover:text-slate-800"}`}
+            >
+              {label}
+            </Link>
+          ))}
+        </nav>
+
+        <main className="p-6 space-y-8 flex-1 min-w-0">
+          {tab === "runs" && (
           <section>
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-base font-bold text-slate-900">Test Runs Aktif</h2>
-              <span className="text-xs text-slate-500">{project.testRuns.length} total run</span>
+              <h2 className="text-base font-bold text-slate-900">Test Runs Terbaru</h2>
+              <span className="text-xs text-slate-500">5 run terakhir</span>
             </div>
 
             {project.testRuns.length === 0 ? (
@@ -113,93 +219,10 @@ export default async function TestCasesPage({
               </div>
             )}
           </section>
-
-          {/* Import XLSX bar (secondary utility) */}
-          {canManage && (
-            <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 flex flex-wrap items-center justify-between gap-3 text-xs">
-              <span className="text-slate-600 font-medium">Impor massal dari spreadsheet atau Markdown (.md):</span>
-              <ActionForm
-                action={async (_prev: ActionResult, formData: FormData): Promise<ActionResult> => {
-                  "use server";
-                  await requireProjectPermission(project.id, "testcase.manage");
-                  const file = formData.get("file") as File;
-                  if (!file || file.size === 0) return { error: "Pilih file XLSX, CSV, atau Markdown (.md)." };
-                  const fileName = file.name.toLowerCase();
-                  let parsed;
-                  if (fileName.endsWith(".md") || fileName.endsWith(".markdown")) {
-                    const text = await file.text();
-                    parsed = parseMarkdownTestCases(text);
-                  } else {
-                    const buffer = Buffer.from(await file.arrayBuffer());
-                    parsed = parseTestCaseWorkbook(buffer);
-                  }
-                  if (parsed.length === 0) return { error: "Tidak ada baris test case yang terbaca. Cek format tabel/header file." };
-
-                  const mods = await activeModules(project.id);
-                  const byName = new Map(mods.map((m) => [m.name.toLowerCase(), m.id]));
-                  const unknown = new Set<string>();
-                  for (const item of parsed) {
-                    const area = item.moduleArea?.trim();
-                    const moduleId = area ? byName.get(area.toLowerCase()) ?? null : null;
-                    if (area && !moduleId) unknown.add(area);
-                    await prisma.testCase.upsert({
-                      where: {
-                        projectId_code: {
-                          projectId: project.id,
-                          code: item.code,
-                        },
-                      },
-                      create: {
-                        projectId: project.id,
-                        code: item.code,
-                        moduleArea: item.moduleArea || null,
-                        moduleId,
-                        title: item.title,
-                        priority: item.priority,
-                        testType: item.testType || null,
-                        targetRole: item.targetRole || null,
-                        precondition: item.precondition || null,
-                        steps: item.steps || "-",
-                        expectedResult: item.expectedResult || "-",
-                        referenceUrl: item.referenceUrl || null,
-                      },
-                      update: {
-                        moduleArea: item.moduleArea || null,
-                        moduleId,
-                        title: item.title,
-                        priority: item.priority,
-                        testType: item.testType || null,
-                        targetRole: item.targetRole || null,
-                        precondition: item.precondition || null,
-                        steps: item.steps || "-",
-                        expectedResult: item.expectedResult || "-",
-                        referenceUrl: item.referenceUrl || null,
-                      },
-                    });
-                  }
-                  revalidatePath(`/projects/${project.key}/test-cases`);
-                  const msg = `${parsed.length} test case diimpor.`;
-                  return unknown.size
-                    ? { error: `${msg} Modul tidak dikenal: ${[...unknown].join(", ")}.` }
-                    : { ok: msg };
-                }}
-                className="flex items-center gap-2"
-              >
-                <input
-                  type="file"
-                  name="file"
-                  accept=".xlsx,.csv,.md,.markdown"
-                  required
-                  className="text-xs file:mr-2 file:py-1 file:px-2.5 file:rounded file:border-0 file:text-xs file:font-medium file:bg-white file:border-slate-300 file:border file:text-slate-700 hover:file:bg-slate-100 cursor-pointer"
-                />
-                <SubmitButton pendingText="Mengimpor..." className="press-snappy px-3 py-1 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-medium rounded">
-                  Upload XLSX/CSV/MD
-                </SubmitButton>
-              </ActionForm>
-            </div>
           )}
 
           {/* Test Cases Repository section with Client Interactive Modal */}
+          {tab === "cases" && (
           <section>
             <TestCaseManagementSection
               projectId={project.id}
@@ -223,6 +246,7 @@ export default async function TestCasesPage({
               }))}
             />
           </section>
+          )}
         </main>
       </div>
     </AppShell>

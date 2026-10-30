@@ -274,7 +274,7 @@ export function TestCaseManagementSection({
         </aside>
 
         {/* RIGHT COLUMN: FILTER BAR & TEST CASE TABLE */}
-        <section className="flex-1 w-full space-y-3">
+        <section className="flex-1 min-w-0 w-full space-y-3">
           {/* Active Module Header & Sub-Filters Bar */}
           <div className="bg-white border border-slate-200 rounded-lg p-3.5 shadow-xs flex flex-wrap items-center justify-between gap-3">
             <div>
@@ -350,12 +350,11 @@ export function TestCaseManagementSection({
               <table className="w-full text-left text-xs">
                 <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold text-xs">
                   <tr>
-                    <th className="py-3 px-4">Code</th>
-                    <th className="py-3 px-4">Tipe</th>
+                    <th className="py-3 px-4 w-28">Code</th>
                     <th className="py-3 px-4">Judul Test Case</th>
-                    <th className="py-3 px-4">Prioritas</th>
-                    <th className="py-3 px-4">Role</th>
-                    <th className="py-3 px-4">Expected Result</th>
+                    <th className="py-3 px-4 w-28">Tipe</th>
+                    <th className="py-3 px-4 w-24">Prioritas</th>
+                    <th className="py-3 px-4 w-32">Role</th>
                     {canManage && <th className="py-3 px-4 text-right">Aksi</th>}
                   </tr>
                 </thead>
@@ -369,13 +368,14 @@ export function TestCaseManagementSection({
                       <td className="py-3 px-4 font-mono font-semibold text-slate-900 whitespace-nowrap">
                         {tc.code}
                       </td>
+                      <td className="py-3 px-4 w-full max-w-0">
+                        <span className="block font-medium text-slate-900">{tc.title}</span>
+                        <span className="block text-slate-500 truncate" title={tc.expectedResult}>{tc.expectedResult}</span>
+                      </td>
                       <td className="py-3 px-4 whitespace-nowrap">
                         <span className="px-2 py-0.5 rounded text-[11px] font-mono bg-slate-100 text-slate-700 font-medium">
                           {tc.testType || "Functional"}
                         </span>
-                      </td>
-                      <td className="py-3 px-4 font-medium text-slate-900">
-                        {tc.title}
                       </td>
                       <td className="py-3 px-4 whitespace-nowrap">
                         <span
@@ -390,11 +390,8 @@ export function TestCaseManagementSection({
                           {tc.priority}
                         </span>
                       </td>
-                      <td className="py-3 px-4 text-slate-500 whitespace-nowrap">
+                      <td className="py-3 px-4 text-slate-500 truncate max-w-[8rem]" title={tc.targetRole ?? undefined}>
                         {tc.targetRole || "-"}
-                      </td>
-                      <td className="py-3 px-4 text-slate-600 max-w-xs truncate">
-                        {tc.expectedResult}
                       </td>
                       {canManage && (
                         <td className="py-3 px-4 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
