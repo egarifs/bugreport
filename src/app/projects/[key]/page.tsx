@@ -6,7 +6,8 @@ import { notFound, redirect } from "next/navigation";
 import { AppShell } from "@/components/layout/app-shell";
 import { hasPermission } from "@/lib/permissions";
 import { activeModules } from "@/lib/modules";
-import { SEVERITY_STYLE, STATUS_LABEL, SeverityBadge, StatusBadge, ageDays } from "@/components/ui/bug-badges";
+import { SEVERITY_STYLE, STATUS_LABEL, SeverityBadge, StatusBadge } from "@/components/ui/bug-badges";
+import { SlaBadge } from "@/components/ui/sla-badge";
 import { BugImportModal } from "./bugs/import/bug-import-modal";
 import { parseMarkdownBugs } from "@/lib/markdown-importer";
 import { requireProjectPermission } from "@/lib/authz";
@@ -238,7 +239,7 @@ export default async function ProjectDetailPage({
                     <th scope="col" className="py-2 px-3 w-24 font-bold">Severity</th>
                     <th scope="col" className="py-2 px-3 w-40 font-bold">Status</th>
                     <th scope="col" className="py-2 px-3 w-40 font-bold">Assignee</th>
-                    <th scope="col" className="py-2 px-3 w-16 font-bold text-right" title="Umur bug dalam hari">Umur</th>
+                    <th scope="col" className="py-2 px-3 w-28 font-bold text-right" title="Target SLA / Batas waktu penyelesaian">SLA / Sisa</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -259,7 +260,9 @@ export default async function ProjectDetailPage({
                       <td className="py-2 px-3"><SeverityBadge severity={b.severity} /></td>
                       <td className="py-2 px-3"><StatusBadge status={b.status} /></td>
                       <td className="py-2 px-3 text-slate-600 truncate max-w-[10rem]">{b.assignee?.name || b.assignee?.email || "Belum di-assign"}</td>
-                      <td className="py-2 px-3 text-right text-slate-600" title={b.createdAt.toLocaleString("id-ID")}>{ageDays(b.createdAt)}h</td>
+                      <td className="py-2 px-3 text-right whitespace-nowrap">
+                        <SlaBadge severity={b.severity} status={b.status} createdAt={b.createdAt} />
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -276,7 +279,7 @@ export default async function ProjectDetailPage({
                           <span className="font-bold text-action text-sm">{b.key}</span>
                           <SeverityBadge severity={b.severity} />
                           <StatusBadge status={b.status} />
-                          <span className="ml-auto text-xs text-slate-500">{ageDays(b.createdAt)}h</span>
+                          <span className="ml-auto shrink-0"><SlaBadge severity={b.severity} status={b.status} createdAt={b.createdAt} compact /></span>
                         </span>
                         <span className="block text-sm text-slate-900">{b.title}</span>
                       </span>

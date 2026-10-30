@@ -1,6 +1,8 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { AppSidebar } from "./app-sidebar";
+import { TopProgressBar } from "./top-progress-bar";
+import { Suspense } from "react";
 import { hasPermission, ROLE_PERMISSIONS } from "@/lib/permissions";
 
 interface AppShellProps {
@@ -41,6 +43,9 @@ export async function AppShell({ children, activeProjectKey }: AppShellProps) {
 
   return (
     <div className="flex flex-col md:flex-row h-screen w-screen overflow-hidden bg-slate-50">
+      <Suspense fallback={null}>
+        <TopProgressBar />
+      </Suspense>
       <AppSidebar
         user={{
           name: user.name,

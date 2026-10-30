@@ -91,70 +91,122 @@ body {
 }
 
 /* Multi-theme support: Claude, ChatGPT, Antigravity, Default */
+:root {
+  --theme-accent: #1E5AA8;
+  --theme-accent-hover: #174A8C;
+  --theme-active-bg: #0F172A;
+  --theme-active-text: #FFFFFF;
+}
+
 html[data-theme="claude"] {
+  --theme-accent: #D97757;
+  --theme-accent-hover: #C56243;
+  --theme-active-bg: #D97757;
+  --theme-active-text: #FFFFFF;
   --bg-app: #FAF7F2;
   --bg-card: #FFFFFF;
-  --text-main: #242220;
-  --text-muted: #736E67;
   --border-app: #E7E1D8;
-  --brand-accent: #D97757;
-  --brand-accent-hover: #C56243;
 }
 
 html[data-theme="chatgpt"] {
+  --theme-accent: #10A37F;
+  --theme-accent-hover: #0E8E6E;
+  --theme-active-bg: #10A37F;
+  --theme-active-text: #FFFFFF;
   --bg-app: #F7F7F8;
   --bg-card: #FFFFFF;
-  --text-main: #0D0D0D;
-  --text-muted: #5D5D5D;
-  --border-app: #E3E3E3;
-  --brand-accent: #10A37F;
-  --brand-accent-hover: #0E8E6E;
+  --border-app: #E5E5E5;
 }
 
 html[data-theme="antigravity"] {
+  --theme-accent: #6366F1;
+  --theme-accent-hover: #4F46E5;
+  --theme-active-bg: #6366F1;
+  --theme-active-text: #FFFFFF;
   --bg-app: #0B0F17;
   --bg-card: #111827;
-  --text-main: #F3F4F6;
-  --text-muted: #9CA3AF;
   --border-app: #1F2937;
-  --brand-accent: #6366F1;
-  --brand-accent-hover: #4F46E5;
 }
 
-/* Theme overrides for body and surface */
+/* Global button action override driven by theme accent */
+html[data-theme] .bg-action,
+html[data-theme] button.bg-action,
+html[data-theme] a.bg-action {
+  background-color: var(--theme-accent) !important;
+}
+html[data-theme] .bg-action:hover,
+html[data-theme] button.bg-action:hover,
+html[data-theme] a.bg-action:hover {
+  background-color: var(--theme-accent-hover) !important;
+}
+
+/* Active sidebar menu items override */
+html[data-theme] aside .bg-slate-900 {
+  background-color: var(--theme-active-bg) !important;
+  color: var(--theme-active-text) !important;
+}
+
+/* Claude Warm Theme Styling */
 html[data-theme="claude"] body {
-  background-color: var(--bg-app);
-  color: var(--text-main);
+  background-color: #FAF7F2 !important;
+  color: #242220;
 }
 html[data-theme="claude"] aside,
+html[data-theme="claude"] header,
 html[data-theme="claude"] .bg-white {
-  background-color: var(--bg-card);
-  border-color: var(--border-app);
+  background-color: #FFFFFF !important;
+  border-color: #E7E1D8 !important;
+}
+html[data-theme="claude"] .bg-slate-50,
+html[data-theme="claude"] .bg-slate-100 {
+  background-color: #F5EFEB !important;
+  border-color: #E7E1D8 !important;
+}
+html[data-theme="claude"] .border-slate-200,
+html[data-theme="claude"] .border-slate-300 {
+  border-color: #E7E1D8 !important;
+}
+html[data-theme="claude"] div[role="menu"] {
+  background-color: #FFFFFF !important;
+  border-color: #E7E1D8 !important;
 }
 
+/* ChatGPT Green Theme Styling */
 html[data-theme="chatgpt"] body {
-  background-color: var(--bg-app);
-  color: var(--text-main);
+  background-color: #F7F7F8 !important;
+  color: #0D0D0D;
 }
 html[data-theme="chatgpt"] aside,
+html[data-theme="chatgpt"] header,
 html[data-theme="chatgpt"] .bg-white {
-  background-color: var(--bg-card);
-  border-color: var(--border-app);
+  background-color: #FFFFFF !important;
+  border-color: #E5E5E5 !important;
+}
+html[data-theme="chatgpt"] .bg-slate-50,
+html[data-theme="chatgpt"] .bg-slate-100 {
+  background-color: #ECECF1 !important;
+  border-color: #E5E5E5 !important;
+}
+html[data-theme="chatgpt"] .border-slate-200,
+html[data-theme="chatgpt"] .border-slate-300 {
+  border-color: #E5E5E5 !important;
 }
 
+/* Antigravity Dark Theme Styling */
 html[data-theme="antigravity"] body {
-  background-color: var(--bg-app);
-  color: var(--text-main);
+  background-color: #0B0F17 !important;
+  color: #F3F4F6 !important;
 }
 html[data-theme="antigravity"] aside,
+html[data-theme="antigravity"] header,
 html[data-theme="antigravity"] .bg-white {
-  background-color: var(--bg-card);
-  border-color: var(--border-app);
-  color: var(--text-main);
+  background-color: #111827 !important;
+  border-color: #1F2937 !important;
+  color: #F3F4F6 !important;
 }
 html[data-theme="antigravity"] .text-slate-900,
 html[data-theme="antigravity"] .text-slate-800 {
-  color: #F3F4F6 !important;
+  color: #F9FAFB !important;
 }
 html[data-theme="antigravity"] .text-slate-700,
 html[data-theme="antigravity"] .text-slate-600,
@@ -170,35 +222,11 @@ html[data-theme="antigravity"] .border-slate-200,
 html[data-theme="antigravity"] .border-slate-300 {
   border-color: #374151 !important;
 }
-
 html[data-theme="antigravity"] div[role="menu"] {
   background-color: #111827 !important;
   border-color: #374151 !important;
   color: #F3F4F6 !important;
 }
-html[data-theme="antigravity"] div[role="menu"] .bg-slate-50\/70 {
-  background-color: #1F2937 !important;
-  border-color: #374151 !important;
-}
-html[data-theme="antigravity"] div[role="menu"] .text-slate-900 {
-  color: #F9FAFB !important;
-}
-html[data-theme="antigravity"] div[role="menu"] .text-slate-500,
-html[data-theme="antigravity"] div[role="menu"] .text-slate-400 {
-  color: #9CA3AF !important;
-}
-html[data-theme="antigravity"] div[role="menu"] .border-slate-100 {
-  border-color: #374151 !important;
-}
 html[data-theme="antigravity"] div[role="menu"] a:hover {
   background-color: #1F2937 !important;
-  color: #F3F4F6 !important;
-}
-html[data-theme="claude"] div[role="menu"] {
-  background-color: #FFFFFF !important;
-  border-color: #E7E1D8 !important;
-}
-html[data-theme="claude"] div[role="menu"] .bg-slate-50\/70 {
-  background-color: #F5EFEB !important;
-  border-color: #E7E1D8 !important;
 }
