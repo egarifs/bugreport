@@ -127,7 +127,7 @@ export default async function ProjectSettingsPage({
                         name,
                         keyHash,
                         keyPrefix,
-                        scopes: ["bug:read", "bug:create", "bug:comment", "bug:attach"],
+                        scopes: ["bug:read", "bug:create", "bug:comment", "bug:attach", "testcase:create"],
                         createdById: actor.id,
                       },
                     });

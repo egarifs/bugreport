@@ -86,6 +86,7 @@ export async function POST(req: NextRequest) {
     if (toolName === "create_bug_draft") requiredScope = "bug:create";
     if (toolName === "add_bug_comment") requiredScope = "bug:comment";
     if (toolName === "attach_bug_screenshot") requiredScope = "bug:attach";
+    if (toolName === "create_test_cases") requiredScope = "testcase:create";
 
     if (!apiKey.scopes.includes(requiredScope) && !apiKey.scopes.includes("*")) {
       return NextResponse.json({

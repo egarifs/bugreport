@@ -3,7 +3,7 @@ import { redactSecrets } from "@/lib/redact";
 import { notifyBug } from "./notify";
 import { recordAuditLog } from "@/lib/user-service";
 import { activeModules, resolveModuleId } from "@/lib/modules";
-import { BugPriority, BugSeverity } from "@prisma/client";
+import { BugPriority, BugSeverity, TestCasePriority } from "@prisma/client";
 import fs from "node:fs/promises";
 import path from "node:path";
 
@@ -91,6 +91,36 @@ export const MCP_TOOLS_DEFINITIONS = [
         imageBase64: { type: "string", description: "Base64 string gambar (JPEG / PNG / WEBP)" },
       },
       required: ["bugKey", "fileName", "imageBase64"],
+    },
+  },
+  {
+    name: "create_test_cases",
+    description: "Buat atau update test cases dalam batch (atau single) dari hasil analisa dokumen PRD/Figma. Jika code sudah ada, otomatis update (upsert).",
+    inputSchema: {
+      type: "object",
+      properties: {
+        testCases: {
+          type: "array",
+          description: "Daftar test case yang akan dibuat/diupdate.",
+          items: {
+            type: "object",
+            properties: {
+              code: { type: "string", description: "Kode unik test case (opsional, misal: TC-AUTH-001). Jika kosong, digenerate otomatis." },
+              title: { type: "string", description: "Judul skenario pengujian" },
+              module: { type: "string", description: "Nama modul terkait (opsional)" },
+              priority: { type: "string", enum: ["CRITICAL", "HIGH", "MEDIUM", "LOW"], description: "Prioritas pengujian (default: MEDIUM)" },
+              testType: { type: "string", description: "Tipe pengujian, misal: Functional, Negative, UI, Security" },
+              targetRole: { type: "string", description: "Aktor/role yang menjalankan, misal: Admin, Dokter, Pasien" },
+              precondition: { type: "string", description: "Prasyarat sebelum skenario dijalankan" },
+              steps: { type: "string", description: "Langkah-langkah pengujian terurut" },
+              expectedResult: { type: "string", description: "Hasil yang diharapkan" },
+              referenceUrl: { type: "string", description: "Tautan referensi Figma, Notion, atau PRD" },
+            },
+            required: ["title", "steps", "expectedResult"],
+          },
+        },
+      },
+      required: ["testCases"],
     },
   },
 ];
@@ -428,6 +458,86 @@ export async function executeMcpTool(
 
         return {
           content: [{ type: "text", text: JSON.stringify({ status: "SUCCESS", attachmentId: attachment.id, fileName }) }],
+        };
+      }
+
+      case "create_test_cases": {
+        const rawItems = Array.isArray(args.testCases) ? args.testCases : [];
+        if (!rawItems.length) {
+          return { content: [{ type: "text", text: "Array 'testCases' tidak boleh kosong." }], isError: true };
+        }
+
+        const results: Array<{ code: string; title: string; action: "CREATED" | "UPDATED" }> = [];
+
+        // Count existing test cases to generate sequence if code is omitted
+        let tcCount = await prisma.testCase.count({ where: { projectId: ctx.projectId } });
+
+        for (const item of rawItems) {
+          const title = redactSecrets(String(item.title || "").trim());
+          const steps = redactSecrets(String(item.steps || "").trim());
+          const expectedResult = redactSecrets(String(item.expectedResult || "").trim());
+          if (!title || !steps || !expectedResult) continue;
+
+          let code = String(item.code || "").trim().toUpperCase();
+          if (!code) {
+            tcCount += 1;
+            const prefix = item.module ? String(item.module).trim().toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 4) : ctx.projectKey;
+            code = `TC-${prefix || "GEN"}-${String(tcCount).padStart(3, "0")}`;
+          }
+
+          const moduleId = await resolveModuleId(ctx.projectId, item.module);
+          const priority = (["CRITICAL", "HIGH", "MEDIUM", "LOW"].includes(item.priority)
+            ? item.priority
+            : "MEDIUM") as TestCasePriority;
+
+          const data = {
+            title,
+            steps,
+            expectedResult,
+            moduleArea: item.module ? String(item.module).trim() : null,
+            moduleId,
+            priority,
+            testType: item.testType ? String(item.testType).trim() : null,
+            targetRole: item.targetRole ? String(item.targetRole).trim() : null,
+            precondition: item.precondition ? redactSecrets(String(item.precondition).trim()) : null,
+            referenceUrl: item.referenceUrl ? String(item.referenceUrl).trim() : null,
+          };
+
+          const existing = await prisma.testCase.findUnique({
+            where: { projectId_code: { projectId: ctx.projectId, code } },
+          });
+
+          if (existing) {
+            await prisma.testCase.update({
+              where: { id: existing.id },
+              data,
+            });
+            results.push({ code, title, action: "UPDATED" });
+          } else {
+            await prisma.testCase.create({
+              data: {
+                projectId: ctx.projectId,
+                code,
+                ...data,
+              },
+            });
+            results.push({ code, title, action: "CREATED" });
+          }
+        }
+
+        await recordAuditLog({
+          projectId: ctx.projectId,
+          actorId: ctx.actorId,
+          actorEmail: ctx.actorEmail,
+          actorType: "agent",
+          action: "testcase.manage",
+          entityType: "testcase",
+          entityId: ctx.projectId,
+          changes: { after: { totalProcessed: results.length, summary: results } },
+        });
+
+        return {
+          content: [{ type: "text", text: JSON.stringify({ status: "SUCCESS", count: results.length, items: results }) }],
         };
       }
 

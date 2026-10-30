@@ -28,7 +28,7 @@ test("PRD-03 MCP Server & AI Agent Integration", async (t) => {
       name: "Claude Code Runner",
       keyHash,
       keyPrefix,
-      scopes: ["bug:read", "bug:create", "bug:comment", "bug:attach"],
+      scopes: ["bug:read", "bug:create", "bug:comment", "bug:attach", "testcase:create"],
       createdById: user.id,
     },
   });
@@ -58,6 +58,7 @@ test("PRD-03 MCP Server & AI Agent Integration", async (t) => {
     assert.ok(toolNames.includes("create_bug_draft"));
     assert.ok(toolNames.includes("add_bug_comment"));
     assert.ok(toolNames.includes("attach_bug_screenshot"));
+    assert.ok(toolNames.includes("create_test_cases"));
   });
 
   await t.test("create_bug_draft always creates status DRAFT and redacts secrets", async () => {
@@ -125,6 +126,69 @@ test("PRD-03 MCP Server & AI Agent Integration", async (t) => {
 
     const forceData = JSON.parse(forceResult.content[0].text);
     assert.equal(forceData.status, "CREATED");
+  });
+
+  await t.test("create_test_cases creates and updates test cases via MCP", async () => {
+    const res = await executeMcpTool(
+      "create_test_cases",
+      {
+        testCases: [
+          {
+            code: "TC-TEST-MCP-001",
+            title: "Verifikasi login dengan Google OAuth Bearer sensitive_secret_token_xyz",
+            module: "Auth",
+            priority: "HIGH",
+            testType: "Functional",
+            targetRole: "All",
+            precondition: "User punya akun Google",
+            steps: "1. Buka login\n2. Klik Sign in",
+            expectedResult: "Redirect ke dashboard",
+            referenceUrl: "https://www.figma.com/file/sample",
+          },
+          {
+            // code auto-generated
+            title: "Verifikasi logout",
+            steps: "1. Klik logout",
+            expectedResult: "Kembali ke login",
+          },
+        ],
+      },
+      ctx
+    );
+
+    assert.equal(res.isError, undefined);
+    const data = JSON.parse(res.content[0].text);
+    assert.equal(data.status, "SUCCESS");
+    assert.equal(data.count, 2);
+    assert.equal(data.items[0].action, "CREATED");
+    assert.equal(data.items[0].code, "TC-TEST-MCP-001");
+
+    // Check redact & db persistence
+    const tc1 = await prisma.testCase.findUnique({
+      where: { projectId_code: { projectId: ctx.projectId, code: "TC-TEST-MCP-001" } },
+    });
+    assert.ok(tc1);
+    assert.ok(!tc1.title.includes("sensitive_secret_token_xyz"));
+    assert.ok(tc1.title.includes("[REDACTED]"));
+    assert.equal(tc1.referenceUrl, "https://www.figma.com/file/sample");
+
+    // Upsert check: update TC-TEST-MCP-001
+    const resUpdate = await executeMcpTool(
+      "create_test_cases",
+      {
+        testCases: [
+          {
+            code: "TC-TEST-MCP-001",
+            title: "Verifikasi login Google OAuth updated",
+            steps: "1. Buka login\n2. Klik tombol",
+            expectedResult: "Masuk dashboard",
+          },
+        ],
+      },
+      ctx
+    );
+    const updateData = JSON.parse(resUpdate.content[0].text);
+    assert.equal(updateData.items[0].action, "UPDATED");
   });
 
   await t.test("Revoked API key returns 401", async () => {
