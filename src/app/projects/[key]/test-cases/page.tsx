@@ -10,6 +10,7 @@ import { hasPermission } from "@/lib/permissions";
 import { ProjectRole } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { parseTestCaseWorkbook } from "@/lib/testcase-importer";
+import { TestCaseManagementSection } from "./test-case-modal";
 
 export default async function TestCasesPage({
   params,
@@ -42,6 +43,7 @@ export default async function TestCasesPage({
 
   const role: ProjectRole = project.members[0]?.role ?? (user.isAdmin ? "ADMIN" : "VIEWER");
   const canManage = hasPermission(role, "testcase.manage", user.isAdmin);
+  const modules = await activeModules(project.id);
 
   return (
     <AppShell activeProjectKey={project.key}>
@@ -111,146 +113,107 @@ export default async function TestCasesPage({
             )}
           </section>
 
-          {/* Test Cases Repository section */}
-          <section>
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h2 className="text-base font-bold text-slate-900">Test Case Repository</h2>
-                <p className="text-xs text-slate-500">
-                  Total {project.testCases.length} skenario pengujian terdaftar.
-                </p>
-              </div>
+          {/* Import XLSX bar (secondary utility) */}
+          {canManage && (
+            <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 flex flex-wrap items-center justify-between gap-3 text-xs">
+              <span className="text-slate-600 font-medium">Impor massal dari spreadsheet:</span>
+              <ActionForm
+                action={async (_prev: ActionResult, formData: FormData): Promise<ActionResult> => {
+                  "use server";
+                  await requireProjectPermission(project.id, "testcase.manage");
+                  const file = formData.get("file") as File;
+                  if (!file || file.size === 0) return { error: "Pilih file XLSX atau CSV." };
+                  const buffer = Buffer.from(await file.arrayBuffer());
+                  const parsed = parseTestCaseWorkbook(buffer);
+                  if (parsed.length === 0) return { error: "Tidak ada baris test case yang terbaca. Cek header kolom." };
 
-              {canManage && (
-                <div className="flex items-center gap-3">
-                  <ActionForm
-                    action={async (_prev: ActionResult, formData: FormData): Promise<ActionResult> => {
-                      "use server";
-                      await requireProjectPermission(project.id, "testcase.manage");
-                      const file = formData.get("file") as File;
-                      if (!file || file.size === 0) return { error: "Pilih file XLSX atau CSV." };
-                      const buffer = Buffer.from(await file.arrayBuffer());
-                      const parsed = parseTestCaseWorkbook(buffer);
-                      if (parsed.length === 0) return { error: "Tidak ada baris test case yang terbaca. Cek header kolom." };
-
-                      // ponytail: report unknown modules after import instead of a full preview step; add preview if mis-mapping becomes common.
-                      const mods = await activeModules(project.id);
-                      const byName = new Map(mods.map((m) => [m.name.toLowerCase(), m.id]));
-                      const unknown = new Set<string>();
-                      for (const item of parsed) {
-                        const area = item.moduleArea?.trim();
-                        const moduleId = area ? byName.get(area.toLowerCase()) ?? null : null;
-                        if (area && !moduleId) unknown.add(area);
-                        await prisma.testCase.upsert({
-                          where: {
-                            projectId_code: {
-                              projectId: project.id,
-                              code: item.code,
-                            },
-                          },
-                          create: {
-                            projectId: project.id,
-                            code: item.code,
-                            moduleArea: item.moduleArea || null,
-                            moduleId,
-                            title: item.title,
-                            priority: item.priority,
-                            testType: item.testType || null,
-                            targetRole: item.targetRole || null,
-                            precondition: item.precondition || null,
-                            steps: item.steps || "-",
-                            expectedResult: item.expectedResult || "-",
-                            referenceUrl: item.referenceUrl || null,
-                          },
-                          update: {
-                            moduleArea: item.moduleArea || null,
-                            moduleId,
-                            title: item.title,
-                            priority: item.priority,
-                            testType: item.testType || null,
-                            targetRole: item.targetRole || null,
-                            precondition: item.precondition || null,
-                            steps: item.steps || "-",
-                            expectedResult: item.expectedResult || "-",
-                            referenceUrl: item.referenceUrl || null,
-                          },
-                        });
-                      }
-                      revalidatePath(`/projects/${project.key}/test-cases`);
-                      const msg = `${parsed.length} test case diimpor.`;
-                      return unknown.size
-                        ? { error: `${msg} Modul tidak dikenal, test case dibiarkan tanpa modul: ${[...unknown].join(", ")}. Tambahkan di Settings lalu import ulang.` }
-                        : { ok: msg };
-                    }}
-                    className="flex flex-wrap items-center gap-2 max-w-md"
-                  >
-                    <input
-                      type="file"
-                      name="file"
-                      accept=".xlsx,.csv"
-                      required
-                      className="text-xs file:mr-2 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-medium file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 cursor-pointer"
-                    />
-                    <SubmitButton pendingText="Mengimpor...">Import XLSX/CSV</SubmitButton>
-                  </ActionForm>
-                </div>
-              )}
+                  const mods = await activeModules(project.id);
+                  const byName = new Map(mods.map((m) => [m.name.toLowerCase(), m.id]));
+                  const unknown = new Set<string>();
+                  for (const item of parsed) {
+                    const area = item.moduleArea?.trim();
+                    const moduleId = area ? byName.get(area.toLowerCase()) ?? null : null;
+                    if (area && !moduleId) unknown.add(area);
+                    await prisma.testCase.upsert({
+                      where: {
+                        projectId_code: {
+                          projectId: project.id,
+                          code: item.code,
+                        },
+                      },
+                      create: {
+                        projectId: project.id,
+                        code: item.code,
+                        moduleArea: item.moduleArea || null,
+                        moduleId,
+                        title: item.title,
+                        priority: item.priority,
+                        testType: item.testType || null,
+                        targetRole: item.targetRole || null,
+                        precondition: item.precondition || null,
+                        steps: item.steps || "-",
+                        expectedResult: item.expectedResult || "-",
+                        referenceUrl: item.referenceUrl || null,
+                      },
+                      update: {
+                        moduleArea: item.moduleArea || null,
+                        moduleId,
+                        title: item.title,
+                        priority: item.priority,
+                        testType: item.testType || null,
+                        targetRole: item.targetRole || null,
+                        precondition: item.precondition || null,
+                        steps: item.steps || "-",
+                        expectedResult: item.expectedResult || "-",
+                        referenceUrl: item.referenceUrl || null,
+                      },
+                    });
+                  }
+                  revalidatePath(`/projects/${project.key}/test-cases`);
+                  const msg = `${parsed.length} test case diimpor.`;
+                  return unknown.size
+                    ? { error: `${msg} Modul tidak dikenal: ${[...unknown].join(", ")}.` }
+                    : { ok: msg };
+                }}
+                className="flex items-center gap-2"
+              >
+                <input
+                  type="file"
+                  name="file"
+                  accept=".xlsx,.csv"
+                  required
+                  className="text-xs file:mr-2 file:py-1 file:px-2.5 file:rounded file:border-0 file:text-xs file:font-medium file:bg-white file:border-slate-300 file:border file:text-slate-700 hover:file:bg-slate-100 cursor-pointer"
+                />
+                <SubmitButton pendingText="Mengimpor..." className="press-snappy px-3 py-1 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-medium rounded">
+                  Upload XLSX/CSV
+                </SubmitButton>
+              </ActionForm>
             </div>
+          )}
 
-            {project.testCases.length === 0 ? (
-              <div className="bg-white border border-slate-200 rounded-lg p-12 text-center text-xs text-slate-500">
-                Belum ada test case di project ini. Gunakan tombol import di atas dengan file format template Google Sheet / Excel CRM.
-              </div>
-            ) : (
-              <div className="bg-white border border-slate-200 rounded-lg overflow-x-auto shadow-sm">
-                <table className="w-full text-left text-xs">
-                  <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold text-xs">
-                    <tr>
-                      <th className="py-3 px-4">Code</th>
-                      <th className="py-3 px-4">Area / Modul</th>
-                      <th className="py-3 px-4">Judul Test Case</th>
-                      <th className="py-3 px-4">Prioritas</th>
-                      <th className="py-3 px-4">Role</th>
-                      <th className="py-3 px-4">Expected Result</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {project.testCases.map((tc) => (
-                      <tr key={tc.id} className="hover:bg-slate-50 transition">
-                        <td className="py-3 px-4 font-mono font-semibold text-slate-900">
-                          {tc.code}
-                        </td>
-                        <td className="py-3 px-4 text-slate-600">
-                          {tc.module?.name ?? (tc.moduleArea ? `${tc.moduleArea} (tidak terdaftar)` : "-")}
-                        </td>
-                        <td className="py-3 px-4 font-medium text-slate-900">
-                          {tc.title}
-                        </td>
-                        <td className="py-3 px-4">
-                          <span
-                            className={`px-2 py-0.5 rounded text-xs font-semibold ${
-                              tc.priority === "CRITICAL"
-                                ? "bg-red-100 text-red-700"
-                                : tc.priority === "HIGH"
-                                ? "bg-orange-100 text-orange-700"
-                                : "bg-blue-100 text-blue-700"
-                            }`}
-                          >
-                            {tc.priority}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4 text-slate-500">
-                          {tc.targetRole || "-"}
-                        </td>
-                        <td className="py-3 px-4 text-slate-600 max-w-xs truncate">
-                          {tc.expectedResult}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+          {/* Test Cases Repository section with Client Interactive Modal */}
+          <section>
+            <TestCaseManagementSection
+              projectId={project.id}
+              projectKey={project.key}
+              canManage={canManage}
+              modules={modules.map((m) => ({ id: m.id, name: m.name }))}
+              testCases={project.testCases.map((tc) => ({
+                id: tc.id,
+                code: tc.code,
+                title: tc.title,
+                priority: tc.priority,
+                moduleId: tc.moduleId,
+                moduleArea: tc.moduleArea,
+                moduleName: tc.module?.name ?? null,
+                testType: tc.testType,
+                targetRole: tc.targetRole,
+                precondition: tc.precondition,
+                steps: tc.steps,
+                expectedResult: tc.expectedResult,
+                referenceUrl: tc.referenceUrl,
+              }))}
+            />
           </section>
         </main>
       </div>
