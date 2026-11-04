@@ -12,18 +12,17 @@ async function main() {
     throw new Error("Seed user ega@sismedika.com exists but is not ACTIVE; refusing to change account status.");
   }
   const existingProject = await prisma.project.findUnique({ where: { key: data.project.key } });
-  if (existingProject && !existingProject.isTest) {
-    throw new Error(`Project ${data.project.key} exists and is not marked isTest; refusing to modify it.`);
+  if (existingProject) {
+    throw new Error(`Project ${data.project.key} already exists; refusing to seed into an existing project.`);
   }
 
   await prisma.$transaction(async (tx) => {
     const user = existingUser ?? await tx.user.create({
       data: { email: "ega@sismedika.com", name: "Ega", status: UserStatus.ACTIVE },
     });
-    const project = existingProject ?? await tx.project.create({
+    const project = await tx.project.create({
       data: { key: data.project.key, name: data.project.name, isTest: true },
     });
-    await tx.project.update({ where: { id: project.id }, data: { name: data.project.name, isTest: true } });
     await tx.projectMember.upsert({
       where: { projectId_userId: { projectId: project.id, userId: user.id } },
       create: { projectId: project.id, userId: user.id, role: ProjectRole.QA },

@@ -12,10 +12,10 @@ describe("test seed inputs and safety", () => {
     expect(data.testCases).toHaveLength(1);
   });
 
-  it("AC-SEED-02 refuses to modify an existing non-test CRM project", async () => {
+  it("AC-SEED-02 refuses to seed into any existing project", async () => {
     const seed = await readFile(resolve(root, "prisma/seed-test.ts"), "utf8");
-    expect(seed).toContain('if (existingProject && !existingProject.isTest)');
-    expect(seed).toContain("refusing to modify it");
+    expect(seed).toContain("if (existingProject)");
+    expect(seed).toContain("refusing to seed into an existing project");
   });
 
   it("AC-SEED-03 uses approved Ega account and marks project as test", async () => {
