@@ -10,7 +10,7 @@ export default function TestCasesLoading() {
       {/* Two Column Layout Skeleton */}
       <div className="flex flex-col md:flex-row gap-6 mt-6 flex-1 min-h-[500px]">
         {/* Left Sidebar Skeleton */}
-        <div className="w-full md:w-64 border border-slate-200 rounded-lg p-3 space-y-3 bg-white">
+        <div className="w-full md:w-64 border border-slate-200 rounded-lg p-3 space-y-3 bg-surface">
           <div className="h-4 w-28 bg-slate-200 rounded mb-4" />
           <div className="h-8 w-full bg-slate-100 rounded" />
           <div className="space-y-2 pt-2">
@@ -21,7 +21,7 @@ export default function TestCasesLoading() {
         </div>
 
         {/* Right Table Skeleton */}
-        <div className="flex-1 border border-slate-200 rounded-lg p-4 bg-white space-y-4">
+        <div className="flex-1 border border-slate-200 rounded-lg p-4 bg-surface space-y-4">
           <div className="flex items-center justify-between">
             <div className="h-5 w-40 bg-slate-200 rounded" />
             <div className="h-8 w-48 bg-slate-100 rounded" />

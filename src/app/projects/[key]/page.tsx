@@ -154,7 +154,7 @@ export default async function ProjectDetailPage({
   return (
     <AppShell activeProjectKey={project.key}>
       <div className="min-h-full flex flex-col">
-        <header className="bg-white border-b border-slate-200 px-4 md:px-6 py-3 md:py-4 flex items-center justify-between gap-3">
+        <header className="bg-surface border-b border-slate-200 px-4 md:px-6 py-3 md:py-4 flex items-center justify-between gap-3">
           <div className="min-w-0">
             <h1 className="font-bold text-slate-900 text-base truncate">{project.name}</h1>
             <p className="text-xs text-slate-500">
@@ -182,7 +182,7 @@ export default async function ProjectDetailPage({
                 href={href(t.id)}
                 aria-current={view === t.id ? "page" : undefined}
                 className={`px-3 py-2 text-sm whitespace-nowrap border-b-2 -mb-px ${
-                  view === t.id ? "border-action text-slate-900 font-bold" : "border-transparent text-slate-500 hover:text-slate-900"
+                  view === t.id ? "border-link text-slate-900 font-bold" : "border-transparent text-slate-500 hover:text-slate-900"
                 }`}
               >
                 {t.label}
@@ -200,25 +200,25 @@ export default async function ProjectDetailPage({
               name="q"
               defaultValue={q ?? ""}
               placeholder={`Cari ID (${project.key}-1) atau judul`}
-              className="px-3 py-1.5 border border-slate-300 rounded flex-1 min-w-[200px] bg-white"
+              className="px-3 py-1.5 border border-slate-300 rounded flex-1 min-w-[200px] bg-surface"
             />
-            <select name="severity" defaultValue={severity ?? ""} aria-label="Severity" className="px-2 py-1.5 border border-slate-300 rounded bg-white">
+            <select name="severity" defaultValue={severity ?? ""} aria-label="Severity" className="px-2 py-1.5 border border-slate-300 rounded bg-surface">
               <option value="">Semua severity</option>
               {Object.values(BugSeverity).map((s) => <option key={s} value={s}>{SEVERITY_STYLE[s].label}</option>)}
             </select>
             {view === "all" && (
-              <select name="status" defaultValue={status ?? ""} aria-label="Status" className="px-2 py-1.5 border border-slate-300 rounded bg-white">
+              <select name="status" defaultValue={status ?? ""} aria-label="Status" className="px-2 py-1.5 border border-slate-300 rounded bg-surface">
                 <option value="">Semua status</option>
                 {Object.values(BugStatus).map((s) => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
               </select>
             )}
             {modules.length > 0 && (
-              <select name="module" defaultValue={sp.module ?? ""} aria-label="Modul" className="px-2 py-1.5 border border-slate-300 rounded bg-white">
+              <select name="module" defaultValue={sp.module ?? ""} aria-label="Modul" className="px-2 py-1.5 border border-slate-300 rounded bg-surface">
                 <option value="">Semua modul</option>
                 {modules.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
               </select>
             )}
-            <button type="submit" className="px-3 py-1.5 border border-slate-300 bg-white hover:bg-slate-100 rounded font-bold">
+            <button type="submit" className="px-3 py-1.5 border border-slate-300 bg-surface hover:bg-slate-100 rounded font-bold">
               Terapkan
             </button>
             {filtered && <Link href={href(view)} className="px-2 py-1.5 text-slate-500 hover:text-slate-900 underline">Reset</Link>}
@@ -226,11 +226,11 @@ export default async function ProjectDetailPage({
           </form>
 
           {bugs.length === 0 ? (
-            <p className="bg-white border border-slate-200 rounded p-10 text-center text-sm text-slate-600">{empty}</p>
+            <p className="bg-surface border border-slate-200 rounded p-10 text-center text-sm text-slate-600">{empty}</p>
           ) : (
             <>
               {/* Desktop: dense table. Left strip = severity, readable at a glance. */}
-              <table className="hidden md:table w-full text-left text-sm bg-white border border-slate-200 rounded overflow-hidden">
+              <table className="hidden md:table w-full text-left text-sm bg-surface border border-slate-200 rounded overflow-hidden">
                 <thead className="bg-slate-50 border-b border-slate-200 text-xs text-slate-600">
                   <tr>
                     <th scope="col" className="w-[3px] p-0"><span className="sr-only">Severity</span></th>
@@ -247,7 +247,7 @@ export default async function ProjectDetailPage({
                     <tr key={b.id} className="row-interactive hover:bg-slate-50/80">
                       <td className={`p-0 ${SEVERITY_STYLE[b.severity].strip} strip-accent`} />
                       <td className="py-2 px-3 font-bold whitespace-nowrap">
-                        <Link href={bugHref(b.number)} className="text-action hover:underline">{b.key}</Link>
+                        <Link href={bugHref(b.number)} className="text-link hover:underline">{b.key}</Link>
                       </td>
                       <td className="py-2 px-3">
                         <Link href={bugHref(b.number)} className="text-slate-900 hover:underline">{b.title}</Link>
@@ -272,11 +272,11 @@ export default async function ProjectDetailPage({
               <ul className="md:hidden space-y-2">
                 {bugs.map((b) => (
                   <li key={b.id}>
-                    <Link href={bugHref(b.number)} className="press-snappy flex bg-white border border-slate-200 hover:border-slate-300 rounded overflow-hidden shadow-xs">
+                    <Link href={bugHref(b.number)} className="press-snappy flex bg-surface border border-slate-200 hover:border-slate-300 rounded overflow-hidden shadow-xs">
                       <span className={`w-[3px] shrink-0 ${SEVERITY_STYLE[b.severity].strip}`} aria-hidden />
                       <span className="p-3 min-w-0 flex-1">
                         <span className="flex flex-wrap items-center gap-2 mb-1">
-                          <span className="font-bold text-action text-sm">{b.key}</span>
+                          <span className="font-bold text-link text-sm">{b.key}</span>
                           <SeverityBadge severity={b.severity} />
                           <StatusBadge status={b.status} />
                           <span className="ml-auto shrink-0"><SlaBadge severity={b.severity} status={b.status} createdAt={b.createdAt} compact /></span>

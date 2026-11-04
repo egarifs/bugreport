@@ -30,12 +30,12 @@ export default async function NotificationsPage({ searchParams }: { searchParams
   ]);
   const now = Date.now();
   const tab = (active: boolean) =>
-    `px-3 py-1.5 rounded text-sm font-medium ${active ? "bg-slate-900 text-white" : "text-slate-700 hover:bg-slate-100"}`;
+    `px-3 py-1.5 rounded text-sm font-medium ${active ? "bg-ink text-on-ink" : "text-slate-700 hover:bg-slate-100"}`;
 
   return (
     <AppShell>
       <div className="min-h-full flex flex-col">
-        <header className="bg-white border-b border-slate-200 px-6 py-4 flex flex-wrap items-center gap-3">
+        <header className="bg-surface border-b border-slate-200 px-6 py-4 flex flex-wrap items-center gap-3">
           <h1 className="font-bold text-slate-900">Notifikasi</h1>
           <nav className="flex gap-1" aria-label="Filter">
             <Link href="/notifications" className={tab(!unreadOnly)} aria-current={!unreadOnly ? "page" : undefined}>Semua</Link>
@@ -52,12 +52,12 @@ export default async function NotificationsPage({ searchParams }: { searchParams
 
         <main className="p-6">
           {items.length === 0 ? (
-            <div className="max-w-xl mx-auto mt-10 text-center bg-white border border-slate-200 rounded-lg p-10">
+            <div className="max-w-xl mx-auto mt-10 text-center bg-surface border border-slate-200 rounded-lg p-10">
               <p className="font-semibold text-slate-900">{unreadOnly ? "Semua sudah dibaca" : "Belum ada notifikasi"}</p>
               <p className="mt-1 text-sm text-slate-500">Notifikasi disimpan 90 hari.</p>
             </div>
           ) : (
-            <ul className="max-w-3xl bg-white border border-slate-200 rounded-lg divide-y divide-slate-100">
+            <ul className="max-w-3xl bg-surface border border-slate-200 rounded-lg divide-y divide-slate-100">
               {items.map((n) => (
                 <li key={n.id}>
                   <Link href={`/notifications/${n.id}`} prefetch={false} className={`flex gap-3 px-5 py-4 hover:bg-slate-50 ${n.readAt ? "" : "bg-slate-50/60"}`}>
@@ -67,7 +67,7 @@ export default async function NotificationsPage({ searchParams }: { searchParams
                       {n.body && <span className="block text-sm text-slate-500 truncate mt-0.5">{n.body}</span>}
                       <span className="block text-xs text-slate-500 mt-1">{timeAgo(n.createdAt.toISOString(), now)}</span>
                     </span>
-                    {!n.readAt && <span className="mt-2 w-2 h-2 shrink-0 rounded-full bg-rose-600" aria-label="Belum dibaca" />}
+                    {!n.readAt && <span className="mt-2 w-2 h-2 shrink-0 rounded-full bg-bad-solid" aria-label="Belum dibaca" />}
                   </Link>
                 </li>
               ))}

@@ -48,7 +48,7 @@ export default async function BusinessDocsPage({
   return (
     <AppShell activeProjectKey={project.key}>
       <div className="min-h-full flex flex-col">
-        <header className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between">
+        <header className="bg-surface border-b border-slate-200 px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <span className="font-mono font-bold text-xs bg-slate-100 text-slate-700 px-2 py-0.5 rounded">
               {project.key}
@@ -62,7 +62,7 @@ export default async function BusinessDocsPage({
         <main className="p-6 space-y-8 flex-1">
           {/* Upload Document Section */}
           {canManage && (
-            <div className="bg-white border border-slate-200 rounded-lg p-5 shadow-sm">
+            <div className="bg-surface border border-slate-200 rounded-lg p-5 shadow-sm">
               <h2 className="text-sm font-bold text-slate-900 mb-1">
                 Upload Dokumen Baru / Revisi Versi
               </h2>
@@ -192,7 +192,7 @@ export default async function BusinessDocsPage({
             </h2>
 
             {project.businessDocs.length === 0 ? (
-              <div className="bg-white border border-slate-200 rounded-lg p-12 text-center text-xs text-slate-500">
+              <div className="bg-surface border border-slate-200 rounded-lg p-12 text-center text-xs text-slate-500">
                 Belum ada dokumen bisnis di-upload untuk project ini.
               </div>
             ) : (
@@ -202,7 +202,7 @@ export default async function BusinessDocsPage({
                   return (
                     <div
                       key={doc.id}
-                      className="bg-white border border-slate-200 rounded-lg p-5 shadow-sm"
+                      className="bg-surface border border-slate-200 rounded-lg p-5 shadow-sm"
                     >
                       <div className="flex items-start justify-between">
                         <div>
@@ -212,7 +212,7 @@ export default async function BusinessDocsPage({
                                 {doc.title}
                               </Link>
                             </h3>
-                            <span className="text-xs font-mono font-semibold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800">
+                            <span className="text-xs font-mono font-semibold px-2 py-0.5 rounded bg-ok-bg text-ok">
                               v{currentVer?.versionNum ?? 1} (Aktif)
                             </span>
                           </div>
@@ -223,7 +223,7 @@ export default async function BusinessDocsPage({
                           )}
                           <Link
                             href={`/projects/${pkey}/docs/${doc.slug}`}
-                            className="inline-block mt-3 px-3 py-1.5 bg-slate-900 text-white rounded text-xs font-bold hover:bg-slate-700"
+                            className="inline-block mt-3 px-3 py-1.5 bg-ink text-on-ink rounded text-xs font-bold hover:bg-ink-hover"
                           >
                             Buka dokumen
                           </Link>
@@ -244,7 +244,7 @@ export default async function BusinessDocsPage({
                                 key={ver.id}
                                 className={`text-xs font-mono px-2 py-0.5 rounded border ${
                                   ver.isCurrent
-                                    ? "bg-slate-900 text-white border-slate-900"
+                                    ? "bg-ink text-on-ink border-slate-900"
                                     : "bg-slate-50 text-slate-600 border-slate-200"
                                 }`}
                               >

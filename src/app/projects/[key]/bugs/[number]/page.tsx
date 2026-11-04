@@ -97,7 +97,7 @@ export default async function BugDetailPage({
   return (
     <AppShell activeProjectKey={project.key}>
       <div className="min-h-full flex flex-col">
-        <header className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between">
+        <header className="bg-surface border-b border-slate-200 px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Link
               href={`/projects/${project.key}`}
@@ -124,7 +124,7 @@ export default async function BugDetailPage({
       <main className="p-6 flex-1 grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left: Detail content & comments */}
         <div className="lg:col-span-2 space-y-6">
-          <div className="bg-white border border-slate-200 rounded-lg p-6 shadow-sm">
+          <div className="bg-surface border border-slate-200 rounded-lg p-6 shadow-sm">
             <h1 className="text-lg font-bold text-slate-900 mb-4">{bug.title}</h1>
 
             <div className="space-y-4 text-xs">
@@ -169,7 +169,7 @@ export default async function BugDetailPage({
                   <ul className="grid grid-cols-2 md:grid-cols-3 gap-2">
                     {bug.attachments.map((a) => (
                       <li key={a.id}>
-                        <a href={`/api/projects/${project.key}/attachments/${a.id}`} target="_blank" rel="noopener" className="block border border-slate-200 rounded overflow-hidden hover:ring-2 hover:ring-action">
+                        <a href={`/api/projects/${project.key}/attachments/${a.id}`} target="_blank" rel="noopener" className="block border border-slate-200 rounded overflow-hidden hover:ring-2 hover:ring-link">
                           {/* eslint-disable-next-line @next/next/no-img-element -- authenticated route, not optimizable */}
                           <img src={`/api/projects/${project.key}/attachments/${a.id}`} alt={a.fileName} className="w-full h-32 object-cover bg-slate-50" loading="lazy" />
                           <span className="block px-2 py-1 truncate text-slate-600">{a.fileName}</span>
@@ -190,7 +190,7 @@ export default async function BugDetailPage({
                     {allRelated.map((r) => (
                       <li key={r.key} className="flex gap-2">
                         <span className="w-28 shrink-0 text-slate-500">Terkait</span>
-                        <Link href={`/projects/${project.key}/bugs/${r.number}`} className="font-mono font-bold text-action hover:underline">{r.key}</Link>
+                        <Link href={`/projects/${project.key}/bugs/${r.number}`} className="font-mono font-bold text-link hover:underline">{r.key}</Link>
                         <span className="truncate">{r.title}</span>
                       </li>
                     ))}
@@ -199,7 +199,7 @@ export default async function BugDetailPage({
               )}
 
               {bug.duplicateOf && (
-                <div className="bg-amber-50 border border-amber-200 rounded p-3 text-amber-900">
+                <div className="bg-warn-bg border border-warn-border rounded p-3 text-warn">
                   <span className="font-semibold">Ditandai duplikat dari:</span>{" "}
                   <Link
                     href={`/projects/${project.key}/bugs/${bug.duplicateOf.number}`}
@@ -212,7 +212,7 @@ export default async function BugDetailPage({
               )}
 
               {bug.reopenReason && (
-                <div className="bg-rose-50 border border-rose-200 rounded p-3 text-rose-900">
+                <div className="bg-bad-bg border border-bad-border rounded p-3 text-bad">
                   <span className="font-semibold">Alasan Reopen:</span> {bug.reopenReason}
                 </div>
               )}
@@ -220,7 +220,7 @@ export default async function BugDetailPage({
           </div>
 
           {/* Comments */}
-          <div className="bg-white border border-slate-200 rounded-lg p-6 shadow-sm">
+          <div className="bg-surface border border-slate-200 rounded-lg p-6 shadow-sm">
             <h2 className="text-sm font-bold text-slate-900 mb-4">
               Komentar & Diskusi ({bug.comments.length})
             </h2>
@@ -234,7 +234,7 @@ export default async function BugDetailPage({
                     key={c.id}
                     className={`p-3 rounded text-xs border ${
                       c.type === CommentType.INTERNAL
-                        ? "bg-amber-50/50 border-amber-200"
+                        ? "bg-warn-bg/50 border-warn-border"
                         : "bg-slate-50 border-slate-200"
                     }`}
                   >
@@ -244,7 +244,7 @@ export default async function BugDetailPage({
                       </span>
                       <div className="flex items-center gap-2">
                         {c.type === CommentType.INTERNAL && (
-                          <span className="text-xs font-semibold bg-amber-200 text-amber-800 px-1.5 py-0.2 rounded">
+                          <span className="text-xs font-semibold bg-warn-border text-warn px-1.5 py-0.2 rounded">
                             Catatan Internal
                           </span>
                         )}
@@ -334,7 +334,7 @@ export default async function BugDetailPage({
         {/* Right: Metadata & Actions */}
         <div className="space-y-6 text-xs">
           {/* Status transition panel */}
-          <div className="bg-white border border-slate-200 rounded-lg p-5 shadow-sm space-y-3">
+          <div className="bg-surface border border-slate-200 rounded-lg p-5 shadow-sm space-y-3">
             <h3 className="font-bold text-slate-900">Ubah Status</h3>
 
             {possibleStatuses.length === 0 ? (
@@ -425,7 +425,7 @@ export default async function BugDetailPage({
                 <select
                   name="targetStatus"
                   required
-                  className="w-full px-2 py-1.5 border border-slate-300 rounded bg-white text-xs font-medium"
+                  className="w-full px-2 py-1.5 border border-slate-300 rounded bg-surface text-xs font-medium"
                 >
                   {possibleStatuses.map((s) => (
                     <option key={s} value={s}>
@@ -442,7 +442,7 @@ export default async function BugDetailPage({
                     {modules.length === 0 ? (
                       <p className="text-xs text-sev-blocker">Project belum punya modul. Admin perlu menambahkannya di Settings.</p>
                     ) : (
-                      <select id="moduleId" name="moduleId" defaultValue={bug.moduleId ?? ""} className="w-full px-2 py-1.5 border border-slate-300 rounded bg-white text-sm">
+                      <select id="moduleId" name="moduleId" defaultValue={bug.moduleId ?? ""} className="w-full px-2 py-1.5 border border-slate-300 rounded bg-surface text-sm">
                         <option value="">Pilih modul</option>
                         {modules.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
                       </select>
@@ -498,7 +498,7 @@ export default async function BugDetailPage({
           </div>
 
           {/* Assignment & Details */}
-          <div className="bg-white border border-slate-200 rounded-lg p-5 shadow-sm space-y-3">
+          <div className="bg-surface border border-slate-200 rounded-lg p-5 shadow-sm space-y-3">
             <h3 className="font-bold text-slate-900">Informasi Bug</h3>
 
             <div className="space-y-2 text-slate-600">
@@ -534,7 +534,7 @@ export default async function BugDetailPage({
               {bug.reopenCount > 0 && (
                 <div className="flex justify-between py-1 border-b border-slate-100">
                   <span className="text-slate-400">Reopen Count</span>
-                  <span className="font-bold text-rose-700">{bug.reopenCount}x</span>
+                  <span className="font-bold text-bad">{bug.reopenCount}x</span>
                 </div>
               )}
 
@@ -582,7 +582,7 @@ export default async function BugDetailPage({
                 <select
                   name="assigneeId"
                   defaultValue={bug.assigneeId ?? ""}
-                  className="flex-1 px-2 py-1 border border-slate-300 rounded bg-white text-xs"
+                  className="flex-1 px-2 py-1 border border-slate-300 rounded bg-surface text-xs"
                 >
                   <option value="">-- Belum di-assign --</option>
                   {members.map((m) => (
@@ -602,7 +602,7 @@ export default async function BugDetailPage({
           </div>
 
           {/* Activity Timeline */}
-          <div className="bg-white border border-slate-200 rounded-lg p-5 shadow-sm space-y-3">
+          <div className="bg-surface border border-slate-200 rounded-lg p-5 shadow-sm space-y-3">
             <h3 className="font-bold text-slate-900">Riwayat Aktivitas</h3>
             {timeline.length === 0 ? (
               <p className="text-slate-400 text-xs italic">Belum ada riwayat aktivitas.</p>
@@ -640,7 +640,7 @@ function LinkRow({ label, href }: { label: string; href: string }) {
   return (
     <li className="flex gap-2">
       <span className="w-28 shrink-0 text-slate-500">{label}</span>
-      <a href={href} target="_blank" rel="noopener noreferrer" className="text-action hover:underline break-all">{href}</a>
+      <a href={href} target="_blank" rel="noopener noreferrer" className="text-link hover:underline break-all">{href}</a>
     </li>
   );
 }

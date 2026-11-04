@@ -15,7 +15,7 @@ export function BugImportModal({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="press-snappy shrink-0 px-3 py-2 border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded flex items-center gap-1.5 bg-white"
+        className="press-snappy shrink-0 px-3 py-2 border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded flex items-center gap-1.5 bg-surface"
       >
         <svg className="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
@@ -24,8 +24,8 @@ export function BugImportModal({
       </button>
 
       {open && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-2xl border border-slate-200 max-w-lg w-full p-5 chat-in">
+        <div className="fixed inset-0 z-50 bg-scrim/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-surface rounded-xl shadow-2xl border border-slate-200 max-w-lg w-full p-5 chat-in">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
                 <span>📥</span> Impor Bug dari Markdown (.md)
@@ -85,7 +85,7 @@ export function BugImportModal({
                   </button>
                   <SubmitButton
                     pendingText="Mengimpor..."
-                    className="press-snappy px-4 py-1.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded"
+                    className="press-snappy px-4 py-1.5 bg-ink hover:bg-ink-hover text-on-ink text-xs font-bold rounded"
                   >
                     Upload & Impor Bug
                   </SubmitButton>

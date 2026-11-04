@@ -60,8 +60,8 @@ export function ScreenshotInput() {
           setOver(false);
           apply([...files, ...e.dataTransfer.files]);
         }}
-        className={`flex flex-col items-center justify-center gap-1 px-4 py-6 border-2 border-dashed rounded cursor-pointer text-center focus-within:ring-2 focus-within:ring-action ${
-          over ? "border-action bg-slate-100" : "border-slate-300 hover:bg-slate-50"
+        className={`flex flex-col items-center justify-center gap-1 px-4 py-6 border-2 border-dashed rounded cursor-pointer text-center focus-within:ring-2 focus-within:ring-link ${
+          over ? "border-link bg-slate-100" : "border-slate-300 hover:bg-slate-50"
         }`}
       >
         <span className="font-bold text-slate-800">Tarik gambar ke sini, tempel (Ctrl+V), atau klik untuk memilih</span>

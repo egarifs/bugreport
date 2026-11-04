@@ -2,8 +2,9 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { createRequire } from "node:module";
 
-// WCAG AA guard for design tokens: text pairs >= 4.5:1. Edit tailwind.config.js, this test re-checks it.
-const { colors } = createRequire(import.meta.url)("../../tailwind.config.js").theme.extend;
+// WCAG AA guard for design tokens, in BOTH themes: text pairs >= 4.5:1.
+// Edit src/lib/theme-tokens.cjs (used by tailwind.config.js); this test re-checks every pair.
+const { light, dark } = createRequire(import.meta.url)("./theme-tokens.cjs") as Record<"light" | "dark", Record<string, string>>;
 
 const lum = (hex: string) => {
   const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255)
@@ -15,19 +16,29 @@ const ratio = (a: string, b: string) => {
   return (hi + 0.05) / (lo + 0.05);
 };
 
-test("PRD-06 token contrast meets WCAG AA", () => {
-  const { slate, action, sev } = colors;
-  const pairs: [string, string, string][] = [
-    ["muted text (slate-400) on page", slate[400], slate[50]],
-    ["muted text (slate-400) on card", slate[400], "#FFFFFF"],
-    ["body text on page", slate[900], slate[50]],
-    ["button text on action", "#FFFFFF", action.DEFAULT],
-    ["button text on action hover", "#FFFFFF", action.hover],
-    ...(["blocker", "high", "medium", "low"] as const).map(
-      (s): [string, string, string] => [`severity ${s}`, sev[s], sev[`${s}-bg`]],
-    ),
-  ];
-  for (const [name, fg, bg] of pairs) {
-    assert.ok(ratio(fg, bg) >= 4.5, `${name}: ${ratio(fg, bg).toFixed(2)} < 4.5`);
+function pairs(): [string, string][] {
+  const p: [string, string][] = [];
+  for (const fg of ["slate-900", "slate-700", "slate-600", "slate-500", "slate-400", "link"]) {
+    for (const bg of ["slate-50", "slate-100", "surface"]) p.push([fg, bg]);
   }
-});
+  p.push(["on-action", "action"], ["on-action", "action-hover"], ["on-ink", "ink"], ["on-ink", "ink-hover"]);
+  p.push(["link", "action-soft"], ["slate-900", "action-soft"]);
+  for (const s of ["blocker", "high", "medium", "low"]) {
+    p.push([`sev-${s}`, `sev-${s}-bg`], [`sev-${s}`, "surface"], [`sev-${s}`, "slate-50"]);
+  }
+  for (const s of ["ok", "warn", "bad", "info", "violet"]) {
+    p.push([s, `${s}-bg`], [s, "surface"], [s, "slate-50"], ["#FFFFFF", `${s}-solid`]);
+  }
+  return p;
+}
+
+for (const [name, tokens] of [["terang", light], ["gelap", dark]] as const) {
+  test(`PRD-06 token contrast meets WCAG AA (tema ${name})`, () => {
+    assert.deepEqual(Object.keys(tokens).sort(), Object.keys(light).sort(), "both themes define the same tokens");
+    for (const [fg, bg] of pairs()) {
+      const f = fg.startsWith("#") ? fg : tokens[fg];
+      const r = ratio(f, tokens[bg]);
+      assert.ok(r >= 4.5, `${name}: ${fg} on ${bg} = ${r.toFixed(2)} < 4.5`);
+    }
+  });
+}

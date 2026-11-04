@@ -58,7 +58,7 @@ export default async function TestRunDetailPage({
   return (
     <AppShell activeProjectKey={project.key}>
       <div className="min-h-full flex flex-col">
-        <header className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between">
+        <header className="bg-surface border-b border-slate-200 px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Link
               href={`/projects/${project.key}/test-cases`}
@@ -70,7 +70,7 @@ export default async function TestRunDetailPage({
             <span className="font-semibold text-slate-900 text-sm">
               {run.name}
             </span>
-            <span className="text-xs font-mono px-2 py-0.5 rounded bg-blue-50 text-blue-700">
+            <span className="text-xs font-mono px-2 py-0.5 rounded bg-info-bg text-info">
               {run.environment}
             </span>
             {run.buildVersion && (
@@ -84,30 +84,30 @@ export default async function TestRunDetailPage({
         <main className="p-6 space-y-6 flex-1">
           {/* Summary status cards */}
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-            <div className="bg-white border border-slate-200 rounded-lg p-3">
+            <div className="bg-surface border border-slate-200 rounded-lg p-3">
               <span className="text-xs text-slate-500">Total Cases</span>
               <p className="text-xl font-bold text-slate-900 mt-0.5">{total}</p>
             </div>
-            <div className="bg-white border border-emerald-200 rounded-lg p-3">
-              <span className="text-xs text-emerald-700">Passed</span>
-              <p className="text-xl font-bold text-emerald-700 mt-0.5">{passCount}</p>
+            <div className="bg-surface border border-ok-border rounded-lg p-3">
+              <span className="text-xs text-ok">Passed</span>
+              <p className="text-xl font-bold text-ok mt-0.5">{passCount}</p>
             </div>
-            <div className="bg-white border border-rose-200 rounded-lg p-3">
-              <span className="text-xs text-rose-600">Failed</span>
-              <p className="text-xl font-bold text-rose-700 mt-0.5">{failCount}</p>
+            <div className="bg-surface border border-bad-border rounded-lg p-3">
+              <span className="text-xs text-bad">Failed</span>
+              <p className="text-xl font-bold text-bad mt-0.5">{failCount}</p>
             </div>
-            <div className="bg-white border border-amber-200 rounded-lg p-3">
-              <span className="text-xs text-amber-700">Blocked</span>
-              <p className="text-xl font-bold text-amber-700 mt-0.5">{blockedCount}</p>
+            <div className="bg-surface border border-warn-border rounded-lg p-3">
+              <span className="text-xs text-warn">Blocked</span>
+              <p className="text-xl font-bold text-warn mt-0.5">{blockedCount}</p>
             </div>
-            <div className="bg-white border border-slate-200 rounded-lg p-3">
+            <div className="bg-surface border border-slate-200 rounded-lg p-3">
               <span className="text-xs text-slate-500">Not Run</span>
               <p className="text-xl font-bold text-slate-700 mt-0.5">{notRunCount}</p>
             </div>
           </div>
 
           {/* Test cases execution table */}
-          <div className="bg-white border border-slate-200 rounded-lg overflow-hidden shadow-sm">
+          <div className="bg-surface border border-slate-200 rounded-lg overflow-hidden shadow-sm">
             <div className="divide-y divide-slate-100">
               {run.items.map((item) => (
                 <div key={item.id} className="p-4 hover:bg-slate-50/50 transition">
@@ -126,11 +126,11 @@ export default async function TestRunDetailPage({
                         <span
                           className={`px-2 py-0.5 rounded text-xs font-semibold ${
                             item.status === "PASS"
-                              ? "bg-emerald-100 text-emerald-700"
+                              ? "bg-ok-bg text-ok"
                               : item.status === "FAIL"
-                              ? "bg-rose-100 text-rose-700"
+                              ? "bg-bad-bg text-bad"
                               : item.status === "BLOCKED"
-                              ? "bg-amber-100 text-amber-700"
+                              ? "bg-warn-bg text-warn"
                               : "bg-slate-100 text-slate-600"
                           }`}
                         >
@@ -148,7 +148,7 @@ export default async function TestRunDetailPage({
                           {item.testCase.expectedResult}
                         </div>
                         {item.actualResult && (
-                          <div className="text-rose-700">
+                          <div className="text-bad">
                             <strong>Hasil Aktual:</strong> {item.actualResult}
                           </div>
                         )}
@@ -190,7 +190,7 @@ export default async function TestRunDetailPage({
                             type="submit"
                             name="status"
                             value="PASS"
-                            className="px-2.5 py-1 text-xs bg-emerald-600 hover:bg-emerald-700 text-white rounded font-medium"
+                            className="px-2.5 py-1 text-xs bg-ok-solid hover:bg-ok-solid text-white rounded font-medium"
                           >
                             Pass
                           </button>
@@ -198,7 +198,7 @@ export default async function TestRunDetailPage({
                             type="submit"
                             name="status"
                             value="FAIL"
-                            className="px-2.5 py-1 text-xs bg-rose-600 hover:bg-rose-700 text-white rounded font-medium"
+                            className="px-2.5 py-1 text-xs bg-bad-solid hover:bg-bad-solid text-white rounded font-medium"
                           >
                             Fail
                           </button>
@@ -206,7 +206,7 @@ export default async function TestRunDetailPage({
                             type="submit"
                             name="status"
                             value="BLOCKED"
-                            className="px-2 py-1 text-xs bg-amber-500 hover:bg-amber-600 text-white rounded font-medium"
+                            className="px-2 py-1 text-xs bg-warn-solid hover:bg-warn-solid text-white rounded font-medium"
                           >
                             Blocked
                           </button>
@@ -219,7 +219,7 @@ export default async function TestRunDetailPage({
                           {item.createdBug ? (
                             <Link
                               href={`/projects/${project.key}/bugs/${item.createdBug.number}`}
-                              className="inline-flex items-center gap-1.5 px-3 py-1 bg-purple-50 text-purple-700 border border-purple-200 rounded text-xs font-semibold hover:bg-purple-100 transition"
+                              className="inline-flex items-center gap-1.5 px-3 py-1 bg-violet-bg text-violet border border-violet-border rounded text-xs font-semibold hover:bg-violet-bg transition"
                             >
                               <span>Bug Draft:</span>
                               <span className="font-mono">{item.createdBug.key}</span>
@@ -240,7 +240,7 @@ export default async function TestRunDetailPage({
                             >
                               <button
                                 type="submit"
-                                className="px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded text-xs font-semibold shadow-sm transition"
+                                className="px-3 py-1 bg-violet-solid hover:bg-violet-solid text-white rounded text-xs font-semibold shadow-sm transition"
                               >
                                 + Create Bug Draft
                               </button>

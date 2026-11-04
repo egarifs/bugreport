@@ -58,7 +58,7 @@ export default async function ProjectSettingsPage({
   return (
     <AppShell activeProjectKey={project.key}>
       <div className="min-h-full flex flex-col">
-        <header className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between">
+        <header className="bg-surface border-b border-slate-200 px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <span className="font-mono font-bold text-xs bg-slate-100 text-slate-700 px-2 py-0.5 rounded">
               {project.key}
@@ -72,42 +72,42 @@ export default async function ProjectSettingsPage({
         <main className="p-6 space-y-8 flex-1">
           {/* Freshly Generated API Key Notice */}
           {newCreatedKey && (
-            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-xs">
-              <h3 className="font-bold text-amber-900 mb-1">
+            <div className="bg-warn-bg border border-warn-border rounded-lg p-4 text-xs">
+              <h3 className="font-bold text-warn mb-1">
                 Simpan API Key Anda Sekarang
               </h3>
-              <p className="text-amber-800 mb-2">
+              <p className="text-warn mb-2">
                 Key ini hanya ditampilkan sekali. Gunakan untuk otentikasi MCP Server di Claude Code atau agent reporter CI/CD.
               </p>
-              <div className="font-mono bg-white border border-amber-300 p-2.5 rounded select-all text-amber-950 font-bold break-all">
+              <div className="font-mono bg-surface border border-warn-border p-2.5 rounded select-all text-warn font-bold break-all">
                 {newCreatedKey}
               </div>
             </div>
           )}
 
-          <section className="bg-white border border-slate-200 rounded-lg p-6 shadow-sm">
+          <section className="bg-surface border border-slate-200 rounded-lg p-6 shadow-sm">
             <h2 className="text-base font-bold text-slate-900">Pemakaian AI Chat hari ini</h2>
             <p className="text-xs text-slate-500 mb-3">Kuota token per project, reset 00:00 WIB. Ubah lewat env <code>CHAT_DAILY_TOKENS_PER_PROJECT</code>.</p>
             <div className="flex items-baseline justify-between text-sm mb-1">
               <span className="font-mono tabular-nums text-slate-900">{aiUsed.toLocaleString("id-ID")} / {aiQuota.toLocaleString("id-ID")} token</span>
-              <span className={aiPct >= 90 ? "font-bold text-rose-700" : "text-slate-500"}>{aiPct}%</span>
+              <span className={aiPct >= 90 ? "font-bold text-bad" : "text-slate-500"}>{aiPct}%</span>
             </div>
             <div className="h-2 rounded-full bg-slate-100 overflow-hidden" role="progressbar" aria-valuenow={aiPct} aria-valuemin={0} aria-valuemax={100} aria-label="Pemakaian kuota AI">
-              <div className={`h-full ${aiPct >= 90 ? "bg-rose-600" : "bg-slate-900"}`} style={{ width: `${aiPct}%` }} />
+              <div className={`h-full ${aiPct >= 90 ? "bg-bad-solid" : "bg-ink"}`} style={{ width: `${aiPct}%` }} />
             </div>
           </section>
 
           <ModulesSection projectId={project.id} projectKey={project.key} canManage={canManage} />
 
           {/* AI Agent API Keys Section (CRUD vs View Only Mode) */}
-          <section className="bg-white border border-slate-200 rounded-lg p-6 shadow-sm">
+          <section className="bg-surface border border-slate-200 rounded-lg p-6 shadow-sm">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5 border-b border-slate-100 pb-4">
               <div>
                 <div className="flex items-center gap-2">
                   <h2 className="text-base font-bold text-slate-900">
                     AI Agent API Keys (MCP Protocol)
                   </h2>
-                  <span className={`text-[11px] font-semibold px-2 py-0.5 rounded ${canManage ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-600"}`}>
+                  <span className={`text-[11px] font-semibold px-2 py-0.5 rounded ${canManage ? "bg-ink text-on-ink" : "bg-slate-100 text-slate-600"}`}>
                     {canManage ? "Mode CRUD (Admin)" : "Mode View Only"}
                   </span>
                 </div>
@@ -166,7 +166,7 @@ export default async function ProjectSettingsPage({
                   />
                   <select
                     name="role"
-                    className="text-xs px-2.5 py-1.5 border border-slate-300 rounded bg-white text-slate-700 outline-none"
+                    className="text-xs px-2.5 py-1.5 border border-slate-300 rounded bg-surface text-slate-700 outline-none"
                     title="Akses Role Agent"
                   >
                     <option value="QA">Role: QA (Full CRUD)</option>
@@ -175,7 +175,7 @@ export default async function ProjectSettingsPage({
                   <select
                     name="expireDays"
                     defaultValue="30"
-                    className="text-xs px-2.5 py-1.5 border border-slate-300 rounded bg-white text-slate-700 outline-none"
+                    className="text-xs px-2.5 py-1.5 border border-slate-300 rounded bg-surface text-slate-700 outline-none"
                     title="Masa Berlaku Key"
                   >
                     <option value="7">Berlaku 7 hari</option>
@@ -210,20 +210,20 @@ export default async function ProjectSettingsPage({
                             {k.keyPrefix}...
                           </span>
                           <span className={`text-[11px] font-semibold px-2 py-0.5 rounded ${
-                            k.role === "QA" ? "bg-blue-100 text-blue-800" : "bg-slate-100 text-slate-700"
+                            k.role === "QA" ? "bg-info-bg text-info" : "bg-slate-100 text-slate-700"
                           }`}>
                             {k.role === "QA" ? "QA (CRUD)" : "Non-QA (View)"}
                           </span>
                           {isRevoked ? (
-                            <span className="text-[11px] bg-rose-100 text-rose-700 px-2 py-0.5 rounded font-semibold">
+                            <span className="text-[11px] bg-bad-bg text-bad px-2 py-0.5 rounded font-semibold">
                               Revoked
                             </span>
                           ) : isExpired ? (
-                            <span className="text-[11px] bg-amber-100 text-amber-800 px-2 py-0.5 rounded font-semibold">
+                            <span className="text-[11px] bg-warn-bg text-warn px-2 py-0.5 rounded font-semibold">
                               Expired
                             </span>
                           ) : (
-                            <span className="text-[11px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded font-semibold">
+                            <span className="text-[11px] bg-ok-bg text-ok px-2 py-0.5 rounded font-semibold">
                               Active
                             </span>
                           )}
@@ -232,7 +232,7 @@ export default async function ProjectSettingsPage({
                           Pembuat: <span className="font-medium text-slate-700">{k.createdBy.name || k.createdBy.email}</span>
                           {" • "}
                           Kadaluwarsa:{" "}
-                          <span className={isExpired ? "text-rose-600 font-semibold" : "text-slate-700"}>
+                          <span className={isExpired ? "text-bad font-semibold" : "text-slate-700"}>
                             {k.expiresAt ? k.expiresAt.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }) : "Tanpa batas"}
                           </span>
                           {" • "}
@@ -255,7 +255,7 @@ export default async function ProjectSettingsPage({
                         >
                           <button
                             type="submit"
-                            className="text-xs text-rose-600 hover:text-rose-800 font-medium px-2 py-1 rounded hover:bg-rose-50"
+                            className="text-xs text-bad hover:text-bad font-medium px-2 py-1 rounded hover:bg-bad-bg"
                           >
                             Revoke Key
                           </button>
@@ -269,7 +269,7 @@ export default async function ProjectSettingsPage({
           </section>
 
           {/* AI Agent Runs Section */}
-          <section className="bg-white border border-slate-200 rounded-lg p-6 shadow-sm">
+          <section className="bg-surface border border-slate-200 rounded-lg p-6 shadow-sm">
             <h2 className="text-base font-bold text-slate-900 mb-1">
               Riwayat Eksekusi AI Agent (Agent Runs)
             </h2>
@@ -300,7 +300,7 @@ export default async function ProjectSettingsPage({
                           r.createdBugs.map((b) => (
                             <span
                               key={b.id}
-                              className="font-mono text-xs font-semibold bg-purple-50 text-purple-700 px-2 py-0.5 rounded border border-purple-200"
+                              className="font-mono text-xs font-semibold bg-violet-bg text-violet px-2 py-0.5 rounded border border-violet-border"
                             >
                               {b.key} ({b.status})
                             </span>

@@ -43,7 +43,7 @@ export default async function DocViewerPage({
   return (
     <AppShell activeProjectKey={pkey}>
       <div className="min-h-full flex flex-col">
-        <header className="bg-white border-b border-slate-200 px-6 py-3 flex flex-wrap items-center gap-x-4 gap-y-2">
+        <header className="bg-surface border-b border-slate-200 px-6 py-3 flex flex-wrap items-center gap-x-4 gap-y-2">
           <nav className="flex items-center gap-2 text-sm min-w-0">
             <Link href={`/projects/${pkey}/docs`} className="text-slate-600 hover:text-slate-900">← Dokumen bisnis</Link>
             <span aria-hidden="true" className="text-slate-300">/</span>
@@ -57,7 +57,7 @@ export default async function DocViewerPage({
                 href={`?v=${x.versionNum}`}
                 aria-current={x.id === ver.id ? "page" : undefined}
                 className={`px-2 py-0.5 rounded border font-mono text-xs ${
-                  x.id === ver.id ? "bg-slate-900 text-white border-slate-900" : "border-slate-300 text-slate-700 hover:bg-slate-100"
+                  x.id === ver.id ? "bg-ink text-on-ink border-slate-900" : "border-slate-300 text-slate-700 hover:bg-slate-100"
                 }`}
               >
                 v{x.versionNum}
@@ -70,13 +70,13 @@ export default async function DocViewerPage({
         </header>
 
         {!ver.isCurrent && (
-          <p role="note" className="px-6 py-2 bg-amber-50 border-b border-amber-200 text-sm text-amber-900">
+          <p role="note" className="px-6 py-2 bg-warn-bg border-b border-warn-border text-sm text-warn">
             Anda melihat v{ver.versionNum} (lama). Versi aktif:{" "}
             <Link href="?" className="font-bold underline">v{current.versionNum}</Link>.
           </p>
         )}
 
-        <div className="px-6 py-2 text-xs text-slate-500 border-b border-slate-200 bg-white">
+        <div className="px-6 py-2 text-xs text-slate-500 border-b border-slate-200 bg-surface">
           {ver.fileName} · {(ver.fileSize / 1024).toFixed(1)} KB · diunggah {ver.uploadedAt.toLocaleDateString("id-ID", { dateStyle: "medium" })}
           {doc.description && <> · {doc.description}</>}
         </div>
@@ -99,12 +99,12 @@ export default async function DocViewerPage({
                 </div>
               </nav>
             )}
-            <article className="self-start flex-1 min-w-0 max-w-4xl bg-white border border-slate-200 rounded-lg p-6 md:p-10">
+            <article className="self-start flex-1 min-w-0 max-w-4xl bg-surface border border-slate-200 rounded-lg p-6 md:p-10">
               <Markdown anchors>{md}</Markdown>
             </article>
           </div>
         ) : isMarkdown(ver.fileName) ? (
-          <p className="m-6 p-6 bg-white border border-slate-200 rounded-lg text-sm text-slate-600">File tidak ditemukan di server. Unggah ulang dokumen ini.</p>
+          <p className="m-6 p-6 bg-surface border border-slate-200 rounded-lg text-sm text-slate-600">File tidak ditemukan di server. Unggah ulang dokumen ini.</p>
         ) : (
           <iframe src={fileUrl} title={`${doc.title} v${ver.versionNum}`} className="flex-1 w-full min-h-[80vh] bg-slate-100" />
         )}

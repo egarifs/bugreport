@@ -160,7 +160,7 @@ export function TestCaseManagementSection({
       {/* Two-Column Master-Detail Layout */}
       <div className="flex flex-col lg:flex-row gap-5 items-start">
         {/* LEFT COLUMN: MODULE SIDEBAR */}
-        <aside className="w-full lg:w-64 bg-white border border-slate-200 rounded-lg p-3 shadow-xs shrink-0 space-y-3">
+        <aside className="w-full lg:w-64 bg-surface border border-slate-200 rounded-lg p-3 shadow-xs shrink-0 space-y-3">
           <div className="flex items-center justify-between px-1">
             <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">Modul Fitur</span>
             <span className="text-[11px] font-mono font-semibold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
@@ -175,7 +175,7 @@ export function TestCaseManagementSection({
               value={moduleSearch}
               onChange={(e) => setModuleSearch(e.target.value)}
               placeholder="Cari modul..."
-              className="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded bg-slate-50/60 focus:bg-white focus:outline-none focus:border-slate-400 placeholder:text-slate-400"
+              className="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded bg-slate-50/60 focus:bg-surface focus:outline-none focus:border-slate-400 placeholder:text-slate-400"
             />
             {moduleSearch && (
               <button
@@ -196,7 +196,7 @@ export function TestCaseManagementSection({
               onClick={() => setSelectedModuleId("ALL")}
               className={`w-full flex items-center justify-between px-2.5 py-2 text-xs rounded transition-colors text-left ${
                 selectedModuleId === "ALL"
-                  ? "bg-slate-900 text-white font-semibold"
+                  ? "bg-ink text-on-ink font-semibold"
                   : "text-slate-700 hover:bg-slate-100"
               }`}
             >
@@ -204,7 +204,7 @@ export function TestCaseManagementSection({
               <span
                 className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${
                   selectedModuleId === "ALL"
-                    ? "bg-slate-800 text-slate-200"
+                    ? "bg-ink text-slate-200"
                     : "bg-slate-100 text-slate-600 font-medium"
                 }`}
               >
@@ -223,7 +223,7 @@ export function TestCaseManagementSection({
                   onClick={() => setSelectedModuleId(m.id)}
                   className={`w-full flex items-center justify-between px-2.5 py-2 text-xs rounded transition-colors text-left ${
                     isSelected
-                      ? "bg-slate-900 text-white font-semibold"
+                      ? "bg-ink text-on-ink font-semibold"
                       : "text-slate-700 hover:bg-slate-100"
                   }`}
                 >
@@ -233,7 +233,7 @@ export function TestCaseManagementSection({
                   <span
                     className={`text-[10px] font-mono px-1.5 py-0.5 rounded shrink-0 ml-2 ${
                       isSelected
-                        ? "bg-slate-800 text-slate-200"
+                        ? "bg-ink text-slate-200"
                         : "bg-slate-100 text-slate-600 font-medium"
                     }`}
                   >
@@ -250,7 +250,7 @@ export function TestCaseManagementSection({
                 onClick={() => setSelectedModuleId("UNASSIGNED")}
                 className={`w-full flex items-center justify-between px-2.5 py-2 text-xs rounded transition-colors text-left ${
                   selectedModuleId === "UNASSIGNED"
-                    ? "bg-slate-900 text-white font-semibold"
+                    ? "bg-ink text-on-ink font-semibold"
                     : "text-slate-500 hover:bg-slate-100 italic"
                 }`}
               >
@@ -258,7 +258,7 @@ export function TestCaseManagementSection({
                 <span
                   className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${
                     selectedModuleId === "UNASSIGNED"
-                      ? "bg-slate-800 text-slate-200"
+                      ? "bg-ink text-slate-200"
                       : "bg-slate-100 text-slate-600 font-medium"
                   }`}
                 >
@@ -276,7 +276,7 @@ export function TestCaseManagementSection({
         {/* RIGHT COLUMN: FILTER BAR & TEST CASE TABLE */}
         <section className="flex-1 min-w-0 w-full space-y-3">
           {/* Active Module Header & Sub-Filters Bar */}
-          <div className="bg-white border border-slate-200 rounded-lg p-3.5 shadow-xs flex flex-wrap items-center justify-between gap-3">
+          <div className="bg-surface border border-slate-200 rounded-lg p-3.5 shadow-xs flex flex-wrap items-center justify-between gap-3">
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="text-sm font-bold text-slate-900">{currentModuleName}</h3>
@@ -294,7 +294,7 @@ export function TestCaseManagementSection({
                 <select
                   value={selectedType}
                   onChange={(e) => setSelectedType(e.target.value)}
-                  className="px-2.5 py-1 text-xs border border-slate-300 rounded bg-white text-slate-700 font-medium focus:outline-none focus:border-slate-400"
+                  className="px-2.5 py-1 text-xs border border-slate-300 rounded bg-surface text-slate-700 font-medium focus:outline-none focus:border-slate-400"
                 >
                   <option value="ALL">Semua Tipe</option>
                   {availableTypes.map((t) => (
@@ -312,7 +312,7 @@ export function TestCaseManagementSection({
                   value={tcSearch}
                   onChange={(e) => setTcSearch(e.target.value)}
                   placeholder="Cari kode atau judul..."
-                  className="w-48 sm:w-56 px-2.5 py-1 text-xs border border-slate-300 rounded bg-white focus:outline-none focus:border-slate-400 placeholder:text-slate-400"
+                  className="w-48 sm:w-56 px-2.5 py-1 text-xs border border-slate-300 rounded bg-surface focus:outline-none focus:border-slate-400 placeholder:text-slate-400"
                 />
                 {tcSearch && (
                   <button
@@ -329,7 +329,7 @@ export function TestCaseManagementSection({
 
           {/* Table list */}
           {filteredTestCases.length === 0 ? (
-            <div className="bg-white border border-slate-200 rounded-lg p-10 text-center text-xs text-slate-500 space-y-2">
+            <div className="bg-surface border border-slate-200 rounded-lg p-10 text-center text-xs text-slate-500 space-y-2">
               <p>Tidak ada test case yang cocok dengan filter yang dipilih.</p>
               {(selectedModuleId !== "ALL" || selectedType !== "ALL" || tcSearch) && (
                 <button
@@ -339,14 +339,14 @@ export function TestCaseManagementSection({
                     setSelectedType("ALL");
                     setTcSearch("");
                   }}
-                  className="text-action underline text-xs font-semibold"
+                  className="text-link underline text-xs font-semibold"
                 >
                   Reset semua filter
                 </button>
               )}
             </div>
           ) : (
-            <div className="bg-white border border-slate-200 rounded-lg overflow-x-auto shadow-xs">
+            <div className="bg-surface border border-slate-200 rounded-lg overflow-x-auto shadow-xs">
               <table className="w-full text-left text-xs">
                 <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold text-xs">
                   <tr>
@@ -381,10 +381,10 @@ export function TestCaseManagementSection({
                         <span
                           className={`px-2 py-0.5 rounded text-xs font-semibold ${
                             tc.priority === "CRITICAL"
-                              ? "bg-red-100 text-red-700"
+                              ? "bg-bad-bg text-bad"
                               : tc.priority === "HIGH"
-                              ? "bg-orange-100 text-orange-700"
-                              : "bg-blue-100 text-blue-700"
+                              ? "bg-warn-bg text-warn"
+                              : "bg-info-bg text-info"
                           }`}
                         >
                           {tc.priority}
@@ -398,7 +398,7 @@ export function TestCaseManagementSection({
                           <button
                             type="button"
                             onClick={() => openEdit(tc)}
-                            className="text-action hover:underline font-medium text-xs"
+                            className="text-link hover:underline font-medium text-xs"
                           >
                             Edit
                           </button>
@@ -415,8 +415,8 @@ export function TestCaseManagementSection({
 
       {/* VIEW MODAL */}
       {activeModal === "view" && selectedTc && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg shadow-xl border border-slate-200 max-w-2xl w-full max-h-[90vh] flex flex-col chat-in">
+        <div className="fixed inset-0 z-50 bg-scrim/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-surface rounded-lg shadow-xl border border-slate-200 max-w-2xl w-full max-h-[90vh] flex flex-col chat-in">
             <header className="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="font-mono font-bold text-sm bg-slate-100 text-slate-800 px-2 py-0.5 rounded">
@@ -428,10 +428,10 @@ export function TestCaseManagementSection({
                 <span
                   className={`px-2 py-0.5 rounded text-xs font-semibold ${
                     selectedTc.priority === "CRITICAL"
-                      ? "bg-red-100 text-red-700"
+                      ? "bg-bad-bg text-bad"
                       : selectedTc.priority === "HIGH"
-                      ? "bg-orange-100 text-orange-700"
-                      : "bg-blue-100 text-blue-700"
+                      ? "bg-warn-bg text-warn"
+                      : "bg-info-bg text-info"
                   }`}
                 >
                   {selectedTc.priority}
@@ -463,7 +463,7 @@ export function TestCaseManagementSection({
                     href={selectedTc.referenceUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="text-action underline font-mono break-all"
+                    className="text-link underline font-mono break-all"
                   >
                     {selectedTc.referenceUrl}
                   </a>
@@ -486,7 +486,7 @@ export function TestCaseManagementSection({
 
               <div>
                 <span className="font-semibold text-slate-700 block mb-1">Hasil yang Diharapkan (Expected Result):</span>
-                <div className="bg-emerald-50/50 border border-emerald-200 rounded p-3 text-emerald-950 font-medium whitespace-pre-wrap">
+                <div className="bg-ok-bg/50 border border-ok-border rounded p-3 text-ok font-medium whitespace-pre-wrap">
                   {selectedTc.expectedResult}
                 </div>
               </div>
@@ -503,7 +503,7 @@ export function TestCaseManagementSection({
                     }}
                   >
                     <input type="hidden" name="id" value={selectedTc.id} />
-                    <SubmitButton pendingText="Menghapus..." className="press-snappy px-3 py-1.5 text-xs text-rose-600 hover:text-rose-700 font-semibold">
+                    <SubmitButton pendingText="Menghapus..." className="press-snappy px-3 py-1.5 text-xs text-bad hover:text-bad font-semibold">
                       Hapus Test Case
                     </SubmitButton>
                   </ActionForm>
@@ -534,8 +534,8 @@ export function TestCaseManagementSection({
 
       {/* CREATE & EDIT MODAL */}
       {(activeModal === "create" || activeModal === "edit") && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg shadow-xl border border-slate-200 max-w-2xl w-full max-h-[90vh] flex flex-col chat-in">
+        <div className="fixed inset-0 z-50 bg-scrim/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-surface rounded-lg shadow-xl border border-slate-200 max-w-2xl w-full max-h-[90vh] flex flex-col chat-in">
             <header className="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
               <h3 className="text-sm font-bold text-slate-900">
                 {activeModal === "create" ? "Buat Test Case Baru" : `Edit Test Case ${selectedTc?.code}`}
@@ -587,7 +587,7 @@ export function TestCaseManagementSection({
                           ? selectedModuleId
                           : "")
                       }
-                      className="w-full px-2.5 py-1.5 border border-slate-300 rounded text-xs bg-white"
+                      className="w-full px-2.5 py-1.5 border border-slate-300 rounded text-xs bg-surface"
                     >
                       <option value="">-- Tanpa Modul --</option>
                       {modules.map((m) => (
@@ -604,7 +604,7 @@ export function TestCaseManagementSection({
                     <select
                       name="priority"
                       defaultValue={selectedTc?.priority || "MEDIUM"}
-                      className="w-full px-2.5 py-1.5 border border-slate-300 rounded text-xs bg-white font-medium"
+                      className="w-full px-2.5 py-1.5 border border-slate-300 rounded text-xs bg-surface font-medium"
                     >
                       <option value="CRITICAL">CRITICAL</option>
                       <option value="HIGH">HIGH</option>

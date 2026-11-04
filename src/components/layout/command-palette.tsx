@@ -251,15 +251,15 @@ export function CommandPalette({
 
   const modalContent = open ? (
     <div 
-      className="fixed inset-0 z-[9999] bg-slate-900/60 backdrop-blur-xs flex items-start justify-center pt-24 px-4"
+      className="fixed inset-0 z-[9999] bg-scrim/60 backdrop-blur-xs flex items-start justify-center pt-24 px-4"
       onClick={() => setOpen(false)}
     >
       <div
-        className="bg-white rounded-xl shadow-2xl border border-slate-200 max-w-xl w-full flex flex-col overflow-hidden chat-in"
+        className="bg-surface rounded-xl shadow-2xl border border-slate-200 max-w-xl w-full flex flex-col overflow-hidden chat-in"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Search Input Bar */}
-        <div className="flex items-center gap-3 px-4 py-3.5 border-b border-slate-200 bg-white">
+        <div className="flex items-center gap-3 px-4 py-3.5 border-b border-slate-200 bg-surface">
           <svg className="w-5 h-5 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
@@ -295,13 +295,13 @@ export function CommandPalette({
                   onClick={() => handleSelect(item)}
                   onMouseEnter={() => setSelectedIndex(idx)}
                   className={`flex items-center justify-between px-3.5 py-2.5 rounded-lg cursor-pointer transition-colors ${
-                    isSelected ? "bg-slate-900 text-white" : "hover:bg-slate-100 text-slate-800"
+                    isSelected ? "bg-ink text-on-ink" : "hover:bg-slate-100 text-slate-800"
                   }`}
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <span className="text-base shrink-0">{item.icon}</span>
                     <div className="min-w-0">
-                      <p className={`font-semibold truncate text-xs ${isSelected ? "text-white" : "text-slate-900"}`}>
+                      <p className={`font-semibold truncate text-xs ${isSelected ? "text-on-ink" : "text-slate-900"}`}>
                         {item.title}
                       </p>
                       {item.subtext && (
@@ -313,7 +313,7 @@ export function CommandPalette({
                   </div>
                   <span
                     className={`text-[10px] font-semibold uppercase px-2 py-0.5 rounded shrink-0 ml-3 ${
-                      isSelected ? "bg-slate-800 text-slate-200" : "bg-slate-100 text-slate-600"
+                      isSelected ? "bg-ink text-slate-200" : "bg-slate-100 text-slate-600"
                     }`}
                   >
                     {item.category}
@@ -351,7 +351,7 @@ export function CommandPalette({
           </svg>
           <span className="truncate">Cari perintah...</span>
         </div>
-        <kbd className="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-mono font-bold text-slate-500 bg-white border border-slate-300 rounded shadow-2xs">
+        <kbd className="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-mono font-bold text-slate-500 bg-surface border border-slate-300 rounded shadow-2xs">
           ⌘K
         </kbd>
       </button>

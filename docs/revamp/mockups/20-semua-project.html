@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<title>Semua project</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Atkinson+Hyperlegible+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#1E5AA8}a:hover{color:#174A8C}
+.row{transition:background-color 120ms cubic-bezier(.2,.8,.2,1)}
+.row:hover{background:#F3EEE4}
+@media (prefers-reduced-motion: reduce){.row{transition:none}}
+</style>
+
+<div style="min-height: 1000px; box-sizing: border-box; background-color: #F6F4EF; background-image: radial-gradient(rgba(80,56,20,0.05) 0.7px, transparent 0.9px), radial-gradient(rgba(80,56,20,0.035) 0.7px, transparent 0.9px); background-size: 4px 4px, 7px 7px; background-position: 0 0, 2px 3px; color: #1F1C17; font-family: 'Atkinson Hyperlegible', system-ui, sans-serif; display: flex; flex-wrap: wrap">
+
+<nav aria-label="Navigasi utama" style="flex: 0 0 72px; box-sizing: border-box; background: #F1EEE7; border-right: 1px solid #E2DDD3; padding: 16px 0; display: flex; flex-direction: column; align-items: center; gap: 6px">
+<a href="20-semua-project.html" aria-label="Semua project" aria-current="page" style="width: 44px; height: 44px; border-radius: 8px; background: #E7ECF4; color: #174A8C; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><rect x="3.5" y="3.5" width="5.5" height="5.5" rx="1.2"></rect><rect x="11" y="3.5" width="5.5" height="5.5" rx="1.2"></rect><rect x="3.5" y="11" width="5.5" height="5.5" rx="1.2"></rect><rect x="11" y="11" width="5.5" height="5.5" rx="1.2"></rect></svg></a>
+<a href="21-notifikasi.html" aria-label="Notifikasi, 33 belum dibaca" style="position: relative; width: 44px; height: 44px; border-radius: 8px; color: #2E2A23; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 14V9a4.5 4.5 0 0 1 9 0v5l1.2 1.5H4.3zM8.5 17.5h3"></path></svg><span style="position: absolute; top: 9px; right: 10px; width: 8px; height: 8px; border-radius: 50%; background: #B42318; border: 2px solid #F1EEE7"></span></a>
+<a href="20-semua-project.html" aria-label="API dan Swagger" style="width: 44px; height: 44px; border-radius: 8px; color: #2E2A23; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 6.5 4 10l3.5 3.5M12.5 6.5 16 10l-3.5 3.5"></path></svg></a>
+<span aria-hidden="true" style="margin-top: auto; width: 32px; height: 32px; border-radius: 50%; background: #E2DDD3; display: flex; align-items: center; justify-content: center; font: 600 12px/16px 'Atkinson Hyperlegible', system-ui, sans-serif">SA</span>
+</nav>
+
+<main style="flex: 999 1 640px; min-width: 0; padding: 28px 40px 48px; display: flex; flex-direction: column; gap: 20px; background-image: radial-gradient(1100px 220px at 18% -60px, rgba(255,214,150,0.28), transparent 70%); background-repeat: no-repeat">
+
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px">
+<div><h1 style="margin: 0; font: 600 24px/30px 'Atkinson Hyperlegible', system-ui, sans-serif">Project</h1><div style="font: 400 14px/20px 'Atkinson Hyperlegible', system-ui, sans-serif; color: #5C564C">Pilih project untuk triase, laporan, atau test run.</div></div>
+<a href="20-semua-project.html" style="display: inline-flex; align-items: center; height: 44px; padding: 0 18px; border-radius: 8px; background: #1E5AA8; color: #fff; font: 600 14px/20px 'Atkinson Hyperlegible', system-ui, sans-serif; text-decoration: none; box-shadow: 0 4px 12px -6px rgba(30,90,168,0.6)">Project baru</a>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px">
+<div role="tablist" aria-label="Filter project" style="display: inline-flex; padding: 3px; border-radius: 10px; background: #ECE7DE; gap: 2px">
+<button type="button" role="tab" aria-selected="true" style="height: 38px; padding: 0 14px; border: 0; border-radius: 8px; background: #FFFDF9; color: #1F1C17; font: 600 14px/20px 'Atkinson Hyperlegible', system-ui, sans-serif; box-shadow: 0 1px 2px rgba(31,28,23,0.12)">Saya anggota</button>
+<button type="button" role="tab" aria-selected="false" style="height: 38px; padding: 0 14px; border: 0; border-radius: 8px; background: transparent; color: #3E3930; font: 500 14px/20px 'Atkinson Hyperlegible', system-ui, sans-serif">Semua</button>
+<button type="button" role="tab" aria-selected="false" style="height: 38px; padding: 0 14px; border: 0; border-radius: 8px; background: transparent; color: #3E3930; font: 500 14px/20px 'Atkinson Hyperlegible', system-ui, sans-serif">Arsip</button>
+</div>
+<div style="flex: 1 1 240px; max-width: 380px"><label for="p-cari" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Cari project</label><input id="p-cari" type="search" placeholder="Cari nama atau kode project" style="width: 100%; height: 44px; box-sizing: border-box; padding: 0 14px; border: 1px solid #8F877A; border-radius: 8px; background: #FFFDF9; font: 400 14px/20px 'Atkinson Hyperlegible', system-ui, sans-serif"></div>
+<span style="margin-left: auto; font: 400 14px/20px 'Atkinson Hyperlegible', system-ui, sans-serif; color: #5C564C">Urut: aktivitas terakhir</span>
+</div>
+
+<div style="background: #FFFDF9; border: 1px solid #E2DDD3; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 2px rgba(31,28,23,0.04), 0 8px 24px -16px rgba(31,28,23,0.18)">
+<div style="overflow-x: auto"><div style="min-width: 900px">
+<div style="display: grid; grid-template-columns: minmax(0, 1fr) 110px 112px 160px 140px 150px; gap: 16px; padding: 10px 20px; background: #F6F4EF; border-bottom: 1px solid #E2DDD3; font: 500 13px/18px 'Atkinson Hyperlegible', system-ui, sans-serif; color: #5C564C"><div>Project</div><div>Peran Anda</div><div>Bug aktif</div><div>Penghalang rilis</div><div>Menunggu review</div><div>Aktivitas terakhir</div></div>
+
+<a class="row" href="10-bug-triase.html" style="display: grid; grid-template-columns: minmax(0, 1fr) 110px 112px 160px 140px 150px; gap: 16px; align-items: center; padding: 16px 20px; border-bottom: 1px solid #ECE7DE; color: #1F1C17; text-decoration: none; font: 400 14px/20px 'Atkinson Hyperlegible', system-ui, sans-serif">
+<div style="display: flex; align-items: center; gap: 12px; min-width: 0"><span style="flex: 0 0 36px; width: 36px; height: 36px; border-radius: 8px; background: #1F1C17; color: #FFFDF9; display: flex; align-items: center; justify-content: center; font: 500 11px/14px 'Atkinson Hyperlegible Mono', ui-monospace, monospace">CRM</span><span style="min-width: 0"><span style="display: block; font-weight: 600">CRM Sismedika</span><span style="display: block; font-size: 13px; color: #5C564C">[N] anggota · 1 modul</span></span></div>
+<div>Admin</div>
+<div style="font-family: 'Atkinson Hyperlegible Mono', ui-monospace, monospace">6</div>
+<div style="display: flex; align-items: center; gap: 6px; color: #B42318; font-weight: 500"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5.5" stroke="#B42318" stroke-width="1.5"></circle><path d="M7 4.2 V7.4" stroke="#B42318" stroke-width="1.5" stroke-linecap="round"></path><circle cx="7" cy="9.4" r="0.9" fill="#B42318"></circle></svg>4 High</div>
+<div><span style="display: inline-flex; min-width: 22px; height: 22px; padding: 0 7px; box-sizing: border-box; border-radius: 11px; background: #1E5AA8; color: #fff; font: 500 12px/22px 'Atkinson Hyperlegible', system-ui, sans-serif; justify-content: center">3</span></div>
+<div style="color: #3E3930">5 jam lalu</div>
+</a>
+
+<a class="row" href="20-semua-project.html" style="display: grid; grid-template-columns: minmax(0, 1fr) 110px 112px 160px 140px 150px; gap: 16px; align-items: center; padding: 16px 20px; border-bottom: 1px solid #ECE7DE; color: #1F1C17; text-decoration: none; font: 400 14px/20px 'Atkinson Hyperlegible', system-ui, sans-serif">
+<div style="display: flex; align-items: center; gap: 12px; min-width: 0"><span style="flex: 0 0 36px; width: 36px; height: 36px; border-radius: 8px; background: #3D5A80; color: #fff; display: flex; align-items: center; justify-content: center; font: 500 11px/14px 'Atkinson Hyperlegible Mono', ui-monospace, monospace">[KD]</span><span style="min-width: 0"><span style="display: block; font-weight: 600">[Nama project lain]</span><span style="display: block; font-size: 13px; color: #5C564C">3 anggota</span></span></div>
+<div>QA</div>
+<div style="font-family: 'Atkinson Hyperlegible Mono', ui-monospace, monospace">1</div>
+<div style="display: flex; align-items: center; gap: 6px; color: #14783D; font-weight: 500"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6.25" fill="#14783D"></circle><path d="M4.2 7.2 6.2 9.2 9.8 5.2" stroke="#fff" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"></path></svg>Siap rilis</div>
+<div style="color: #5C564C">0</div>
+<div style="color: #3E3930">1 hari lalu</div>
+</a>
+
+<button type="button" style="display: flex; width: 100%; align-items: center; gap: 10px; padding: 14px 20px; border: 0; background: transparent; color: #3E3930; font: 400 14px/20px 'Atkinson Hyperlegible', system-ui, sans-serif; text-align: left; cursor: pointer; min-height: 52px">
+<svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4l4 4-4 4"></path></svg>
+<span><b style="color: #1F1C17">[N] project uji</b> disembunyikan (Report fixture, Phase 2B, Notify, MCP Test, Phase 4 AI Chat). Tampilkan</span>
+</button>
+</div></div>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; gap: 16px; font: 400 13px/18px 'Atkinson Hyperlegible', system-ui, sans-serif; color: #5C564C">
+<span>Project yang dibuat oleh test otomatis ditandai "uji" dan otomatis dilipat, supaya daftar kerja tetap bersih.</span>
+</div>
+
+</main>
+</div>
+
+
+</body>
+</html>

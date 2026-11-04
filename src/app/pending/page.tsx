@@ -20,8 +20,8 @@ export default async function PendingPage() {
 
   return (
     <main className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
-      <div className="max-w-md w-full bg-white rounded-lg shadow-sm border border-slate-200 p-8 text-center">
-        <div className="w-12 h-12 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center mx-auto mb-4 font-bold text-xl">
+      <div className="max-w-md w-full bg-surface rounded-lg shadow-sm border border-slate-200 p-8 text-center">
+        <div className="w-12 h-12 rounded-full bg-warn-bg text-warn flex items-center justify-center mx-auto mb-4 font-bold text-xl">
           !
         </div>
 
@@ -54,7 +54,7 @@ export default async function PendingPage() {
           </div>
           <div>
             <span className="text-slate-400">Status:</span>{" "}
-            <span className="font-medium text-amber-700">{user.status}</span>
+            <span className="font-medium text-warn">{user.status}</span>
           </div>
         </div>
 

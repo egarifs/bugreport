@@ -19,7 +19,7 @@ export default function ProjectPageLoading() {
       </div>
 
       {/* Table Rows Skeleton */}
-      <div className="mt-4 border border-slate-200 rounded-lg divide-y divide-slate-100 bg-white overflow-hidden shadow-2xs">
+      <div className="mt-4 border border-slate-200 rounded-lg divide-y divide-slate-100 bg-surface overflow-hidden shadow-2xs">
         {[1, 2, 3, 4, 5, 6].map((i) => (
           <div key={i} className="flex items-center justify-between p-4 gap-4">
             <div className="flex items-center gap-4 flex-1 min-w-0">

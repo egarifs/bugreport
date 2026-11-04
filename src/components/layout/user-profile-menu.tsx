@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import { THEME_STORAGE_KEY, applyTheme, normalizeTheme, type ThemeChoice } from "@/lib/theme";
 
 export type ProfileUser = {
   id?: string;
@@ -11,7 +12,12 @@ export type ProfileUser = {
   isAdmin?: boolean;
 };
 
-export type ThemeChoice = "default" | "claude" | "chatgpt" | "antigravity";
+
+const THEME_OPTIONS: { value: ThemeChoice; label: string }[] = [
+  { value: "system", label: "Ikut sistem" },
+  { value: "light", label: "Terang" },
+  { value: "dark", label: "Gelap" },
+];
 
 export function UserProfileMenu({
   user,
@@ -23,22 +29,25 @@ export function UserProfileMenu({
   onSignOut: () => Promise<void>;
 }) {
   const [open, setOpen] = useState(false);
-  const [currentTheme, setCurrentTheme] = useState<ThemeChoice>("default");
+  const [currentTheme, setCurrentTheme] = useState<ThemeChoice>("system");
   const menuRef = useRef<HTMLDivElement>(null);
 
-  // Sync theme with localStorage
+  // The <head> script already applied the theme before paint; this only syncs the menu state
+  // and rewrites old brand-named values ("claude", "antigravity", ...) once.
   useEffect(() => {
-    const saved = localStorage.getItem("bugreport-theme") as ThemeChoice;
-    if (saved) {
-      setCurrentTheme(saved);
-      document.documentElement.setAttribute("data-theme", saved);
-    }
+    const stored = localStorage.getItem(THEME_STORAGE_KEY);
+    const t = normalizeTheme(stored);
+    setCurrentTheme(t);
+    applyTheme(t);
+    if (t === "system" && stored !== null) localStorage.removeItem(THEME_STORAGE_KEY);
+    else if (t !== "system" && stored !== t) localStorage.setItem(THEME_STORAGE_KEY, t);
   }, []);
 
   function handleThemeChange(t: ThemeChoice) {
     setCurrentTheme(t);
-    localStorage.setItem("bugreport-theme", t);
-    document.documentElement.setAttribute("data-theme", t);
+    if (t === "system") localStorage.removeItem(THEME_STORAGE_KEY);
+    else localStorage.setItem(THEME_STORAGE_KEY, t);
+    applyTheme(t);
   }
 
   // Close when clicking outside
@@ -85,7 +94,7 @@ export function UserProfileMenu({
       >
         <div className="flex items-center gap-2.5 min-w-0">
           {/* Avatar Anchor */}
-          <div className="w-8 h-8 rounded-full bg-slate-900 text-white flex items-center justify-center font-semibold text-xs shrink-0 shadow-2xs">
+          <div className="w-8 h-8 rounded-full bg-ink text-on-ink flex items-center justify-center font-semibold text-xs shrink-0 shadow-2xs">
             {user.image ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
@@ -106,7 +115,7 @@ export function UserProfileMenu({
               <p className="text-[11px] text-slate-500 truncate flex items-center gap-1.5">
                 <span
                   className={`inline-block w-1.5 h-1.5 rounded-full ${
-                    user.isAdmin ? "bg-indigo-600" : "bg-emerald-500"
+                    user.isAdmin ? "bg-info-solid" : "bg-ok-solid"
                   }`}
                 />
                 {user.isAdmin ? "Super Admin" : "Active Member"}
@@ -133,7 +142,7 @@ export function UserProfileMenu({
       {open && (
         <div
           role="menu"
-          className={`absolute bottom-full mb-2 z-50 bg-white rounded-xl shadow-2xl border border-slate-200 py-2 min-w-72 chat-in ${
+          className={`absolute bottom-full mb-2 z-50 bg-surface rounded-xl shadow-2xl border border-slate-200 py-2 min-w-72 chat-in ${
             collapsed ? "left-0" : "left-0 right-0"
           }`}
         >
@@ -149,7 +158,7 @@ export function UserProfileMenu({
               <span
                 className={`inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-semibold rounded ${
                   user.isAdmin
-                    ? "bg-indigo-50 text-indigo-700 border border-indigo-200"
+                    ? "bg-info-bg text-info border border-info-border"
                     : "bg-slate-100 text-slate-700 border border-slate-200"
                 }`}
               >
@@ -161,61 +170,21 @@ export function UserProfileMenu({
 
           {/* Theme Selector */}
           <div className="px-3 py-2 border-b border-slate-100">
-            <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5 flex items-center gap-1">
-              <span>🎨</span> Pilihan Tema
-            </p>
-            <div className="grid grid-cols-2 gap-1.5 text-xs">
-              <button
-                type="button"
-                onClick={() => handleThemeChange("default")}
-                className={`flex items-center gap-1.5 px-2 py-1.5 rounded border text-[11px] font-medium transition-colors ${
-                  currentTheme === "default"
-                    ? "bg-slate-900 text-white border-slate-900"
-                    : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
-                }`}
-              >
-                <span className="w-2 h-2 rounded-full bg-blue-500 shrink-0" />
-                Default Slate
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleThemeChange("claude")}
-                className={`flex items-center gap-1.5 px-2 py-1.5 rounded border text-[11px] font-medium transition-colors ${
-                  currentTheme === "claude"
-                    ? "bg-[#D97757] text-white border-[#D97757]"
-                    : "bg-[#FAF7F2] text-[#242220] border-[#E7E1D8] hover:bg-[#F2ECE4]"
-                }`}
-              >
-                <span className="w-2 h-2 rounded-full bg-[#D97757] shrink-0" />
-                Claude Warm
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleThemeChange("chatgpt")}
-                className={`flex items-center gap-1.5 px-2 py-1.5 rounded border text-[11px] font-medium transition-colors ${
-                  currentTheme === "chatgpt"
-                    ? "bg-[#10A37F] text-white border-[#10A37F]"
-                    : "bg-white text-slate-700 border-slate-200 hover:bg-emerald-50/50"
-                }`}
-              >
-                <span className="w-2 h-2 rounded-full bg-[#10A37F] shrink-0" />
-                ChatGPT Green
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleThemeChange("antigravity")}
-                className={`flex items-center gap-1.5 px-2 py-1.5 rounded border text-[11px] font-medium transition-colors ${
-                  currentTheme === "antigravity"
-                    ? "bg-indigo-600 text-white border-indigo-600"
-                    : "bg-slate-900 text-slate-200 border-slate-700 hover:bg-slate-800"
-                }`}
-              >
-                <span className="w-2 h-2 rounded-full bg-indigo-400 shrink-0" />
-                Antigravity Dark
-              </button>
+            <p id="theme-label" className="text-xs font-semibold text-slate-600 mb-1.5">Tema</p>
+            <div role="group" aria-labelledby="theme-label" className="grid grid-cols-3 gap-1 p-0.5 rounded-lg bg-slate-100">
+              {THEME_OPTIONS.map((o) => (
+                <button
+                  key={o.value}
+                  type="button"
+                  aria-pressed={currentTheme === o.value}
+                  onClick={() => handleThemeChange(o.value)}
+                  className={`min-h-[36px] px-2 rounded-md text-xs font-semibold transition-colors duration-fast ${
+                    currentTheme === o.value ? "bg-surface text-slate-900 shadow-sm" : "text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  {o.label}
+                </button>
+              ))}
             </div>
           </div>
 
@@ -258,10 +227,10 @@ export function UserProfileMenu({
             >
               <button
                 type="submit"
-                className="w-full flex items-center gap-2.5 px-2.5 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 rounded-md transition-colors"
+                className="w-full flex items-center gap-2.5 px-2.5 py-2 text-xs font-semibold text-bad hover:bg-bad-bg rounded-md transition-colors"
                 role="menuitem"
               >
-                <svg className="w-4 h-4 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-4 h-4 text-bad" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"

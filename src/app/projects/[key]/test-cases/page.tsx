@@ -52,7 +52,7 @@ export default async function TestCasesPage({
   return (
     <AppShell activeProjectKey={project.key}>
       <div className="min-h-full flex flex-col">
-        <header className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between">
+        <header className="bg-surface border-b border-slate-200 px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <span className="font-mono font-bold text-xs bg-slate-100 text-slate-700 px-2 py-0.5 rounded">
               {project.key}
@@ -66,10 +66,10 @@ export default async function TestCasesPage({
             {/* Import: secondary utility, tucked into native <details> dropdown */}
             {canManage && (
               <details className="relative">
-                <summary className="list-none cursor-pointer select-none px-3.5 py-1.5 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-medium rounded transition">
+                <summary className="list-none cursor-pointer select-none px-3.5 py-1.5 bg-surface border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-medium rounded transition">
                   Impor ▾
                 </summary>
-                <div className="absolute right-0 mt-1 z-30 w-80 bg-white border border-slate-200 rounded-lg shadow-lg p-3 space-y-2 text-xs">
+                <div className="absolute right-0 mt-1 z-30 w-80 bg-surface border border-slate-200 rounded-lg shadow-lg p-3 space-y-2 text-xs">
                 <p className="text-slate-600 font-medium">Impor massal: XLSX, CSV, atau Markdown (.md). Code yang sama akan di-update.</p>
                 <ActionForm
                   action={async (_prev: ActionResult, formData: FormData): Promise<ActionResult> => {
@@ -143,9 +143,9 @@ export default async function TestCasesPage({
                     name="file"
                     accept=".xlsx,.csv,.md,.markdown"
                     required
-                    className="text-xs file:mr-2 file:py-1 file:px-2.5 file:rounded file:border-0 file:text-xs file:font-medium file:bg-white file:border-slate-300 file:border file:text-slate-700 hover:file:bg-slate-100 cursor-pointer"
+                    className="text-xs file:mr-2 file:py-1 file:px-2.5 file:rounded file:border-0 file:text-xs file:font-medium file:bg-surface file:border-slate-300 file:border file:text-slate-700 hover:file:bg-slate-100 cursor-pointer"
                   />
-                  <SubmitButton pendingText="Mengimpor..." className="press-snappy px-3 py-1 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-medium rounded">
+                  <SubmitButton pendingText="Mengimpor..." className="press-snappy px-3 py-1 bg-surface border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-medium rounded">
                     Upload XLSX/CSV/MD
                   </SubmitButton>
                 </ActionForm>
@@ -155,14 +155,14 @@ export default async function TestCasesPage({
 
             <Link
               href={`/projects/${project.key}/test-runs/new`}
-              className="px-3.5 py-1.5 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-medium rounded transition"
+              className="px-3.5 py-1.5 bg-surface border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-medium rounded transition"
             >
               + Buat Test Run
             </Link>
           </div>
         </header>
 
-        <nav className="bg-white border-b border-slate-200 px-6 flex gap-5 text-sm" aria-label="Test case tabs">
+        <nav className="bg-surface border-b border-slate-200 px-6 flex gap-5 text-sm" aria-label="Test case tabs">
           {([["cases", `Repository (${project.testCases.length})`], ["runs", `Test Runs (${project.testRuns.length})`]] as const).map(([t, label]) => (
             <Link
               key={t}
@@ -184,7 +184,7 @@ export default async function TestCasesPage({
             </div>
 
             {project.testRuns.length === 0 ? (
-              <div className="bg-white border border-slate-200 rounded-lg p-6 text-center text-xs text-slate-500">
+              <div className="bg-surface border border-slate-200 rounded-lg p-6 text-center text-xs text-slate-500">
                 Belum ada test run dibuat. Buat test run untuk mulai eksekusi pengujian release.
               </div>
             ) : (
@@ -197,11 +197,11 @@ export default async function TestCasesPage({
                     <Link
                       key={r.id}
                       href={`/projects/${project.key}/test-runs/${r.id}`}
-                      className="bg-white border border-slate-200 hover:border-slate-300 rounded-lg p-4 block shadow-sm"
+                      className="bg-surface border border-slate-200 hover:border-slate-300 rounded-lg p-4 block shadow-sm"
                     >
                       <div className="flex items-start justify-between">
                         <span className="font-semibold text-sm text-slate-900">{r.name}</span>
-                        <span className="text-xs font-mono px-2 py-0.5 rounded bg-blue-50 text-blue-700">
+                        <span className="text-xs font-mono px-2 py-0.5 rounded bg-info-bg text-info">
                           {r.environment}
                         </span>
                       </div>
@@ -209,8 +209,8 @@ export default async function TestCasesPage({
                       <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
                         <span className="text-slate-600">{total} test cases</span>
                         <div className="flex items-center gap-2">
-                          <span className="text-emerald-700 font-medium">{passCount} Pass</span>
-                          <span className="text-rose-600 font-medium">{failCount} Fail</span>
+                          <span className="text-ok font-medium">{passCount} Pass</span>
+                          <span className="text-bad font-medium">{failCount} Fail</span>
                         </div>
                       </div>
                     </Link>

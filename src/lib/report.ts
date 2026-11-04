@@ -25,7 +25,10 @@ export async function getProjectReport(projectId: string, targetVersion?: string
     prisma.bug.groupBy({ by: ["assigneeId"], where: active, _count: true }),
     prisma.bug.findMany({
       where: { ...active, severity: { in: ["BLOCKER", "HIGH"] }, ...versionFilter },
-      select: { key: true, title: true, severity: true, status: true },
+      select: {
+        key: true, title: true, severity: true, status: true,
+        assignee: { select: { name: true, email: true } },
+      },
       orderBy: { severity: "asc" },
     }),
   ]);

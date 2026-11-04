@@ -63,8 +63,8 @@ export function TopProgressBar() {
         className="h-full transition-all ease-out duration-200"
         style={{
           width: `${progress}%`,
-          backgroundColor: "var(--theme-accent, #1E5AA8)",
-          boxShadow: "0 0 8px var(--theme-accent, #1E5AA8)",
+          backgroundColor: "rgb(var(--c-action))",
+          boxShadow: "0 0 8px rgb(var(--c-action) / 0.6)",
         }}
       />
     </div>
