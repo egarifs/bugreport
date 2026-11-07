@@ -51,6 +51,7 @@ export default async function NewBugPage({
   const role = project.members[0]?.role;
   const modules = await activeModules(project.id);
   // If QA or Admin reports, can start directly as OPEN if preferred, otherwise DRAFT
+  const canSetPriority = hasPermission(role, "bug.review", user.isAdmin);
   const canDirectOpen = user.isAdmin || role === "QA" || role === "ADMIN";
 
   return (
@@ -119,16 +120,30 @@ export default async function NewBugPage({
                     <option value={BugSeverity.LOW}>Low: minor, teks/tampilan</option>
                   </select>
                 </div>
-                <div>
-                  <label htmlFor="priority" className={LABEL}>Priority</label>
-                  <select id="priority" name="priority" defaultValue={BugPriority.NORMAL} className={INPUT}>
-                    <option value={BugPriority.URGENT}>Urgent</option>
-                    <option value={BugPriority.HIGH}>High</option>
-                    <option value={BugPriority.NORMAL}>Normal</option>
-                    <option value={BugPriority.LOW}>Low</option>
-                  </select>
-                </div>
+                {canSetPriority ? (
+                  <div>
+                    <label htmlFor="priority" className={LABEL}>Prioritas</label>
+                    <select id="priority" name="priority" defaultValue={BugPriority.NORMAL} className={INPUT}>
+                      <option value={BugPriority.URGENT}>Urgent</option>
+                      <option value={BugPriority.HIGH}>High</option>
+                      <option value={BugPriority.NORMAL}>Normal</option>
+                      <option value={BugPriority.LOW}>Low</option>
+                    </select>
+                  </div>
+                ) : (
+                  <p className="text-xs text-slate-500 self-end pb-2">Prioritas ditentukan QA saat triase.</p>
+                )}
               </div>
+              <details className="text-xs text-slate-700 bg-slate-50 border border-slate-200 rounded p-3">
+                <summary className="font-bold cursor-pointer">Panduan severity × prioritas</summary>
+                <dl className="mt-2 space-y-1.5">
+                  <div><dt className="inline font-bold">Blocker: </dt><dd className="inline">fitur inti tidak bisa dipakai, tanpa jalan lain. Mis. login gagal untuk semua.</dd></div>
+                  <div><dt className="inline font-bold">High: </dt><dd className="inline">fungsi penting salah, ada jalan lain yang merepotkan.</dd></div>
+                  <div><dt className="inline font-bold">Medium: </dt><dd className="inline">fungsi sekunder salah atau tampilan mengganggu.</dd></div>
+                  <div><dt className="inline font-bold">Low: </dt><dd className="inline">kosmetik atau typo, tidak memengaruhi alur.</dd></div>
+                </dl>
+                <p className="mt-2"><b>Severity</b> = dampak ke pengguna (diisi pelapor). <b>Prioritas</b> = urutan perbaikan (diubah QA saat triase). Logo salah di halaman utama klien bisa Low severity tapi High prioritas.</p>
+              </details>
             </fieldset>
 
             <fieldset className="space-y-3 pt-5 border-t border-slate-200">
@@ -241,9 +256,11 @@ async function createBug(projectId: string, _prev: ActionResult, formData: FormD
 
   const title = text(formData, "title");
   const severity = formData.get("severity") as BugSeverity;
-  const priority = Object.values(BugPriority).includes(formData.get("priority") as BugPriority)
-    ? (formData.get("priority") as BugPriority)
-    : BugPriority.NORMAL;
+  // Only reviewers set priority; reporters' value is ignored server-side.
+  const priority =
+    hasPermission(author.role, "bug.review", author.isAdmin) && Object.values(BugPriority).includes(formData.get("priority") as BugPriority)
+      ? (formData.get("priority") as BugPriority)
+      : BugPriority.NORMAL;
   if (!title) return { error: "Isi judul bug." };
   if (title.length > 200) return { error: "Judul maksimal 200 karakter." };
   if (!Object.values(BugSeverity).includes(severity)) return { error: "Pilih severity." };

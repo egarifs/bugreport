@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import type { BugStatus } from "@prisma/client";
+import { statusLabel } from "@/lib/status-dictionary";
 
 interface DuplicateItem {
   id: string;
@@ -65,15 +67,15 @@ export function DuplicateChecker({ projectKey }: { projectKey: string }) {
   if (duplicates.length === 0) return null;
 
   return (
-    <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs space-y-2">
+    <div role="status" aria-live="polite" className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs space-y-2">
       <div className="flex items-center justify-between">
         <span className="font-semibold text-amber-900 flex items-center gap-1.5">
-          Kemungkinan bug duplikat ditemukan ({duplicates.length})
+          Mirip {duplicates[0].key}{duplicates.length > 1 ? ` dan ${duplicates.length - 1} lainnya` : ""}
         </span>
         {loading && <span className="text-xs text-amber-700">Mencari...</span>}
       </div>
       <p className="text-xs text-amber-700">
-        Periksa daftar berikut sebelum membuat laporan baru agar tidak terjadi redundansi:
+        Bug yang sama? Tambahkan info Anda sebagai komentar di sana. Laporan tetap bisa dikirim.
       </p>
       <ul className="space-y-1.5 divide-y divide-amber-200/50">
         {duplicates.map((d) => (
@@ -84,7 +86,7 @@ export function DuplicateChecker({ projectKey }: { projectKey: string }) {
             </div>
             <div className="flex items-center gap-2 shrink-0">
               <span className="px-1.5 py-0.5 rounded text-xs bg-amber-200/60 text-amber-900 font-medium">
-                {d.status}
+                {statusLabel(d.status as BugStatus)}
               </span>
               <span className="text-xs text-amber-700">
                 {(d.similarity * 100).toFixed(0)}% mirip
@@ -94,7 +96,7 @@ export function DuplicateChecker({ projectKey }: { projectKey: string }) {
                 target="_blank"
                 className="text-amber-900 font-semibold underline hover:text-amber-950"
               >
-                Lihat ↗
+                Buka ↗
               </Link>
             </div>
           </li>
