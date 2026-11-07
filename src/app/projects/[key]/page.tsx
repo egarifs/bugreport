@@ -7,6 +7,7 @@ import { AppShell } from "@/components/layout/app-shell";
 import { hasPermission } from "@/lib/permissions";
 import { activeModules } from "@/lib/modules";
 import { SEVERITY_STYLE, STATUS_LABEL, SeverityBadge, StatusBadge } from "@/components/ui/bug-badges";
+import { StatePanel } from "@/components/ui/state-panel";
 import { SlaBadge } from "@/components/ui/sla-badge";
 import { BugImportModal } from "./bugs/import/bug-import-modal";
 import { parseMarkdownBugs } from "@/lib/markdown-importer";
@@ -226,7 +227,13 @@ export default async function ProjectDetailPage({
           </form>
 
           {bugs.length === 0 ? (
-            <p className="bg-white border border-slate-200 rounded p-10 text-center text-sm text-slate-600">{empty}</p>
+            <StatePanel
+              kind={filtered ? "filtered" : "empty"}
+              title={filtered ? "Tidak ada bug yang cocok" : view === "review" ? "Antrean bersih" : "Belum ada bug"}
+              action={filtered ? { label: "Hapus semua filter", href: href(view) } : view === "review" ? { label: "Tugas saya", href: href("mine") } : canCreate ? { label: "Laporkan bug", href: `/projects/${project.key}/bugs/new` } : undefined}
+            >
+              {empty}
+            </StatePanel>
           ) : (
             <>
               {/* Desktop: dense table. Left strip = severity, readable at a glance. */}

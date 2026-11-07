@@ -1,3 +1,4 @@
+import { statusLabel } from "./status-dictionary";
 import { prisma } from "@/lib/db";
 import { redactSecrets } from "@/lib/redact";
 import { notifyBug } from "./notify";
@@ -238,7 +239,7 @@ export async function executeMcpTool(
         });
 
         return {
-          content: [{ type: "text", text: JSON.stringify({ count: bugs.length, bugs }, null, 2) }],
+          content: [{ type: "text", text: JSON.stringify({ count: bugs.length, bugs: bugs.map((b) => ({ ...b, statusLabel: statusLabel(b.status) })) }, null, 2) }],
         };
       }
 
@@ -270,7 +271,7 @@ export async function executeMcpTool(
         }
 
         return {
-          content: [{ type: "text", text: JSON.stringify(bug, null, 2) }],
+          content: [{ type: "text", text: JSON.stringify({ ...bug, statusLabel: statusLabel(bug.status) }, null, 2) }],
         };
       }
 

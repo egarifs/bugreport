@@ -3,6 +3,7 @@ import { activeModules } from "@/lib/modules";
 import { requireProjectPermission } from "@/lib/authz";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { ForbiddenState } from "@/components/ui/forbidden-state";
 import { AppShell } from "@/components/layout/app-shell";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
@@ -43,7 +44,7 @@ export default async function TestCasesPage({
 
   if (!project) notFound();
   if (!project.members[0] && !user.isAdmin) redirect("/projects");
-  if (!hasPermission(project.members[0]?.role, "testcase.read", user.isAdmin)) redirect(`/projects/${project.key}`);
+  if (!hasPermission(project.members[0]?.role, "testcase.read", user.isAdmin)) return <ForbiddenState projectKey={project.key} />;
 
   const role: ProjectRole = project.members[0]?.role ?? (user.isAdmin ? "ADMIN" : "VIEWER");
   const canManage = hasPermission(role, "testcase.manage", user.isAdmin);

@@ -230,3 +230,10 @@ html[data-theme="antigravity"] div[role="menu"] {
 html[data-theme="antigravity"] div[role="menu"] a:hover {
   background-color: #1F2937 !important;
 }
+
+/* Skeleton tampil hanya jika memuat > 300 ms (AC-STATE-03); tanpa animasi saat reduced-motion. */
+@keyframes skeleton-in { to { opacity: 1; } }
+.skeleton-delayed { opacity: 0; animation: skeleton-in 0s linear 300ms forwards; }
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-delayed, .skeleton-delayed * { animation-name: skeleton-in !important; }
+}
