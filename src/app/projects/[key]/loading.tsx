@@ -1,6 +1,6 @@
 export default function ProjectPageLoading() {
   return (
-    <div className="flex-1 flex flex-col p-6 animate-pulse">
+    <div className="flex-1 flex flex-col p-6 animate-pulse motion-reduce:animate-none skeleton-delayed">
       {/* Top Header Skeleton */}
       <div className="flex items-center justify-between pb-6 border-b border-slate-200">
         <div className="space-y-2">

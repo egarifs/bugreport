@@ -1,6 +1,7 @@
 import { hasPermission } from "@/lib/permissions";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { ForbiddenState } from "@/components/ui/forbidden-state";
 import { AppShell } from "@/components/layout/app-shell";
 import { notFound, redirect } from "next/navigation";
 import { ProjectChatBox } from "./chat-box";
@@ -24,7 +25,7 @@ export default async function ProjectChatPage({
 
   if (!project) notFound();
   if (!project.members[0] && !user.isAdmin) redirect("/projects");
-  if (!hasPermission(project.members[0]?.role, "chat.ask", user.isAdmin)) redirect(`/projects/${project.key}`);
+  if (!hasPermission(project.members[0]?.role, "chat.ask", user.isAdmin)) return <ForbiddenState projectKey={project.key} />;
 
   const messages = await prisma.chatMessage.findMany({
     where: {
