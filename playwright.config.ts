@@ -13,6 +13,7 @@ export default defineConfig({
   webServer: process.env.PLAYWRIGHT_BASE_URL
     ? undefined
     : {
+        env: { NEXTAUTH_URL: baseURL, AUTH_URL: baseURL },
         command: `npm run dev -- --hostname 127.0.0.1 --port ${port}`,
         url: `${baseURL}/login`,
         reuseExistingServer: !process.env.CI,
