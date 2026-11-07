@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { NotificationBell } from "./notification-bell";
 import { CommandPalette } from "./command-palette";
 import { UserProfileMenu } from "./user-profile-menu";
@@ -31,6 +31,10 @@ export function AppSidebar({ user, projects, activeProjectKey }: AppSidebarProps
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
+  const activeLinkRef = useRef<HTMLAnchorElement>(null);
+  const sidebarRef = useRef<HTMLElement>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
 
   // Restore collapsed state from localStorage
   useEffect(() => {
@@ -52,6 +56,48 @@ export function AppSidebar({ user, projects, activeProjectKey }: AppSidebarProps
   useEffect(() => {
     setMobileOpen(false);
   }, [pathname]);
+
+  useEffect(() => {
+    if (mobileOpen) {
+      previousFocusRef.current = menuButtonRef.current;
+      activeLinkRef.current?.focus();
+    } else if (previousFocusRef.current) {
+      previousFocusRef.current.focus();
+      previousFocusRef.current = null;
+    }
+  }, [mobileOpen]);
+
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setMobileOpen(false);
+        menuButtonRef.current?.focus();
+        return;
+      }
+      if (event.key === "Tab" && !sidebarRef.current?.contains(document.activeElement)) {
+        event.preventDefault();
+        activeLinkRef.current?.focus();
+        return;
+      }
+      if (event.key !== "Tab") return;
+      const focusable = sidebarRef.current?.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      );
+      if (!focusable?.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [mobileOpen]);
 
   const currentKey = activeProjectKey || projects[0]?.key;
   const currentProject = projects.find((p) => p.key === currentKey);
@@ -139,9 +185,12 @@ export function AppSidebar({ user, projects, activeProjectKey }: AppSidebarProps
       <div className="md:hidden flex items-center justify-between bg-white border-b border-slate-200 px-4 py-3">
         <div className="flex items-center gap-2">
           <button
-            onClick={() => setMobileOpen(!mobileOpen)}
+            ref={menuButtonRef}
+            onClick={() => setMobileOpen((open) => !open)}
             className="p-1.5 rounded hover:bg-slate-100 text-slate-700"
-            aria-label="Toggle menu"
+            aria-label={mobileOpen ? "Tutup navigasi" : "Buka navigasi"}
+            aria-expanded={mobileOpen}
+            aria-controls="app-sidebar"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
@@ -161,15 +210,24 @@ export function AppSidebar({ user, projects, activeProjectKey }: AppSidebarProps
 
       {/* Mobile Drawer Backdrop */}
       {mobileOpen && (
-        <div
-          className="fixed inset-0 bg-slate-900/40 z-40 md:hidden"
-          onClick={() => setMobileOpen(false)}
+        <button
+          type="button"
+          className="fixed inset-0 bg-slate-900/40 z-40 md:hidden cursor-default"
+          aria-label="Tutup navigasi"
+          onClick={() => {
+            setMobileOpen(false);
+            menuButtonRef.current?.focus();
+          }}
         />
       )}
 
       {/* Sidebar Container */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 bg-white border-r border-slate-200 flex flex-col transition-all duration-200 md:static ${
+        id="app-sidebar"
+        ref={sidebarRef}
+        role="dialog"
+        aria-label="Navigasi utama"
+        className={`fixed inset-y-0 left-0 z-50 bg-white border-r border-slate-200 flex flex-col transition-all duration-200 motion-reduce:transition-none md:static ${
           collapsed ? "w-16" : "w-64"
         } ${mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}`}
       >
@@ -254,13 +312,15 @@ export function AppSidebar({ user, projects, activeProjectKey }: AppSidebarProps
         )}
 
         {/* Navigation Menu Items */}
-        <nav className="flex-1 p-2 space-y-1 overflow-y-auto">
+        <nav className="flex-1 p-2 space-y-1 overflow-y-auto" aria-label="Menu project">
           {navItems.map((item) => (
             <Link
               key={item.label}
+              ref={item.active && mobileOpen ? activeLinkRef : undefined}
               href={item.href}
+              aria-current={item.active ? "page" : undefined}
               title={collapsed ? item.label : undefined}
-              className={`flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium transition ${
+              className={`flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium transition motion-reduce:transition-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900 ${
                 item.active
                   ? "bg-slate-900 text-white shadow-xs"
                   : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
