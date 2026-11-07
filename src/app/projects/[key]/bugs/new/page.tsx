@@ -11,6 +11,7 @@ import { BugSeverity, BugPriority, BugStatus } from "@prisma/client";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { DuplicateChecker } from "./duplicate-checker";
+import { DraftAutosave } from "./draft-autosave";
 import { AppShell } from "@/components/layout/app-shell";
 import { ScreenshotInput } from "./screenshot-input";
 import { parseBugKeys, parseLinks, parseUrl, readScreenshots, type Screenshot } from "@/lib/bug-input";
@@ -81,6 +82,7 @@ export default async function NewBugPage({
           </p>
 
           <ActionForm action={createBug.bind(null, project.id)} className="space-y-6 text-sm">
+            <DraftAutosave storageKey={`bugdraft:${user.id}:${project.key}`} />
             <fieldset className="space-y-3">
               <legend className="text-xs font-bold text-slate-500 mb-2">Ringkasan (wajib)</legend>
               <div>
