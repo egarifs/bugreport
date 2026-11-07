@@ -1,6 +1,6 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { BugSeverity, BugStatus, Prisma } from "@prisma/client";
+import { BugPriority, BugSeverity, BugStatus, Prisma } from "@prisma/client";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { AppShell } from "@/components/layout/app-shell";
@@ -13,7 +13,9 @@ import { BugImportModal } from "./bugs/import/bug-import-modal";
 import { parseMarkdownBugs } from "@/lib/markdown-importer";
 import { requireProjectPermission } from "@/lib/authz";
 import { revalidatePath } from "next/cache";
-import type { ActionResult } from "@/components/ui/action-form";
+import { ActionForm, type ActionResult } from "@/components/ui/action-form";
+import { triageBug, startOfTodayWib } from "@/lib/triage-service";
+import { TriageKeys } from "./triage-keys";
 
 type View = "review" | "mine" | "all";
 const DONE: BugStatus[] = ["CLOSED", "INVALID", "DUPLICATE", "CANNOT_REPRODUCE", "WONT_FIX"];
@@ -23,7 +25,7 @@ export default async function ProjectDetailPage({
   searchParams,
 }: {
   params: Promise<{ key: string }>;
-  searchParams: Promise<{ view?: string; status?: string; severity?: string; module?: string; q?: string }>;
+  searchParams: Promise<{ done?: string; sel?: string; view?: string; status?: string; severity?: string; module?: string; q?: string }>;
 }) {
   const session = await auth();
   const user = session?.user as { id?: string; email?: string; isAdmin?: boolean } | undefined;
@@ -58,10 +60,18 @@ export default async function ProjectDetailPage({
   const viewWhere: Prisma.BugWhereInput =
     view === "review" ? { status: "DRAFT" } : view === "mine" ? { assigneeId: user.id, status: { notIn: DONE } } : {};
 
-  const [reviewCount, mineCount, modules, bugs] = await Promise.all([
+  const today = startOfTodayWib();
+  const [reviewCount, mineCount, modules, members, reviewedToday, closedToday, bugs] = await Promise.all([
     prisma.bug.count({ where: { ...base, status: "DRAFT" } }),
     prisma.bug.count({ where: { ...base, assigneeId: user.id, status: { notIn: DONE } } }),
     activeModules(project.id),
+    canReview
+      ? prisma.projectMember.findMany({ where: { projectId: project.id }, include: { user: { select: { name: true, email: true } } } })
+      : Promise.resolve([]),
+    canReview ? prisma.bug.count({ where: { ...base, reviewedAt: { gte: today } } }) : Promise.resolve(0),
+    canReview
+      ? prisma.auditLog.count({ where: { projectId: project.id, action: "bug.status_change", createdAt: { gte: today }, changes: { path: ["after", "status"], equals: "CLOSED" } } })
+      : Promise.resolve(0),
     prisma.bug.findMany({
       where: {
         ...base,
@@ -90,6 +100,13 @@ export default async function ProjectDetailPage({
     { id: "all", label: "Semua bug", show: true },
   ];
   const href = (v: View) => `/projects/${project.key}?view=${v}`;
+  const selHref = (k: string) => {
+    const p = new URLSearchParams();
+    for (const [n, v] of Object.entries({ view: view, status, severity, module: sp.module, q })) if (v) p.set(n, v);
+    p.set("sel", k);
+    return `/projects/${project.key}?${p}`;
+  };
+  const selected = bugs.find((b) => b.key === sp.sel) ?? null;
   const filtered = Boolean(status || severity || sp.module || q);
   const bugHref = (n: number) => `/projects/${project.key}/bugs/${n}`;
   const source = (b: (typeof bugs)[number]) => (b.agentRunId ? "Agent" : b.testRunItemId ? "Test run" : null);
@@ -103,6 +120,25 @@ export default async function ProjectDetailPage({
   const projectId = project.id;
   const projectKey = project.key;
   const userId = user.id;
+
+  async function handleTriage(_prev: ActionResult, formData: FormData): Promise<ActionResult> {
+    "use server";
+    const actor = await requireProjectPermission(projectId, "bug.review");
+    const intent = formData.get("intent");
+    const res = await triageBug(actor, projectId, String(formData.get("bugId")), {
+      severity: String(formData.get("severity") ?? ""),
+      priority: String(formData.get("priority") ?? ""),
+      moduleId: String(formData.get("moduleId") ?? ""),
+      assigneeId: String(formData.get("assigneeId") ?? ""),
+      accept: intent === "accept",
+      reject: intent === "reject",
+    });
+    revalidatePath(`/projects/${projectKey}`);
+    if ("ok" in res && (intent === "accept" || intent === "reject")) {
+      redirect(`/projects/${projectKey}?view=review&done=${encodeURIComponent(res.ok!)}`);
+    }
+    return res;
+  }
 
   async function handleImportMarkdownBugs(_prev: ActionResult, formData: FormData): Promise<ActionResult> {
     "use server";
@@ -176,6 +212,15 @@ export default async function ProjectDetailPage({
         </header>
 
         <main className="p-4 md:p-6 flex-1">
+          {sp.done && <p role="status" className="mb-4 px-4 py-2 bg-green-50 border border-green-200 text-green-800 text-sm rounded">{sp.done.slice(0, 120)}</p>}
+          {canReview && (
+            <div aria-label="Ringkasan hari ini" className="flex flex-wrap items-center gap-x-6 gap-y-1 mb-4 px-4 py-2.5 bg-white border border-slate-200 rounded text-sm">
+              <span className="font-bold text-slate-900">Hari ini</span>
+              <span className="text-slate-700"><b className="font-mono">{reviewedToday}</b> direview</span>
+              <span className="text-slate-700"><b className="font-mono">{closedToday}</b> ditutup</span>
+              <span className="ml-auto text-xs text-slate-500">Reset pukul 00.00 WIB</span>
+            </div>
+          )}
           <nav aria-label="Tampilan bug" className="flex gap-1 border-b border-slate-200 mb-4 overflow-x-auto">
             {tabs.filter((t) => t.show).map((t) => (
               <Link
@@ -235,7 +280,8 @@ export default async function ProjectDetailPage({
               {empty}
             </StatePanel>
           ) : (
-            <>
+            <div className="flex flex-wrap items-start gap-5">
+            <div className="flex-[999_1_520px] min-w-0">
               {/* Desktop: dense table. Left strip = severity, readable at a glance. */}
               <table className="hidden md:table w-full text-left text-sm bg-white border border-slate-200 rounded overflow-hidden">
                 <thead className="bg-slate-50 border-b border-slate-200 text-xs text-slate-600">
@@ -251,13 +297,13 @@ export default async function ProjectDetailPage({
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {bugs.map((b) => (
-                    <tr key={b.id} className="row-interactive hover:bg-slate-50/80">
+                    <tr key={b.id} aria-selected={selected?.id === b.id} className={`row-interactive hover:bg-slate-50/80 ${selected?.id === b.id ? "bg-blue-50" : ""}`}>
                       <td className={`p-0 ${SEVERITY_STYLE[b.severity].strip} strip-accent`} />
                       <td className="py-2 px-3 font-bold whitespace-nowrap">
                         <Link href={bugHref(b.number)} className="text-action hover:underline">{b.key}</Link>
                       </td>
                       <td className="py-2 px-3">
-                        <Link href={bugHref(b.number)} className="text-slate-900 hover:underline">{b.title}</Link>
+                        <Link href={selHref(b.key)} scroll={false} className="text-slate-900 hover:underline">{b.title}</Link>
                         <span className="block text-xs text-slate-500">
                           {[b.module?.name ?? (b.status === "DRAFT" ? "Modul belum diisi" : null), source(b) && `dari ${source(b)}`, b._count.comments > 0 && `${b._count.comments} komentar`]
                             .filter(Boolean)
@@ -294,7 +340,67 @@ export default async function ProjectDetailPage({
                   </li>
                 ))}
               </ul>
-            </>
+              {canReview && (
+                <p className="hidden md:block mt-3 text-xs text-slate-500">
+                  <kbd className="px-1 border rounded">J</kbd>/<kbd className="px-1 border rounded">K</kbd> pilih · <kbd className="px-1 border rounded">A</kbd> terima · <kbd className="px-1 border rounded">X</kbd> tolak · <kbd className="px-1 border rounded">↵</kbd> buka detail
+                </p>
+              )}
+            </div>
+            {selected && (
+              <aside aria-label={`Pratinjau dan triase ${selected.key}`} className="hidden md:flex flex-[1_1_340px] max-w-[440px] min-w-0 flex-col bg-white border border-slate-200 rounded">
+                <div className="p-4 border-b border-slate-100 space-y-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-mono text-xs font-bold text-action">{selected.key}</span>
+                    <Link href={bugHref(selected.number)} className="text-xs text-action underline">Buka detail</Link>
+                  </div>
+                  <h2 className="font-bold text-slate-900 text-sm">{selected.title}</h2>
+                  <p className="text-xs text-slate-500">{[source(selected) && `Dilaporkan oleh ${source(selected)}`, `${selected._count.comments} komentar`].filter(Boolean).join(" · ")}</p>
+                </div>
+                <div className="p-4 space-y-3 border-b border-slate-100 text-sm">
+                  <div><p className="text-xs font-bold text-sev-blocker">Aktual</p><p className="whitespace-pre-wrap text-slate-800 line-clamp-6">{selected.actualResult}</p></div>
+                  <div><p className="text-xs font-bold text-green-700">Diharapkan</p><p className="whitespace-pre-wrap text-slate-800 line-clamp-6">{selected.expectedResult}</p></div>
+                </div>
+                {canReview && selected.status === "DRAFT" ? (
+                  <ActionForm action={handleTriage} className="p-4 space-y-3">
+                    <input type="hidden" name="bugId" value={selected.id} />
+                    <div className="grid grid-cols-2 gap-3 text-xs font-medium text-slate-700">
+                      <label className="space-y-1 block">Severity
+                        <select name="severity" defaultValue={selected.severity} className="w-full px-2 py-1.5 border border-slate-300 rounded bg-white text-sm">
+                          {Object.values(BugSeverity).map((v) => <option key={v} value={v}>{SEVERITY_STYLE[v].label}</option>)}
+                        </select></label>
+                      <label className="space-y-1 block">Priority
+                        <select name="priority" defaultValue={selected.priority} className="w-full px-2 py-1.5 border border-slate-300 rounded bg-white text-sm">
+                          {Object.values(BugPriority).map((v) => <option key={v} value={v}>{v}</option>)}
+                        </select></label>
+                      <label className="space-y-1 block">Modul
+                        <select name="moduleId" defaultValue={selected.moduleId ?? ""} className="w-full px-2 py-1.5 border border-slate-300 rounded bg-white text-sm">
+                          <option value="">Pilih modul</option>
+                          {modules.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+                        </select></label>
+                      <label className="space-y-1 block">Assignee
+                        <select name="assigneeId" defaultValue={selected.assigneeId ?? ""} className="w-full px-2 py-1.5 border border-slate-300 rounded bg-white text-sm">
+                          <option value="">Belum di-assign</option>
+                          {members.map((m) => <option key={m.userId} value={m.userId}>{m.user.name || m.user.email}</option>)}
+                        </select></label>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <button id="triage-accept" type="submit" name="intent" value="accept" className="flex-1 min-w-[120px] px-3 py-2 bg-action hover:bg-action-hover text-white text-sm font-bold rounded">Terima</button>
+                      <button type="submit" name="intent" value="save" className="px-3 py-2 border border-slate-300 bg-white hover:bg-slate-100 text-sm font-bold rounded">Simpan</button>
+                      <button id="triage-reject" type="submit" name="intent" value="reject" className="px-3 py-2 border border-slate-300 bg-white hover:bg-slate-100 text-sm font-bold rounded">Tolak</button>
+                    </div>
+                  </ActionForm>
+                ) : (
+                  <p className="p-4 text-xs text-slate-500">{canReview ? "Bug ini sudah ditriase." : "Triase hanya untuk reviewer."} Buka detail untuk aksi lain.</p>
+                )}
+              </aside>
+            )}
+            <TriageKeys
+              keys={bugs.map((b) => b.key)}
+              selected={selected?.key ?? null}
+              basePath={selHref("").replace(/sel=$/, "sel=")}
+              detailHref={selected ? bugHref(selected.number) : null}
+            />
+            </div>
           )}
         </main>
       </div>
