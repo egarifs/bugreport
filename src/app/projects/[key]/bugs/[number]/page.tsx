@@ -2,6 +2,7 @@ import { requireProjectPermission } from "@/lib/authz";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { canTransitionBug, hasPermission } from "@/lib/permissions";
+import { guardBugTransition } from "@/lib/bug-transition";
 import { redactSecrets } from "@/lib/redact";
 import { notifyBug } from "@/lib/notify";
 import { recordAuditLog } from "@/lib/user-service";
@@ -351,7 +352,7 @@ export default async function BugDetailPage({
                   const appVersion = (formData.get("appVersion") as string)?.trim();
                   const duplicateOfKey = (formData.get("duplicateOfKey") as string)?.trim();
 
-                  const check = canTransitionBug(bug.status, targetStatus, actor.role, actor.isAdmin);
+                  const check = await guardBugTransition(bug, project.id, targetStatus, actor);
                   if (!check.allowed) return { error: "Role Anda tidak bisa mengubah status ke pilihan ini." };
 
                   if (targetStatus === BugStatus.REOPENED && !reopenReason) {
