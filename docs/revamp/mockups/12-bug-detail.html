@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<title>Detail bug CRM-1</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&amp;family=Atkinson+Hyperlegible+Mono:wght@400;500;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#1E5AA8}a:hover{color:#174A8C}
+</style>
+
+<div style="min-height: 1320px; box-sizing: border-box; background: #F4F6F7; color: #15212B; font-family: 'Atkinson Hyperlegible', system-ui, sans-serif; display: flex; flex-wrap: wrap">
+
+<nav aria-label="Navigasi ringkas" style="flex: 0 0 72px; box-sizing: border-box; background: #fff; border-right: 1px solid #D3DAE0; padding: 16px 0; display: flex; flex-direction: column; align-items: center; gap: 6px">
+<a href="10-bug-triase.html" aria-label="Project CRM Sismedika" style="width: 40px; height: 40px; margin-bottom: 10px; border-radius: 8px; background: #15212B; color: #fff; display: flex; align-items: center; justify-content: center; font: 500 11px/14px 'Atkinson Hyperlegible Mono', ui-monospace, monospace; text-decoration: none">CRM</a>
+<a href="10-bug-triase.html" aria-label="Bug" aria-current="page" style="width: 44px; height: 44px; border-radius: 8px; background: #E8EFF8; color: #174A8C; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="7" width="8" height="10" rx="4"></rect><path d="M10 7V4M6 11H3M14 11h3M6 15H4M14 15h2"></path></svg></a>
+<a href="10-bug-triase.html" aria-label="Test case" style="width: 44px; height: 44px; border-radius: 8px; color: #2A3641; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="12" height="14" rx="2"></rect><path d="M7.5 11l2 2 3.5-4"></path></svg></a>
+<a href="10-bug-triase.html" aria-label="Dokumen bisnis" style="width: 44px; height: 44px; border-radius: 8px; color: #2A3641; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3.5" width="12" height="13" rx="2"></rect><path d="M7 8h6M7 11h6M7 14h3"></path></svg></a>
+<a href="14-kesiapan-rilis.html" aria-label="Kesiapan rilis" style="width: 44px; height: 44px; border-radius: 8px; color: #2A3641; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 16V9M10 16V5M15 16v-4"></path></svg></a>
+<a href="10-bug-triase.html" aria-label="AI Chat" style="width: 44px; height: 44px; border-radius: 8px; color: #2A3641; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h12v8H9l-3 3v-3H4z"></path></svg></a>
+<a href="10-bug-triase.html" aria-label="Pengaturan" style="margin-top: auto; width: 44px; height: 44px; border-radius: 8px; color: #2A3641; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="2.5"></circle><path d="M10 3v2M10 15v2M3 10h2M15 10h2M5 5l1.4 1.4M13.6 13.6L15 15M15 5l-1.4 1.4M6.4 13.6L5 15"></path></svg></a>
+</nav>
+
+<div style="flex: 999 1 640px; min-width: 0; padding: 20px 32px 40px; display: flex; flex-direction: column; gap: 20px">
+
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px">
+<div style="display: flex; align-items: center; gap: 8px; font: 400 14px/20px 'Atkinson Hyperlegible', system-ui, sans-serif; color: #4E5A65"><a href="10-bug-triase.html" style="display: inline-flex; align-items: center; height: 44px">Bug</a><span aria-hidden="true">/</span><span style="font: 500 13px/18px 'Atkinson Hyperlegible Mono', ui-monospace, monospace; color: #15212B">CRM-1</span></div>
+<div style="display: flex; align-items: center; gap: 8px">
+<button type="button" aria-label="Bug sebelumnya" style="width: 44px; height: 44px; border: 1px solid #D3DAE0; border-radius: 8px; background: #fff; color: #2A3641; cursor: pointer"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle"><path d="M3.5 9.5 8 5l4.5 4.5"></path></svg></button>
+<button type="button" aria-label="Bug berikutnya" style="width: 44px; height: 44px; border: 1px solid #D3DAE0; border-radius: 8px; background: #fff; color: #2A3641; cursor: pointer"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle"><path d="M3.5 6.5 8 11l4.5-4.5"></path></svg></button>
+<button type="button" aria-label="Aksi lain" style="width: 44px; height: 44px; border: 1px solid #D3DAE0; border-radius: 8px; background: #fff; color: #2A3641; cursor: pointer"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style="vertical-align: middle"><circle cx="3.5" cy="8" r="1.3"></circle><circle cx="8" cy="8" r="1.3"></circle><circle cx="12.5" cy="8" r="1.3"></circle></svg></button>
+</div>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 16px">
+<div style="flex: 1 1 480px; display: flex; flex-direction: column; gap: 10px">
+<h1 style="margin: 0; font: 600 26px/34px 'Atkinson Hyperlegible', system-ui, sans-serif; text-wrap: balance">Halaman Complaint bisa dibuka user tanpa hak akses via URL langsung</h1>
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px; font: 500 14px/20px 'Atkinson Hyperlegible', system-ui, sans-serif">
+<span style="display: inline-flex; align-items: center; gap: 8px; color: #8A6100"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5.5" stroke="#8A6100" stroke-width="1.5"></circle><path d="M7 3.5 A3.5 3.5 0 0 1 7 10.5 Z" fill="#8A6100"></path></svg>In progress</span>
+<span style="display: inline-flex; align-items: center; gap: 6px"><span aria-hidden="true" style="display: inline-flex; align-items: flex-end; gap: 2px; height: 14px"><span style="width: 3px; height: 5px; background: #B54708"></span><span style="width: 3px; height: 8px; background: #B54708"></span><span style="width: 3px; height: 11px; background: #B54708"></span><span style="width: 3px; height: 14px; background: #D3DAE0"></span></span>High</span>
+<span style="color: #4E5A65; font-weight: 400">Access Control · dari Agent · 6 hari lalu</span>
+</div>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 10px">
+<button type="button" aria-haspopup="menu" style="display: flex; align-items: center; gap: 6px; height: 44px; padding: 0 16px; border: 1px solid #B8C2CB; border-radius: 8px; background: #fff; color: #15212B; font: 600 14px/20px 'Atkinson Hyperlegible', system-ui, sans-serif; cursor: pointer">Pindah status<svg aria-hidden="true" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 6.5 8 10l3.5-3.5"></path></svg></button>
+<button type="button" style="height: 44px; padding: 0 18px; border: 0; border-radius: 8px; background: #1E5AA8; color: #fff; font: 600 14px/20px 'Atkinson Hyperlegible', system-ui, sans-serif; cursor: pointer">Kirim ke verifikasi</button>
+</div>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; align-items: flex-start; gap: 20px">
+
+<div style="flex: 999 1 520px; min-width: 0; display: flex; flex-direction: column; gap: 16px">
+
+<section style="background: #fff; border: 1px solid #D3DAE0; border-radius: 10px; padding: 24px; display: flex; flex-direction: column; gap: 22px">
+<div style="display: flex; flex-direction: column; gap: 6px"><h2 style="margin: 0; font: 600 14px/20px 'Atkinson Hyperlegible', system-ui, sans-serif">Deskripsi</h2><p style="margin: 0; font: 400 15px/24px 'Atkinson Hyperlegible', system-ui, sans-serif">User tanpa hak akses ke modul Complaint tetap bisa membuka halamannya jika mengetik URL langsung. Menu sudah disembunyikan, tetapi halaman tidak memeriksa peran.</p></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><h2 style="margin: 0; font: 600 14px/20px 'Atkinson Hyperlegible', system-ui, sans-serif">Langkah reproduksi</h2>
+<ol style="margin: 0; padding-left: 22px; font: 400 15px/26px 'Atkinson Hyperlegible', system-ui, sans-serif"><li>Login sebagai user tanpa hak akses Complaint.</li><li>Buka URL <span style="font: 500 13px/18px 'Atkinson Hyperlegible Mono', ui-monospace, monospace; background: #E9EDF0; padding: 1px 6px; border-radius: 4px">/dashboard/complaint</span>.</li><li>Halaman terbuka dan menampilkan daftar complaint.</li></ol></div>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr)); gap: 12px">
+<div style="background: #FDECEA; border-radius: 8px; padding: 14px 16px; display: flex; flex-direction: column; gap: 4px"><div style="font: 600 13px/18px 'Atkinson Hyperlegible', system-ui, sans-serif; color: #B42318">Aktual</div><div style="font: 400 14px/21px 'Atkinson Hyperlegible', system-ui, sans-serif; color: #3B0F0A">Halaman terbuka dan menampilkan daftar complaint.</div></div>
+<div style="background: #E6F4EA; border-radius: 8px; padding: 14px 16px; display: flex; flex-direction: column; gap: 4px"><div style="font: 600 13px/18px 'Atkinson Hyperlegible', system-ui, sans-serif; color: #14783D">Diharapkan</div><div style="font: 400 14px/21px 'Atkinson Hyperlegible', system-ui, sans-serif; color: #0B3A1C">Diarahkan ke 403 karena user tidak punya hak akses.</div></div>
+</div>
+</section>
+
+<section style="background: #fff; border: 1px solid #D3DAE0; border-radius: 10px; padding: 24px; display: flex; flex-direction: column; gap: 14px">
+<h2 style="margin: 0; font: 600 14px/20px 'Atkinson Hyperlegible', system-ui, sans-serif">Bukti</h2>
+<a href="#" style="display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 0 14px; border: 1px solid #D3DAE0; border-radius: 8px; color: #15212B; text-decoration: none"><span aria-hidden="true" style="width: 32px; height: 32px; border-radius: 8px; background: #E8EFF8; color: #1E5AA8; display: flex; align-items: center; justify-content: center"><svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><path d="M4 2.5v9l7-4.5z"></path></svg></span><span style="flex: 1 1 auto; min-width: 0"><span style="display: block; font: 500 14px/20px 'Atkinson Hyperlegible', system-ui, sans-serif">Rekaman Jam</span><span style="display: block; font: 400 13px/18px 'Atkinson Hyperlegible Mono', ui-monospace, monospace; color: #4E5A65">[URL REKAMAN]</span></span></a>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr)); gap: 12px">
+<div style="aspect-ratio: 16 / 10; border: 1px solid #D3DAE0; border-radius: 8px; background: #E9EDF0; display: flex; align-items: center; justify-content: center; padding: 12px; box-sizing: border-box; text-align: center; font: 400 13px/18px 'Atkinson Hyperlegible', system-ui, sans-serif; color: #3B4752">[SCREENSHOT] URL langsung terbuka</div>
+<div style="aspect-ratio: 16 / 10; border: 1px solid #D3DAE0; border-radius: 8px; background: #E9EDF0; display: flex; align-items: center; justify-content: center; padding: 12px; box-sizing: border-box; text-align: center; font: 400 13px/18px 'Atkinson Hyperlegible', system-ui, sans-serif; color: #3B4752">[SCREENSHOT] Daftar complaint tampil</div>
+</div>
+</section>
+
+<section style="background: #fff; border: 1px solid #D3DAE0; border-radius: 10px; padding: 24px; display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px"><h2 style="margin: 0; font: 600 14px/20px 'Atkinson Hyperlegible', system-ui, sans-serif">Komentar</h2>
+<div role="tablist" aria-label="Jenis komentar" style="display: inline-flex; padding: 3px; border-radius: 8px; background: #E9EDF0; gap: 2px"><button type="button" role="tab" aria-selected="true" style="height: 38px; padding: 0 14px; border: 0; border-radius: 6px; background: #fff; color: #15212B; font: 600 13px/18px 'Atkinson Hyperlegible', system-ui, sans-serif; cursor: pointer">Publik</button><button type="button" role="tab" aria-selected="false" style="height: 38px; padding: 0 14px; border: 0; border-radius: 6px; background: transparent; color: #3B4752; font: 500 13px/18px 'Atkinson Hyperlegible', system-ui, sans-serif; cursor: pointer">Internal</button></div></div>
+<div style="display: flex; flex-direction: column; gap: 2px; font: 400 14px/21px 'Atkinson Hyperlegible', system-ui, sans-serif"><div><b>Agent</b> <span style="color: #4E5A65; font-size: 13px">· 6 hari lalu</span></div><div>Terdeteksi saat E2E test hak akses. URL langsung tidak diblokir.</div></div>
+<div style="background: #FDF6DC; border-radius: 8px; padding: 12px 14px; display: flex; flex-direction: column; gap: 2px; font: 400 14px/21px 'Atkinson Hyperlegible', system-ui, sans-serif"><div><b>Super Admin</b> <span style="display: inline-block; margin-left: 6px; padding: 0 8px; border-radius: 10px; background: #8A6100; color: #fff; font: 500 12px/20px 'Atkinson Hyperlegible', system-ui, sans-serif">Internal</span> <span style="color: #4E5A65; font-size: 13px">· 5 hari lalu</span></div><div>Kemungkinan guard hanya ada di layout. Minta vendor periksa middleware.</div></div>
+<div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end"><div style="flex: 1 1 280px; display: flex; flex-direction: column; gap: 4px"><label for="kom" style="font: 500 13px/18px 'Atkinson Hyperlegible', system-ui, sans-serif; color: #3B4752">Tulis komentar publik</label><textarea id="kom" rows="2" style="box-sizing: border-box; padding: 10px 14px; border: 1px solid #B8C2CB; border-radius: 8px; font: 400 14px/21px 'Atkinson Hyperlegible', system-ui, sans-serif; resize: vertical"></textarea></div><button type="button" style="height: 44px; padding: 0 18px; border: 1px solid #1E5AA8; border-radius: 8px; background: #fff; color: #1E5AA8; font: 600 14px/20px 'Atkinson Hyperlegible', system-ui, sans-serif; cursor: pointer">Kirim</button></div>
+</section>
+
+</div>
+
+<aside aria-label="Properti dan aktivitas" style="flex: 1 1 320px; max-width: 400px; min-width: 0; display: flex; flex-direction: column; gap: 16px">
+
+<section style="background: #fff; border: 1px solid #D3DAE0; border-radius: 10px; padding: 18px 20px; display: flex; flex-direction: column; font: 400 14px/20px 'Atkinson Hyperlegible', system-ui, sans-serif">
+<h2 style="margin: 0 0 8px; font: 600 14px/20px 'Atkinson Hyperlegible', system-ui, sans-serif">Properti</h2>
+<div style="display: grid; grid-template-columns: 104px minmax(0, 1fr); gap: 12px; padding: 9px 0; border-top: 1px solid #E9EDF0"><div style="color: #4E5A65">Assignee</div><div>Vendor Dev</div></div>
+<div style="display: grid; grid-template-columns: 104px minmax(0, 1fr); gap: 12px; padding: 9px 0; border-top: 1px solid #E9EDF0"><div style="color: #4E5A65">Priority</div><div style="display: flex; align-items: center; gap: 6px">Normal</div></div>
+<div style="display: grid; grid-template-columns: 104px minmax(0, 1fr); gap: 12px; padding: 9px 0; border-top: 1px solid #E9EDF0"><div style="color: #4E5A65">Modul</div><div>Access Control</div></div>
+<div style="display: grid; grid-template-columns: 104px minmax(0, 1fr); gap: 12px; padding: 9px 0; border-top: 1px solid #E9EDF0"><div style="color: #4E5A65">Pelapor</div><div>Agent (E2E Test)</div></div>
+<div style="display: grid; grid-template-columns: 104px minmax(0, 1fr); gap: 12px; padding: 9px 0; border-top: 1px solid #E9EDF0"><div style="color: #4E5A65">Direview</div><div>Super Admin, 5 hari lalu</div></div>
+<div style="display: grid; grid-template-columns: 104px minmax(0, 1fr); gap: 12px; padding: 9px 0; border-top: 1px solid #E9EDF0"><div style="color: #4E5A65">Reopen</div><div>0 kali</div></div>
+<div style="display: grid; grid-template-columns: 104px minmax(0, 1fr); gap: 12px; padding: 9px 0; border-top: 1px solid #E9EDF0"><div style="color: #4E5A65">Lingkungan</div><div>[VERSI] · [BUILD] · [BROWSER]</div></div>
+<div style="display: grid; grid-template-columns: 104px minmax(0, 1fr); gap: 12px; padding: 9px 0; border-top: 1px solid #E9EDF0"><div style="color: #4E5A65">Task</div><div><a href="#" style="font: 500 13px/18px 'Atkinson Hyperlegible Mono', ui-monospace, monospace">[URL TASK]</a></div></div>
+<div style="display: grid; grid-template-columns: 104px minmax(0, 1fr); gap: 12px; padding: 9px 0; border-top: 1px solid #E9EDF0"><div style="color: #4E5A65">Terkait</div><div><a href="#" style="font: 500 13px/18px 'Atkinson Hyperlegible Mono', ui-monospace, monospace">CRM-4</a> Filter Type hilang pada Approval Access Control</div></div>
+<div style="display: grid; grid-template-columns: 104px minmax(0, 1fr); gap: 12px; padding: 9px 0; border-top: 1px solid #E9EDF0"><div style="color: #4E5A65">Test run</div><div style="color: #4E5A65">Belum tertaut</div></div>
+</section>
+
+<section style="background: #fff; border: 1px solid #D3DAE0; border-radius: 10px; padding: 18px 20px; display: flex; flex-direction: column; gap: 14px">
+<h2 style="margin: 0; font: 600 14px/20px 'Atkinson Hyperlegible', system-ui, sans-serif">Waktu di tiap status</h2>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
+<div style="background: #F4F6F7; border-radius: 8px; padding: 10px"><div style="font: 400 13px/18px 'Atkinson Hyperlegible', system-ui, sans-serif; color: #4E5A65">Draft</div><div style="font: 600 15px/22px 'Atkinson Hyperlegible', system-ui, sans-serif">1 hari</div></div>
+<div style="background: #F4F6F7; border-radius: 8px; padding: 10px"><div style="font: 400 13px/18px 'Atkinson Hyperlegible', system-ui, sans-serif; color: #4E5A65">Open</div><div style="font: 600 15px/22px 'Atkinson Hyperlegible', system-ui, sans-serif">2 hari</div></div>
+<div style="background: #FDF6DC; border-radius: 8px; padding: 10px"><div style="font: 400 13px/18px 'Atkinson Hyperlegible', system-ui, sans-serif; color: #4E5A65">In progress</div><div style="font: 600 15px/22px 'Atkinson Hyperlegible', system-ui, sans-serif">3 hari</div></div>
+</div>
+<ol style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; font: 400 14px/20px 'Atkinson Hyperlegible', system-ui, sans-serif">
+<li style="display: flex; gap: 12px"><div style="display: flex; flex-direction: column; align-items: center"><span style="width: 9px; height: 9px; margin-top: 6px; border-radius: 50%; background: #8A6100"></span><span style="flex: 1 1 auto; width: 2px; background: #D3DAE0"></span></div><div style="padding-bottom: 14px"><div><b>In progress</b> <span style="color: #4E5A65">oleh Vendor Dev</span></div><div style="font-size: 13px; color: #4E5A65">3 hari lalu</div></div></li>
+<li style="display: flex; gap: 12px"><div style="display: flex; flex-direction: column; align-items: center"><span style="width: 9px; height: 9px; margin-top: 6px; border-radius: 50%; background: #1E5AA8"></span><span style="flex: 1 1 auto; width: 2px; background: #D3DAE0"></span></div><div style="padding-bottom: 14px"><div><b>Ditugaskan ke Vendor Dev</b></div><div style="font-size: 13px; color: #4E5A65">5 hari lalu</div></div></li>
+<li style="display: flex; gap: 12px"><div style="display: flex; flex-direction: column; align-items: center"><span style="width: 9px; height: 9px; margin-top: 6px; border-radius: 50%; background: #1E5AA8"></span><span style="flex: 1 1 auto; width: 2px; background: #D3DAE0"></span></div><div style="padding-bottom: 14px"><div><b>Open</b> <span style="color: #4E5A65">direview Super Admin</span></div><div style="font-size: 13px; color: #4E5A65">5 hari lalu · severity High, modul Access Control</div></div></li>
+<li style="display: flex; gap: 12px"><div style="display: flex; flex-direction: column; align-items: center"><span style="width: 9px; height: 9px; margin-top: 6px; border-radius: 50%; background: #5F6B76"></span></div><div><div><b>Draft</b> <span style="color: #4E5A65">dibuat oleh Agent</span></div><div style="font-size: 13px; color: #4E5A65">6 hari lalu</div></div></li>
+</ol>
+</section>
+
+</aside>
+</div>
+</div>
+</div>
+
+
+</body>
+</html>

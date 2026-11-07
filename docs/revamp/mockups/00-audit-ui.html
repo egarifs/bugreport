@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<title>Audit UI saat ini</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&amp;family=Atkinson+Hyperlegible+Mono:wght@400;500;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+</style>
+
+<div style="width: 1440px; height: 1300px; box-sizing: border-box; padding: 64px; background: #F4F6F7; color: #15212B; font-family: 'Atkinson Hyperlegible', system-ui, sans-serif; display: flex; flex-direction: column; gap: 32px">
+
+<div style="display: flex; flex-direction: column; gap: 10px; max-width: 900px">
+<div style="font: 500 13px/18px 'Atkinson Hyperlegible Mono', ui-monospace, monospace; letter-spacing: 0.08em; text-transform: uppercase; color: #1E5AA8">Audit · 14 screenshot aplikasi saat ini</div>
+<h1 style="margin: 0; font: 600 36px/44px 'Atkinson Hyperlegible', system-ui, sans-serif; text-wrap: balance">Fondasinya sudah kuat. Yang kurang adalah hierarki dan kecepatan triase.</h1>
+<p style="margin: 0; font: 400 16px/24px 'Atkinson Hyperlegible', system-ui, sans-serif; color: #3B4752; text-wrap: pretty">Fitur Anda sudah jauh di depan tracker biasa. Masalahnya ada di cara layar memperlakukan semua hal dengan bobot yang sama, sehingga QA yang triase harus membuka halaman penuh untuk setiap keputusan.</p>
+</div>
+
+<div style="background: #fff; border: 1px solid #D3DAE0; border-radius: 10px; overflow: hidden">
+<div style="display: grid; grid-template-columns: 240px minmax(0, 1fr) minmax(0, 1fr); gap: 24px; padding: 12px 24px; background: #F4F6F7; border-bottom: 1px solid #D3DAE0; font: 500 13px/18px 'Atkinson Hyperlegible', system-ui, sans-serif; color: #4E5A65"><div>Layar</div><div>Yang terlihat sekarang</div><div>Perbaikan di desain baru</div></div>
+
+<div style="display: grid; grid-template-columns: 240px minmax(0, 1fr) minmax(0, 1fr); gap: 24px; padding: 18px 24px; border-bottom: 1px solid #E9EDF0; font: 400 14px/21px 'Atkinson Hyperlegible', system-ui, sans-serif">
+<div><div style="font: 600 14px/20px 'Atkinson Hyperlegible', system-ui, sans-serif">1. Shell dan navigasi</div><div style="font: 400 13px/18px 'Atkinson Hyperlegible Mono', ui-monospace, monospace; color: #4E5A65">semua layar</div></div>
+<div>Nama project muncul tiga kali (judul sidebar, dropdown "Pilih Project", judul halaman). Lonceng terjepit di sudut sidebar. Delapan menu rata tanpa hierarki; alat admin sejajar dengan kerja harian.</div>
+<div>Satu project switcher. Menu dikelompokkan: kerja, insight, lalu pengaturan dan admin di dasar. Lonceng pindah ke header halaman.</div>
+</div>
+
+<div style="display: grid; grid-template-columns: 240px minmax(0, 1fr) minmax(0, 1fr); gap: 24px; padding: 18px 24px; border-bottom: 1px solid #E9EDF0; font: 400 14px/21px 'Atkinson Hyperlegible', system-ui, sans-serif">
+<div><div style="font: 600 14px/20px 'Atkinson Hyperlegible', system-ui, sans-serif">2. Daftar bug</div><div style="font: 400 13px/18px 'Atkinson Hyperlegible Mono', ui-monospace, monospace; color: #4E5A65">08-projects-CRM</div></div>
+<div>Badge "Draft" berbingkai hitam tebal jadi elemen paling keras di layar padahal semua baris sama. Garis kiri berwarna tanpa legenda. Kolom Assignee dan SLA berisi "Belum di-assign" dan "-" berulang. Filter menunggu tombol "Terapkan".</div>
+<div>Status jadi glyph ringan plus kata. Severity memakai meter empat bar. Garis kiri dibuang. Kolom diganti "Menunggu" yang relevan untuk review. Filter langsung berlaku.</div>
+</div>
+
+<div style="display: grid; grid-template-columns: 240px minmax(0, 1fr) minmax(0, 1fr); gap: 24px; padding: 18px 24px; border-bottom: 1px solid #E9EDF0; font: 400 14px/21px 'Atkinson Hyperlegible', system-ui, sans-serif">
+<div><div style="font: 600 14px/20px 'Atkinson Hyperlegible', system-ui, sans-serif">3. Triase "Perlu review"</div><div style="font: 400 13px/18px 'Atkinson Hyperlegible Mono', ui-monospace, monospace; color: #4E5A65">08-projects-CRM</div></div>
+<div>Tab ini tempat QA bekerja, tetapi setiap bug harus dibuka sebagai halaman penuh sebelum bisa diterima atau ditolak. Tidak ada cara cepat menandai duplikat.</div>
+<div>Panel triase di samping daftar: severity, priority, modul, assignee, cek duplikat, Terima atau Tolak. Pintasan J, K, A, X, D.</div>
+</div>
+
+<div style="display: grid; grid-template-columns: 240px minmax(0, 1fr) minmax(0, 1fr); gap: 24px; padding: 18px 24px; border-bottom: 1px solid #E9EDF0; font: 400 14px/21px 'Atkinson Hyperlegible', system-ui, sans-serif">
+<div><div style="font: 600 14px/20px 'Atkinson Hyperlegible', system-ui, sans-serif">4. Form laporan bug</div><div style="font: 400 13px/18px 'Atkinson Hyperlegible Mono', ui-monospace, monospace; color: #4E5A65">09-projects-CRM-bugs-new</div></div>
+<div>"Hasil yang diharapkan" tampil sebelum "Hasil aktual", terbalik dari standar laporan dan dari halaman detail. Pemisah "Ringkasan (wajib)" dan "Detail (opsional)" tipis sehingga sulit dipindai. Bukti jatuh di bawah lipatan. Cek duplikat tidak terlihat.</div>
+<div>Urutan Aktual lalu Diharapkan. Penanda wajib pada label. Saran bug mirip muncul di samping saat judul diketik. Bukti naik di atas lingkungan teknis yang dilipat.</div>
+</div>
+
+<div style="display: grid; grid-template-columns: 240px minmax(0, 1fr) minmax(0, 1fr); gap: 24px; padding: 18px 24px; border-bottom: 1px solid #E9EDF0; font: 400 14px/21px 'Atkinson Hyperlegible', system-ui, sans-serif">
+<div><div style="font: 600 14px/20px 'Atkinson Hyperlegible', system-ui, sans-serif">5. Laporan kesiapan rilis</div><div style="font: 400 13px/18px 'Atkinson Hyperlegible Mono', ui-monospace, monospace; color: #4E5A65">10-projects-CRM-reports</div></div>
+<div>Ide terbaik di aplikasi ini: verdict BLOCKED dengan daftar penghalang. Tetapi verdict hanya sebesar kartu lain, dan bar severity hanya dibedakan lewat hue.</div>
+<div>Verdict jadi hero dengan angka penghalang. Bar bernilai dan meter bentuk. Setiap ID bisa diklik. Ada tombol salin ringkasan untuk dibagikan.</div>
+</div>
+
+<div style="display: grid; grid-template-columns: 240px minmax(0, 1fr) minmax(0, 1fr); gap: 24px; padding: 18px 24px; border-bottom: 1px solid #E9EDF0; font: 400 14px/21px 'Atkinson Hyperlegible', system-ui, sans-serif">
+<div><div style="font: 600 14px/20px 'Atkinson Hyperlegible', system-ui, sans-serif">6. Notifikasi</div><div style="font: 400 13px/18px 'Atkinson Hyperlegible Mono', ui-monospace, monospace; color: #4E5A65">05-notifications</div></div>
+<div>31 item hampir identik ("menunggu approval") ditampilkan satu per satu, tanpa pengelompokan dan tanpa aksi langsung. Titik merah di semua baris menghilangkan arti "belum dibaca".</div>
+<div>Kelompokkan per jenis dengan jumlah. Aksi Setujui atau Tolak langsung di baris. Titik hanya untuk yang belum dibaca.</div>
+</div>
+
+<div style="display: grid; grid-template-columns: 240px minmax(0, 1fr) minmax(0, 1fr); gap: 24px; padding: 18px 24px; border-bottom: 1px solid #E9EDF0; font: 400 14px/21px 'Atkinson Hyperlegible', system-ui, sans-serif">
+<div><div style="font: 600 14px/20px 'Atkinson Hyperlegible', system-ui, sans-serif">7. Pengaturan project</div><div style="font: 400 13px/18px 'Atkinson Hyperlegible Mono', ui-monospace, monospace; color: #4E5A65">11-projects-CRM-settings</div></div>
+<div>Kuota AI, modul, API key, dan riwayat agent ditumpuk dalam satu halaman panjang. Tombol Naik dan Turun pada modul tampak kecil dan pucat.</div>
+<div>Pecah menjadi tab: Umum, Modul, Agent dan API key, Kuota. Urutan modul lewat seret, bukan tombol.</div>
+</div>
+
+<div style="display: grid; grid-template-columns: 240px minmax(0, 1fr) minmax(0, 1fr); gap: 24px; padding: 18px 24px; font: 400 14px/21px 'Atkinson Hyperlegible', system-ui, sans-serif">
+<div><div style="font: 600 14px/20px 'Atkinson Hyperlegible', system-ui, sans-serif">8. Semua project</div><div style="font: 400 13px/18px 'Atkinson Hyperlegible Mono', ui-monospace, monospace; color: #4E5A65">02-projects</div></div>
+<div>Nama project berulang (Report fixture dua kali, Phase 2B tiga kali), tanpa pencarian atau arsip. "0 anggota" mendominasi kartu. Kemungkinan besar data uji, tetapi daftar ini akan membengkak di produksi.</div>
+<div>Putaran berikutnya: pencarian, arsip, peran Anda, dan aktivitas terakhir per project. Tidak dikerjakan di putaran ini.</div>
+</div>
+</div>
+
+<div style="background: #E8EFF8; border-radius: 10px; padding: 20px 24px; display: flex; flex-direction: column; gap: 8px">
+<div style="font: 600 15px/22px 'Atkinson Hyperlegible', system-ui, sans-serif; color: #15212B">Yang sengaja dipertahankan</div>
+<div style="font: 400 14px/21px 'Atkinson Hyperlegible', system-ui, sans-serif; color: #2A3641">Palet slate dan biru action dari tailwind.config.js, lantai teks 13 px, perintah ⌘K, aturan modul wajib sebelum Open, redaksi otomatis token dan password, komentar publik dan internal, serta impor .md. Semuanya sudah benar; desain baru hanya memberi mereka tempat yang lebih jelas.</div>
+</div>
+
+</div>
+
+
+</body>
+</html>

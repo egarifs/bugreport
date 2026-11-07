@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<title>Eksekusi test run</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&amp;family=Atkinson+Hyperlegible+Mono:wght@400;500;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#1E5AA8}a:hover{color:#174A8C}
+.row{transition:background-color 120ms cubic-bezier(.2,.8,.2,1)}
+.row:hover{background:#F3EEE4}
+.panel{animation:bbslide 180ms cubic-bezier(.2,.8,.2,1) both}
+@keyframes bbslide{from{opacity:0;transform:translateX(12px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion: reduce){.row{transition:none}.panel{animation:none}}
+</style>
+
+<div style="min-height: 1080px; box-sizing: border-box; background-color: #F6F4EF; background-image: radial-gradient(rgba(80,56,20,0.05) 0.7px, transparent 0.9px), radial-gradient(rgba(80,56,20,0.035) 0.7px, transparent 0.9px); background-size: 4px 4px, 7px 7px; background-position: 0 0, 2px 3px; color: #1F1C17; font-family: 'Atkinson Hyperlegible', system-ui, sans-serif; display: flex; flex-wrap: wrap">
+
+<nav aria-label="Navigasi project" style="flex: 0 0 72px; box-sizing: border-box; background: #F1EEE7; border-right: 1px solid #E2DDD3; padding: 16px 0; display: flex; flex-direction: column; align-items: center; gap: 6px">
+<a href="20-semua-project.html" aria-label="Project CRM Sismedika" style="width: 40px; height: 40px; margin-bottom: 10px; border-radius: 8px; background: #1F1C17; color: #FFFDF9; display: flex; align-items: center; justify-content: center; font: 500 11px/14px 'Atkinson Hyperlegible Mono', ui-monospace, monospace; text-decoration: none">CRM</a>
+<a href="10-bug-triase.html" aria-label="Bug" style="width: 44px; height: 44px; border-radius: 8px; color: #2E2A23; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="7" width="8" height="10" rx="4"></rect><path d="M10 7V4M6 11H3M14 11h3M6 15H4M14 15h2"></path></svg></a>
+<a href="23-test-case.html" aria-label="Test case" aria-current="page" style="width: 44px; height: 44px; border-radius: 8px; background: #E7ECF4; color: #174A8C; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="12" height="14" rx="2"></rect><path d="M7.5 11l2 2 3.5-4"></path></svg></a>
+<a href="14-kesiapan-rilis.html" aria-label="Kesiapan rilis" style="width: 44px; height: 44px; border-radius: 8px; color: #2E2A23; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 16V9M10 16V5M15 16v-4"></path></svg></a>
+<a href="22-ai-chat.html" aria-label="AI Chat" style="width: 44px; height: 44px; border-radius: 8px; color: #2E2A23; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h12v8H9l-3 3v-3H4z"></path></svg></a>
+<a href="25-pengaturan.html" aria-label="Pengaturan" style="margin-top: auto; width: 44px; height: 44px; border-radius: 8px; color: #2E2A23; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="2.5"></circle><path d="M10 3v2M10 15v2M3 10h2M15 10h2M5 5l1.4 1.4M13.6 13.6L15 15M15 5l-1.4 1.4M6.4 13.6L5 15"></path></svg></a>
+</nav>
+
+<main style="flex: 999 1 640px; min-width: 0; padding: 20px 40px 48px; display: flex; flex-direction: column; gap: 18px; background-image: radial-gradient(1100px 220px at 18% -60px, rgba(255,214,150,0.28), transparent 70%); background-repeat: no-repeat">
+
+<div style="display: flex; align-items: center; gap: 8px; font: 400 14px/20px 'Atkinson Hyperlegible', system-ui, sans-serif; color: #5C564C"><a href="23-test-case.html" style="display: inline-flex; align-items: center; height: 44px">Test run</a><span aria-hidden="true">/</span><span style="color: #1F1C17; font-weight: 500">[Nama run]</span></div>
+
+<div style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px">
+<div><h1 style="margin: 0; font: 600 24px/30px 'Atkinson Hyperlegible', system-ui, sans-serif">[Nama run]</h1><div style="font: 400 14px/20px 'Atkinson Hyperlegible', system-ui, sans-serif; color: #5C564C">Staging · build [VERSI] · dibuat oleh Super Admin</div></div>
+<div style="flex: 1 1 360px; max-width: 520px; display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; height: 10px; border-radius: 5px; overflow: hidden; gap: 2px; background: #ECE7DE" role="img" aria-label="1 lolos, 1 gagal, 1 terblokir, 1 belum dijalankan dari 4"><span style="flex: 1 1 0; background: #14783D"></span><span style="flex: 1 1 0; background: #B42318"></span><span style="flex: 1 1 0; background: #8A6100"></span><span style="flex: 1 1 0; background: transparent"></span></div>
+<div style="display: flex; flex-wrap: wrap; gap: 6px 16px; font: 400 13px/18px 'Atkinson Hyperlegible', system-ui, sans-serif; color: #3E3930"><span><b style="color: #14783D">1</b> lolos</span><span><b style="color: #B42318">1</b> gagal</span><span><b style="color: #8A6100">1</b> terblokir</span><span><b>1</b> belum dijalankan</span><span style="margin-left: auto">3 dari 4 selesai</span></div>
+</div>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; align-items: flex-start; gap: 20px">
+
+<ol aria-label="Daftar test case dalam run" style="flex: 1 1 340px; max-width: 420px; margin: 0; padding: 0; list-style: none; background: #FFFDF9; border: 1px solid #E2DDD3; border-radius: 10px; overflow: hidden">
+<li class="row" style="display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-bottom: 1px solid #ECE7DE; background: #E7ECF4"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5.5" stroke="#7A7366" stroke-width="1.5" stroke-dasharray="2.5 2.5"></circle></svg><span style="flex: 1 1 auto; min-width: 0"><span style="display: block; font: 500 13px/18px 'Atkinson Hyperlegible Mono', ui-monospace, monospace; color: #174A8C">TC-CRM-001</span><span style="display: block; font: 500 14px/20px 'Atkinson Hyperlegible', system-ui, sans-serif">Verifikasi filter tanggal transaksi pasien BPJS</span></span><span style="font: 500 12px/16px 'Atkinson Hyperlegible', system-ui, sans-serif; color: #174A8C">Sekarang</span></li>
+<li class="row" style="display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-bottom: 1px solid #ECE7DE"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6.25" fill="#B42318"></circle><path d="M4.8 4.8l4.4 4.4M9.2 4.8 4.8 9.2" stroke="#fff" stroke-width="1.5" stroke-linecap="round"></path></svg><span style="flex: 1 1 auto; min-width: 0"><span style="display: block; font: 500 13px/18px 'Atkinson Hyperlegible Mono', ui-monospace, monospace">TC-CRM-002</span><span style="display: block; font: 400 14px/20px 'Atkinson Hyperlegible', system-ui, sans-serif">Halaman Complaint ditolak untuk user tanpa hak akses</span><span style="display: block; font: 400 13px/18px 'Atkinson Hyperlegible', system-ui, sans-serif; color: #5C564C">Bug dibuat: <a href="12-bug-detail.html" style="font-family: 'Atkinson Hyperlegible Mono', ui-monospace, monospace">CRM-1</a></span></span></li>
+<li class="row" style="display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-bottom: 1px solid #ECE7DE"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6.25" fill="#14783D"></circle><path d="M4.2 7.2 6.2 9.2 9.8 5.2" stroke="#fff" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"></path></svg><span style="flex: 1 1 auto; min-width: 0"><span style="display: block; font: 500 13px/18px 'Atkinson Hyperlegible Mono', ui-monospace, monospace">TC-CRM-003</span><span style="display: block; font: 400 14px/20px 'Atkinson Hyperlegible', system-ui, sans-serif">Hapus user group dengan anggota aktif menampilkan peringatan</span></span></li>
+<li class="row" style="display: flex; align-items: center; gap: 12px; padding: 14px 16px"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5.5" stroke="#8A6100" stroke-width="1.5"></circle><path d="M3.5 10.5 L10.5 3.5" stroke="#8A6100" stroke-width="1.5"></path></svg><span style="flex: 1 1 auto; min-width: 0"><span style="display: block; font: 500 13px/18px 'Atkinson Hyperlegible Mono', ui-monospace, monospace">TC-CRM-004</span><span style="display: block; font: 400 14px/20px 'Atkinson Hyperlegible', system-ui, sans-serif">Filter Type tersedia di Approval</span><span style="display: block; font: 400 13px/18px 'Atkinson Hyperlegible', system-ui, sans-serif; color: #8A6100">Terblokir: menunggu CRM-4</span></span></li>
+</ol>
+
+<section class="panel" aria-label="Jalankan TC-CRM-001" style="flex: 999 1 460px; min-width: 0; background: #FFFDF9; border: 1px solid #E2DDD3; border-radius: 10px; display: flex; flex-direction: column; box-shadow: 0 1px 2px rgba(31,28,23,0.04), 0 12px 32px -18px rgba(31,28,23,0.25)">
+<div style="padding: 20px 24px 16px; border-bottom: 1px solid #ECE7DE; display: flex; flex-direction: column; gap: 6px">
+<div style="display: flex; justify-content: space-between; gap: 8px; font: 500 13px/18px 'Atkinson Hyperlegible', system-ui, sans-serif; color: #5C564C"><span style="font-family: 'Atkinson Hyperlegible Mono', ui-monospace, monospace; color: #174A8C">TC-CRM-001</span><span>Functional · High · role Admin Kasir</span></div>
+<h2 style="margin: 0; font: 600 18px/26px 'Atkinson Hyperlegible', system-ui, sans-serif">Verifikasi filter tanggal transaksi pasien BPJS</h2>
+</div>
+<div style="padding: 18px 24px; display: flex; flex-direction: column; gap: 16px; border-bottom: 1px solid #ECE7DE">
+<div><div style="font: 600 14px/20px 'Atkinson Hyperlegible', system-ui, sans-serif; margin-bottom: 6px">Langkah</div><ol style="margin: 0; padding-left: 22px; font: 400 15px/25px 'Atkinson Hyperlegible', system-ui, sans-serif"><li>[Langkah 1 dari test case]</li><li>[Langkah 2]</li><li>[Langkah 3]</li></ol></div>
+<div style="background: #E9F3EA; border-radius: 8px; padding: 12px 14px"><div style="font: 600 13px/18px 'Atkinson Hyperlegible', system-ui, sans-serif; color: #14783D">Hasil yang diharapkan</div><div style="font: 400 14px/21px 'Atkinson Hyperlegible', system-ui, sans-serif; color: #0C3A1F">Daftar transaksi BPJS tampil sesuai rentang tanggal yang dipilih.</div></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="actual" style="font: 600 14px/20px 'Atkinson Hyperlegible', system-ui, sans-serif">Hasil aktual <span style="font-weight: 400; color: #5C564C">(wajib bila gagal)</span></label><textarea id="actual" rows="3" placeholder="Apa yang terjadi saat Anda menjalankan langkah di atas?" style="box-sizing: border-box; padding: 10px 14px; border: 1px solid #8F877A; border-radius: 8px; background: #FFFDF9; font: 400 14px/21px 'Atkinson Hyperlegible', system-ui, sans-serif; resize: vertical"></textarea></div>
+</div>
+<div style="padding: 16px 24px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px">
+<button type="button" style="display: flex; align-items: center; gap: 8px; height: 48px; padding: 0 20px; border: 0; border-radius: 8px; background: #14783D; color: #fff; font: 600 15px/20px 'Atkinson Hyperlegible', system-ui, sans-serif">Lolos<kbd style="font: 500 11px/14px 'Atkinson Hyperlegible Mono', ui-monospace, monospace; padding: 1px 5px; border-radius: 4px; background: rgba(255,255,255,0.2)">P</kbd></button>
+<button type="button" style="display: flex; align-items: center; gap: 8px; height: 48px; padding: 0 20px; border: 0; border-radius: 8px; background: #B42318; color: #fff; font: 600 15px/20px 'Atkinson Hyperlegible', system-ui, sans-serif">Gagal, buat bug<kbd style="font: 500 11px/14px 'Atkinson Hyperlegible Mono', ui-monospace, monospace; padding: 1px 5px; border-radius: 4px; background: rgba(255,255,255,0.2)">F</kbd></button>
+<button type="button" style="display: flex; align-items: center; gap: 8px; height: 48px; padding: 0 18px; border: 1px solid #8A6100; border-radius: 8px; background: #FFFDF9; color: #6B4B00; font: 600 15px/20px 'Atkinson Hyperlegible', system-ui, sans-serif">Terblokir<kbd style="font: 500 11px/14px 'Atkinson Hyperlegible Mono', ui-monospace, monospace; padding: 1px 5px; border-radius: 4px; background: #F6F4EF">B</kbd></button>
+<span style="margin-left: auto; font: 400 13px/18px 'Atkinson Hyperlegible', system-ui, sans-serif; color: #5C564C">Setelah dipilih, otomatis lanjut ke test case berikutnya.</span>
+</div>
+<div style="margin: 0 24px 20px; padding: 12px 14px; border-radius: 8px; background: #F6F4EF; font: 400 13px/19px 'Atkinson Hyperlegible', system-ui, sans-serif; color: #3E3930">"Gagal, buat bug" membuka form laporan yang sudah terisi judul, langkah, hasil yang diharapkan, hasil aktual, dan build dari run ini. Bug otomatis tertaut ke test case.</div>
+</section>
+
+</div>
+</main>
+</div>
+
+
+</body>
+</html>

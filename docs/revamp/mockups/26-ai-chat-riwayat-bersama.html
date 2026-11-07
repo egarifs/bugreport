@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<title>AI Chat, riwayat bersama</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&amp;family=Atkinson+Hyperlegible+Mono:wght@400;500;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#1E5AA8}a:hover{color:#174A8C}
+.root{height:768px;box-sizing:border-box;display:flex;overflow:hidden;background-color:#F6F4EF;background-image:radial-gradient(rgba(80,56,20,0.05) 0.7px,transparent 0.9px),radial-gradient(rgba(80,56,20,0.035) 0.7px,transparent 0.9px);background-size:4px 4px,7px 7px;background-position:0 0,2px 3px;color:#1F1C17;font-family:'Atkinson Hyperlegible', system-ui, sans-serif}
+.list{flex:0 0 304px;box-sizing:border-box;display:flex;flex-direction:column;border-right:1px solid #E2DDD3;background:#F9F7F2;min-height:0}
+.lh{padding:16px 16px 10px;display:flex;flex-direction:column;gap:10px}
+.row{display:flex;align-items:center;gap:8px}
+.btn{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 12px;border:1px solid #8F877A;border-radius:8px;background:#FFFDF9;color:#1F1C17;font:600 13px/18px 'Atkinson Hyperlegible', system-ui, sans-serif;text-decoration:none;cursor:pointer}
+.ibtn{width:36px;height:36px;display:inline-flex;align-items:center;justify-content:center;border:1px solid #E2DDD3;border-radius:8px;background:#FFFDF9;color:#2E2A23;cursor:pointer}
+.search{display:flex;align-items:center;gap:8px;height:36px;padding:0 10px;border:1px solid #CFC8BB;border-radius:8px;background:#FFFDF9;color:#5C564C;font:400 14px/20px 'Atkinson Hyperlegible', system-ui, sans-serif}
+.seg{display:flex;padding:3px;gap:3px;border-radius:8px;background:#ECE7DE}
+.seg button{flex:1;height:30px;border:0;border-radius:6px;background:transparent;color:#3E3930;font:600 13px/18px 'Atkinson Hyperlegible', system-ui, sans-serif;cursor:pointer}
+.seg button[aria-pressed=true]{background:#FFFDF9;color:#1F1C17;box-shadow:0 1px 2px rgba(31,28,23,.08)}
+.scroll{flex:1 1 auto;min-height:0;overflow:auto;padding:0 8px 8px}
+.grp{padding:12px 8px 4px;font:700 12px/16px 'Atkinson Hyperlegible', system-ui, sans-serif;color:#5C564C}
+.item{display:block;padding:9px 10px;border-radius:8px;border:1px solid transparent;color:#1F1C17;text-decoration:none}
+.item:hover{background:#F1EEE7}
+.item[aria-current=page]{background:#FFFDF9;border-color:#E2DDD3;box-shadow:0 1px 2px rgba(31,28,23,.05)}
+.it{font:700 14px/20px 'Atkinson Hyperlegible', system-ui, sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.im{margin-top:2px;display:flex;align-items:center;gap:6px;font:400 12px/16px 'Atkinson Hyperlegible', system-ui, sans-serif;color:#5C564C;white-space:nowrap}
+.im .sp{flex:1}
+.lane{display:inline-flex;align-items:center;gap:4px;height:20px;padding:0 6px;border-radius:4px;font:700 11px/14px 'Atkinson Hyperlegible', system-ui, sans-serif;white-space:nowrap}
+.lane.int{background:#ECE7DE;color:#3E3930}
+.lane.ven{background:#FDF6DC;color:#4D3800;border:1px solid #EBD9A1}
+.priv{border-top:1px solid #E2DDD3;padding:10px 16px;display:flex;align-items:center;gap:8px;min-height:44px;box-sizing:border-box;font:600 13px/18px 'Atkinson Hyperlegible', system-ui, sans-serif;color:#3E3930;background:transparent;border-left:0;border-right:0;border-bottom:0;width:100%;text-align:left;cursor:pointer}
+main{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;background-image:radial-gradient(900px 200px at 30% -60px,rgba(255,214,150,0.26),transparent 70%);background-repeat:no-repeat}
+.th{padding:14px 32px 12px;display:flex;align-items:flex-start;gap:16px;border-bottom:1px solid #E2DDD3}
+.th h1{margin:0;font:700 18px/24px 'Atkinson Hyperlegible', system-ui, sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tm{margin-top:4px;display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;font:400 13px/18px 'Atkinson Hyperlegible', system-ui, sans-serif;color:#5C564C}
+.av{width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font:700 10px/1 'Atkinson Hyperlegible', system-ui, sans-serif;color:#1F1C17;border:2px solid #F6F4EF;box-sizing:border-box}
+.stack .av+.av{margin-left:-6px}
+.quota{display:flex;align-items:center;gap:8px;font:400 12px/16px 'Atkinson Hyperlegible', system-ui, sans-serif;color:#3E3930;white-space:nowrap}
+.bar{width:80px;height:6px;border-radius:3px;background:#ECE7DE;overflow:hidden}
+.banner{margin:10px 32px 0;padding:6px 12px;display:flex;align-items:center;gap:10px;background:#FDF6DC;border:1px solid #EBD9A1;border-radius:8px;font:400 13px/18px 'Atkinson Hyperlegible', system-ui, sans-serif;color:#4D3800}
+.banner a{color:#4D3800;font-weight:700;margin-left:auto;display:inline-flex;align-items:center;min-height:32px}
+.thread{flex:1 1 auto;min-height:0;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;padding:16px 32px 8px;-webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 32px);mask-image:linear-gradient(to bottom,transparent 0,#000 32px)}
+.col{width:100%;max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+.q{display:flex;flex-direction:column;gap:4px;max-width:560px}
+.q.me{align-self:flex-end;align-items:flex-end}
+.who{display:flex;align-items:center;gap:6px;font:400 12px/16px 'Atkinson Hyperlegible', system-ui, sans-serif;color:#5C564C}
+.who b{color:#1F1C17}
+.qb{padding:10px 14px;border-radius:12px 12px 12px 4px;background:#EFEBE3;font:400 15px/22px 'Atkinson Hyperlegible', system-ui, sans-serif}
+.me .qb{border-radius:12px 12px 4px 12px;background:#1F1C17;color:#FFFDF9}
+.ans{background:#FFFDF9;border:1px solid #E2DDD3;border-radius:12px 12px 12px 4px;padding:14px 16px;display:flex;flex-direction:column;gap:10px;box-shadow:0 1px 2px rgba(31,28,23,.04),0 8px 24px -16px rgba(31,28,23,.18)}
+.tool{display:flex;align-items:center;gap:8px;font:400 12px/16px 'Atkinson Hyperlegible', system-ui, sans-serif;color:#5C564C}
+.ans p{margin:0;font:400 15px/24px 'Atkinson Hyperlegible', system-ui, sans-serif;max-width:68ch}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 10px;border:1px solid #E2DDD3;border-radius:6px;background:#F6F4EF;color:#1F1C17;font:500 13px/18px 'Atkinson Hyperlegible Mono', ui-monospace, monospace;text-decoration:none}
+.chip span{font-family:'Atkinson Hyperlegible', system-ui, sans-serif;color:#5C564C}
+.note{font:400 12px/16px 'Atkinson Hyperlegible', system-ui, sans-serif;color:#5C564C}
+.comp{padding:8px 32px 16px}
+.box{display:flex;align-items:flex-end;gap:10px;padding:8px;background:#FFFDF9;border:1px solid #8F877A;border-radius:12px;box-shadow:0 8px 24px -16px rgba(31,28,23,.25)}
+.box textarea{flex:1;border:0;outline:none;resize:none;background:transparent;font:400 15px/22px 'Atkinson Hyperlegible', system-ui, sans-serif;color:#1F1C17;padding:6px}
+.send{height:40px;padding:0 16px;border:0;border-radius:8px;background:#1E5AA8;color:#fff;font:700 14px/20px 'Atkinson Hyperlegible', system-ui, sans-serif;cursor:pointer}
+.help{margin-top:6px;display:flex;align-items:center;gap:6px;font:400 12px/16px 'Atkinson Hyperlegible', system-ui, sans-serif;color:#5C564C}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.menu{position:absolute;right:0;top:42px;width:220px;padding:6px;background:#FFFDF9;border:1px solid #E2DDD3;border-radius:10px;box-shadow:0 12px 32px -12px rgba(31,28,23,.3);z-index:2}
+.menu button{display:flex;align-items:center;width:100%;height:40px;padding:0 10px;border:0;border-radius:6px;background:transparent;font:600 14px/20px 'Atkinson Hyperlegible', system-ui, sans-serif;color:#1F1C17;text-align:left;cursor:pointer}
+.menu button:hover{background:#F1EEE7}
+.menu .del{color:#B42318}
+.menu small{display:block;padding:6px 10px 2px;border-top:1px solid #ECE7DE;margin-top:4px;font:400 12px/16px 'Atkinson Hyperlegible', system-ui, sans-serif;color:#5C564C}
+.dots{display:inline-flex;gap:3px}.dots i{width:5px;height:5px;border-radius:50%;background:#8F877A;animation:dot 1s infinite ease-in-out}.dots i:nth-child(2){animation-delay:.15s}.dots i:nth-child(3){animation-delay:.3s}@keyframes dot{0%,80%,100%{opacity:.3}40%{opacity:1}}@media (prefers-reduced-motion: reduce){.dots i{animation:none}}
+.thread-in{animation:bbin 180ms cubic-bezier(.2,.8,.2,1) both}
+@keyframes bbin{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion: reduce){.dots{display:inline-flex;gap:3px}.dots i{width:5px;height:5px;border-radius:50%;background:#8F877A;animation:dot 1s infinite ease-in-out}.dots i:nth-child(2){animation-delay:.15s}.dots i:nth-child(3){animation-delay:.3s}@keyframes dot{0%,80%,100%{opacity:.3}40%{opacity:1}}@media (prefers-reduced-motion: reduce){.dots i{animation:none}}
+.thread-in{animation:none}}
+</style>
+
+<div class="root">
+<nav aria-label="Navigasi project" style="flex: 0 0 72px; box-sizing: border-box; background: #F1EEE7; border-right: 1px solid #E2DDD3; padding: 16px 0; display: flex; flex-direction: column; align-items: center; gap: 6px">
+<a href="20-semua-project.html" aria-label="Project CRM Sismedika" style="width: 40px; height: 40px; margin-bottom: 10px; border-radius: 8px; background: #1F1C17; color: #FFFDF9; display: flex; align-items: center; justify-content: center; font: 500 11px/14px 'Atkinson Hyperlegible Mono', ui-monospace, monospace; text-decoration: none">CRM</a>
+<a href="10-bug-triase.html" aria-label="Bug" style="width: 44px; height: 44px; border-radius: 8px; color: #2E2A23; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="7" width="8" height="10" rx="4"></rect><path d="M10 7V4M6 11H3M14 11h3M6 15H4M14 15h2"></path></svg></a>
+<a href="23-test-case.html" aria-label="Test case" style="width: 44px; height: 44px; border-radius: 8px; color: #2E2A23; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="12" height="14" rx="2"></rect><path d="M7.5 11l2 2 3.5-4"></path></svg></a>
+<a href="14-kesiapan-rilis.html" aria-label="Kesiapan rilis" style="width: 44px; height: 44px; border-radius: 8px; color: #2E2A23; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 16V9M10 16V5M15 16v-4"></path></svg></a>
+<a href="26-ai-chat-riwayat-bersama.html" aria-label="AI Chat" aria-current="page" style="width: 44px; height: 44px; border-radius: 8px; background: #E7ECF4; color: #174A8C; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h12v8H9l-3 3v-3H4z"></path></svg></a>
+<a href="25-pengaturan.html" aria-label="Pengaturan" style="margin-top: auto; width: 44px; height: 44px; border-radius: 8px; color: #2E2A23; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="2.5"></circle><path d="M10 3v2M10 15v2M3 10h2M15 10h2M5 5l1.4 1.4M13.6 13.6L15 15M15 5l-1.4 1.4M6.4 13.6L5 15"></path></svg></a>
+</nav>
+<aside class="list" aria-label="Riwayat percakapan project">
+<div class="lh">
+<div class="row"><h2 style="margin:0;font:700 16px/22px 'Atkinson Hyperlegible',system-ui,sans-serif;flex:1">Percakapan</h2><button type="button" class="btn"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M7 2.5v9M2.5 7h9"/></svg>Baru</button></div>
+<label class="search"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6" cy="6" r="4"/><path d="M9 9l3 3" stroke-linecap="round"/></svg><span class="sr">Cari percakapan</span><span>Cari judul atau penanya</span></label>
+<div class="seg" role="group" aria-label="Saring percakapan"><button type="button" aria-pressed="true">Semua</button><button type="button" aria-pressed="false">Milik saya</button></div>
+</div>
+<div class="scroll">
+<div class="grp">Hari ini</div>
+<a class="item" href="#" aria-current="page"><div class="it">Siap rilis?</div><div class="im"><span class="av" style="background:#E7ECF4">R</span>Rina · 13.40 · 6 pesan<span class="sp"></span><span class="lane int"><svg aria-hidden="true" width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="2.5" y="5.5" width="7" height="5" rx="1"/><path d="M4 5.5V4a2 2 0 0 1 4 0v1.5"/></svg>Internal</span></div></a>
+<a class="item" href="#"><div class="it">Bug yang belum ditugaskan</div><div class="im"><span class="av" style="background:#E6F0E4">D</span>Dimas · 10.12 · 2 pesan<span class="sp"></span><span class="lane int"><svg aria-hidden="true" width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="2.5" y="5.5" width="7" height="5" rx="1"/><path d="M4 5.5V4a2 2 0 0 1 4 0v1.5"/></svg>Internal</span></div></a>
+<a class="item" href="#"><div class="it">Format export CSV modul Leads</div><div class="im"><span class="av" style="background:#FDF6DC">B</span>Budi (Vendor) · 09.30 · 4 pesan<span class="sp"></span><span class="lane ven"><svg aria-hidden="true" width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="4.5" cy="4" r="1.8"/><path d="M1.5 10a3 3 0 0 1 6 0M8 2.5a1.8 1.8 0 0 1 0 3.3M9 7.3A3 3 0 0 1 10.5 10"/></svg>Vendor</span></div></a>
+<div class="grp">Kemarin</div>
+<a class="item" href="#"><div class="it">Apa kata PRD tentang hak akses?</div><div class="im"><span class="av" style="background:#ECE7DE">A</span>Anda · 16.02 · 3 pesan<span class="sp"></span><span class="lane int"><svg aria-hidden="true" width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="2.5" y="5.5" width="7" height="5" rx="1"/><path d="M4 5.5V4a2 2 0 0 1 4 0v1.5"/></svg>Internal</span></div></a>
+<a class="item" href="#"><div class="it">Ringkas minggu ini</div><div class="im"><span class="av" style="background:#E7ECF4">R</span>Rina · 08.15 · 2 pesan<span class="sp"></span><span class="lane int"><svg aria-hidden="true" width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="2.5" y="5.5" width="7" height="5" rx="1"/><path d="M4 5.5V4a2 2 0 0 1 4 0v1.5"/></svg>Internal</span></div></a>
+<div class="grp">7 hari terakhir</div>
+<a class="item" href="#"><div class="it">Status integrasi WhatsApp</div><div class="im"><span class="av" style="background:#FDF6DC">B</span>Budi (Vendor) · Sen · 5 pesan<span class="sp"></span><span class="lane ven"><svg aria-hidden="true" width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="4.5" cy="4" r="1.8"/><path d="M1.5 10a3 3 0 0 1 6 0M8 2.5a1.8 1.8 0 0 1 0 3.3M9 7.3A3 3 0 0 1 10.5 10"/></svg>Vendor</span></div></a>
+<a class="item" href="#"><div class="it">Bug duplikat di modul Kontak</div><div class="im"><span class="av" style="background:#E6F0E4">D</span>Dimas · Sen · 3 pesan<span class="sp"></span><span class="lane int"><svg aria-hidden="true" width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="2.5" y="5.5" width="7" height="5" rx="1"/><path d="M4 5.5V4a2 2 0 0 1 4 0v1.5"/></svg>Internal</span></div></a>
+</div>
+<button type="button" class="priv" aria-expanded="false" title="Pesan dari sebelum riwayat bersama. Hanya Anda yang melihatnya."><svg aria-hidden="true" width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="2.5" y="5.5" width="7" height="5" rx="1"/><path d="M4 5.5V4a2 2 0 0 1 4 0v1.5"/></svg><span style="flex:1">Chat pribadi lama</span><span style="font-family:'Atkinson Hyperlegible Mono', ui-monospace, monospace;color:#5C564C">[N]</span><svg aria-hidden="true" width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 4.5l3 3 3-3"/></svg></button>
+</aside><main>
+<header class="th">
+<div style="flex:1;min-width:0">
+<h1>Siap rilis?</h1>
+<div class="tm"><span class="stack" aria-hidden="true"><span class="av" style="background:#E7ECF4">R</span><span class="av" style="background:#E6F0E4">D</span><span class="av" style="background:#ECE7DE">A</span></span><span>Dimulai Rina (QA) · 2 Nov, 13.40 · 3 penanya</span><span class="lane int"><svg aria-hidden="true" width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="2.5" y="5.5" width="7" height="5" rx="1"/><path d="M4 5.5V4a2 2 0 0 1 4 0v1.5"/></svg>Internal</span><span>Terlihat oleh Admin, QA, dan Developer</span></div>
+</div>
+<div class="quota"><span>Kuota hari ini</span><span class="bar"><span style="display:block;width:0%;height:6px;background:#1E5AA8"></span></span><span style="font-family:'Atkinson Hyperlegible Mono', ui-monospace, monospace">[N] / 1 jt</span></div>
+<button type="button" class="ibtn" aria-label="Opsi percakapan" aria-haspopup="menu"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><circle cx="3.5" cy="8" r="1.3"/><circle cx="8" cy="8" r="1.3"/><circle cx="12.5" cy="8" r="1.3"/></svg></button>
+</header>
+<div class="banner"><b>Mode simulasi.</b><span>Kunci API Claude belum diatur. Hanya admin yang melihat pesan ini.</span><a href="25-pengaturan.html">Atur di Pengaturan</a></div>
+<section class="thread" aria-label="Isi percakapan" aria-live="polite">
+<div class="col">
+<article class="ans" aria-label="Jawaban asisten untuk Rina">
+<div class="tool"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="7" cy="7" r="5.5"/><path d="M7 4v3l2 1.5" stroke-linecap="round"/></svg>Menjawab Rina · membaca laporan kesiapan rilis · 1 alat dipakai</div>
+<p><b>Belum siap rilis.</b> Tidak ada Blocker, tetapi masih ada <b>[N] bug High</b> aktif. Dua masih menunggu review: <a href="10-bug-triase.html">CRM-5</a> dan <a href="10-bug-triase.html">CRM-6</a>.</p>
+<div class="chips"><a class="chip" href="10-bug-triase.html">CRM-5 <span>Draft</span></a><a class="chip" href="10-bug-triase.html">CRM-6 <span>Draft</span></a></div>
+</article>
+<div class="q"><div class="who"><span class="av" style="background:#E6F0E4">D</span><b>Dimas</b> Developer · 13.52</div><div class="qb">CRM-5 sudah saya perbaiki di build terbaru. Apa masih ada High lain yang belum ditugaskan?</div></div>
+<article class="ans thread-in" aria-label="Jawaban asisten untuk Dimas">
+<div class="tool"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="7" cy="7" r="5.5"/><path d="M7 4v3l2 1.5" stroke-linecap="round"/></svg>Menjawab Dimas · mencari bug · 1 alat dipakai</div>
+<p>Ada <b>[N] bug High</b> tanpa penanggung jawab. Yang paling lama adalah <a href="12-bug-detail.html">CRM-6</a>, dibuka [N] hari lalu. Status CRM-5 masih <b>Draft</b>, jadi perlu direview QA sebelum bisa diverifikasi.</p>
+<div class="chips"><a class="chip" href="12-bug-detail.html">CRM-6 <span>Draft</span></a></div>
+</article>
+<div class="q me"><div class="who">Anda · 14.03</div><div class="qb">Tolong ringkas catatan internal CRM-6.</div></div>
+<div class="tool" role="status" style="padding-left:4px"><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>Asisten sedang membaca CRM-6</div>
+</div>
+</section>
+<div class="comp"><div class="col" style="gap:0">
+<div class="box"><label for="ask" class="sr">Pertanyaan lanjutan</label><textarea id="ask" rows="2" placeholder="Tanyakan lanjutan di percakapan ini"></textarea><button type="button" class="send">Kirim</button></div>
+<div class="help"><svg aria-hidden="true" width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="2.5" y="5.5" width="7" height="5" rx="1"/><path d="M4 5.5V4a2 2 0 0 1 4 0v1.5"/></svg><span>Pertanyaan dan jawaban di sini terlihat oleh semua Admin, QA, dan Developer project ini. Enter kirim, Shift+Enter baris baru.</span></div>
+</div></div>
+</main>
+</div>
+
+
+</body>
+</html>

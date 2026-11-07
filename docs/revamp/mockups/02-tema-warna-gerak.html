@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<title>Tema kertas hangat dan gerak</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Atkinson+Hyperlegible+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+.m-row{transition:background-color 120ms cubic-bezier(.2,.8,.2,1)}
+.m-row:hover{background:#F3EEE4}
+.sk{background:linear-gradient(90deg,#EFEAE1 0,#F9F5EE 40%,#EFEAE1 80%);background-size:480px 100%;animation:bbshimmer 1.4s linear infinite}
+@keyframes bbshimmer{from{background-position:-240px 0}to{background-position:240px 0}}
+@media (prefers-reduced-motion: reduce){.sk{animation:none}.m-row{transition:none}}
+</style>
+
+<div style="width: 1440px; height: 1640px; box-sizing: border-box; padding: 64px; background-color: #F6F4EF; background-image: radial-gradient(rgba(80,56,20,0.05) 0.7px, transparent 0.9px), radial-gradient(rgba(80,56,20,0.035) 0.7px, transparent 0.9px); background-size: 4px 4px, 7px 7px; background-position: 0 0, 2px 3px; color: #1F1C17; font-family: 'Atkinson Hyperlegible', system-ui, sans-serif; display: flex; flex-direction: column; gap: 36px">
+
+<div style="display: flex; flex-direction: column; gap: 10px; max-width: 920px">
+<div style="font: 500 13px/18px 'Atkinson Hyperlegible Mono', ui-monospace, monospace; letter-spacing: 0.08em; text-transform: uppercase; color: #1E5AA8">Revamp v3 · Tema kertas hangat</div>
+<h1 style="margin: 0; font: 600 36px/44px 'Atkinson Hyperlegible', system-ui, sans-serif; text-wrap: balance">Betah karena mata tidak lelah dan kerja terasa maju, bukan karena ramai.</h1>
+<p style="margin: 0; font: 400 16px/24px 'Atkinson Hyperlegible', system-ui, sans-serif; color: #3E3930; text-wrap: pretty">Nilai slate di tailwind.config.js diganti ke abu hangat, persis seperti remap yang sudah Anda lakukan, jadi semua halaman ikut berubah. Setiap token punya pasangan gelap; tema mengikuti OS dan bisa diganti di menu user.</p>
+</div>
+
+<section style="display: flex; flex-direction: column; gap: 14px">
+<h2 style="margin: 0; font: 600 18px/24px 'Atkinson Hyperlegible', system-ui, sans-serif">Token berpasangan</h2>
+<div style="background: #FFFDF9; border: 1px solid #E2DDD3; border-radius: 10px; overflow: hidden">
+<div style="display: grid; grid-template-columns: 200px repeat(2, minmax(0, 1fr)); gap: 24px; padding: 12px 24px; background: #F1EEE7; border-bottom: 1px solid #E2DDD3; font: 500 13px/18px 'Atkinson Hyperlegible', system-ui, sans-serif; color: #5C564C"><div>Peran</div><div>Terang</div><div>Gelap</div></div>
+
+<div style="display: grid; grid-template-columns: 200px repeat(2, minmax(0, 1fr)); gap: 24px; align-items: center; padding: 12px 24px; border-bottom: 1px solid #ECE7DE; font: 400 14px/20px 'Atkinson Hyperlegible', system-ui, sans-serif"><div style="font-weight: 500">Latar halaman</div><div style="display: flex; align-items: center; gap: 12px"><span style="width: 56px; height: 32px; border-radius: 6px; background: #F6F4EF; border: 1px solid #E2DDD3"></span><span style="font: 400 13px/18px 'Atkinson Hyperlegible Mono', ui-monospace, monospace">#F6F4EF + grain</span></div><div style="display: flex; align-items: center; gap: 12px"><span style="width: 56px; height: 32px; border-radius: 6px; background: #1A1916"></span><span style="font: 400 13px/18px 'Atkinson Hyperlegible Mono', ui-monospace, monospace">#1A1916</span></div></div>
+<div style="display: grid; grid-template-columns: 200px repeat(2, minmax(0, 1fr)); gap: 24px; align-items: center; padding: 12px 24px; border-bottom: 1px solid #ECE7DE; font: 400 14px/20px 'Atkinson Hyperlegible', system-ui, sans-serif"><div style="font-weight: 500">Kartu dan panel</div><div style="display: flex; align-items: center; gap: 12px"><span style="width: 56px; height: 32px; border-radius: 6px; background: #FFFDF9; border: 1px solid #E2DDD3"></span><span style="font: 400 13px/18px 'Atkinson Hyperlegible Mono', ui-monospace, monospace">#FFFDF9</span></div><div style="display: flex; align-items: center; gap: 12px"><span style="width: 56px; height: 32px; border-radius: 6px; background: #22201C"></span><span style="font: 400 13px/18px 'Atkinson Hyperlegible Mono', ui-monospace, monospace">#22201C</span></div></div>
+<div style="display: grid; grid-template-columns: 200px repeat(2, minmax(0, 1fr)); gap: 24px; align-items: center; padding: 12px 24px; border-bottom: 1px solid #ECE7DE; font: 400 14px/20px 'Atkinson Hyperlegible', system-ui, sans-serif"><div style="font-weight: 500">Sidebar</div><div style="display: flex; align-items: center; gap: 12px"><span style="width: 56px; height: 32px; border-radius: 6px; background: #F1EEE7; border: 1px solid #E2DDD3"></span><span style="font: 400 13px/18px 'Atkinson Hyperlegible Mono', ui-monospace, monospace">#F1EEE7</span></div><div style="display: flex; align-items: center; gap: 12px"><span style="width: 56px; height: 32px; border-radius: 6px; background: #1F1D19"></span><span style="font: 400 13px/18px 'Atkinson Hyperlegible Mono', ui-monospace, monospace">#1F1D19</span></div></div>
+<div style="display: grid; grid-template-columns: 200px repeat(2, minmax(0, 1fr)); gap: 24px; align-items: center; padding: 12px 24px; border-bottom: 1px solid #ECE7DE; font: 400 14px/20px 'Atkinson Hyperlegible', system-ui, sans-serif"><div style="font-weight: 500">Garis, border input</div><div style="display: flex; align-items: center; gap: 12px"><span style="width: 56px; height: 32px; border-radius: 6px; background: #E2DDD3"></span><span style="font: 400 13px/18px 'Atkinson Hyperlegible Mono', ui-monospace, monospace">#E2DDD3, input #8F877A</span></div><div style="display: flex; align-items: center; gap: 12px"><span style="width: 56px; height: 32px; border-radius: 6px; background: #34312B"></span><span style="font: 400 13px/18px 'Atkinson Hyperlegible Mono', ui-monospace, monospace">#34312B, input #7A7366</span></div></div>
+<div style="display: grid; grid-template-columns: 200px repeat(2, minmax(0, 1fr)); gap: 24px; align-items: center; padding: 12px 24px; border-bottom: 1px solid #ECE7DE; font: 400 14px/20px 'Atkinson Hyperlegible', system-ui, sans-serif"><div style="font-weight: 500">Teks utama</div><div style="display: flex; align-items: center; gap: 12px"><span style="width: 56px; height: 32px; border-radius: 6px; background: #1F1C17"></span><span style="font: 400 13px/18px 'Atkinson Hyperlegible Mono', ui-monospace, monospace">#1F1C17 · 16.7:1</span></div><div style="display: flex; align-items: center; gap: 12px"><span style="width: 56px; height: 32px; border-radius: 6px; background: #ECE8E0"></span><span style="font: 400 13px/18px 'Atkinson Hyperlegible Mono', ui-monospace, monospace">#ECE8E0 · 13.3:1</span></div></div>
+<div style="display: grid; grid-template-columns: 200px repeat(2, minmax(0, 1fr)); gap: 24px; align-items: center; padding: 12px 24px; border-bottom: 1px solid #ECE7DE; font: 400 14px/20px 'Atkinson Hyperlegible', system-ui, sans-serif"><div style="font-weight: 500">Teks meta</div><div style="display: flex; align-items: center; gap: 12px"><span style="width: 56px; height: 32px; border-radius: 6px; background: #5C564C"></span><span style="font: 400 13px/18px 'Atkinson Hyperlegible Mono', ui-monospace, monospace">#5C564C · 7.2:1</span></div><div style="display: flex; align-items: center; gap: 12px"><span style="width: 56px; height: 32px; border-radius: 6px; background: #A8A196"></span><span style="font: 400 13px/18px 'Atkinson Hyperlegible Mono', ui-monospace, monospace">#A8A196 · 6.4:1</span></div></div>
+<div style="display: grid; grid-template-columns: 200px repeat(2, minmax(0, 1fr)); gap: 24px; align-items: center; padding: 12px 24px; border-bottom: 1px solid #ECE7DE; font: 400 14px/20px 'Atkinson Hyperlegible', system-ui, sans-serif"><div style="font-weight: 500">Aksi</div><div style="display: flex; align-items: center; gap: 12px"><span style="width: 56px; height: 32px; border-radius: 6px; background: #1E5AA8"></span><span style="font: 400 13px/18px 'Atkinson Hyperlegible Mono', ui-monospace, monospace">#1E5AA8 · putih di atasnya 6.8:1</span></div><div style="display: flex; align-items: center; gap: 12px"><span style="width: 56px; height: 32px; border-radius: 6px; background: #7AA7E8"></span><span style="font: 400 13px/18px 'Atkinson Hyperlegible Mono', ui-monospace, monospace">#7AA7E8 · teks #10161F 7.4:1</span></div></div>
+<div style="display: grid; grid-template-columns: 200px repeat(2, minmax(0, 1fr)); gap: 24px; align-items: center; padding: 12px 24px; font: 400 14px/20px 'Atkinson Hyperlegible', system-ui, sans-serif"><div style="font-weight: 500">Severity</div>
+<div style="display: flex; gap: 6px; flex-wrap: wrap"><span style="padding: 4px 8px; border-radius: 6px; background: #F6F4EF; color: #B42318; font: 500 13px/18px 'Atkinson Hyperlegible', system-ui, sans-serif">Blocker 6.0</span><span style="padding: 4px 8px; border-radius: 6px; background: #F6F4EF; color: #B54708; font: 500 13px/18px 'Atkinson Hyperlegible', system-ui, sans-serif">High 4.9</span><span style="padding: 4px 8px; border-radius: 6px; background: #F6F4EF; color: #8A6100; font: 500 13px/18px 'Atkinson Hyperlegible', system-ui, sans-serif">Medium 5.0</span><span style="padding: 4px 8px; border-radius: 6px; background: #F6F4EF; color: #3D5A80; font: 500 13px/18px 'Atkinson Hyperlegible', system-ui, sans-serif">Low 6.4</span></div>
+<div style="display: flex; gap: 6px; flex-wrap: wrap"><span style="padding: 4px 8px; border-radius: 6px; background: #1A1916; color: #F28B82; font: 500 13px/18px 'Atkinson Hyperlegible', system-ui, sans-serif">Blocker 7.4</span><span style="padding: 4px 8px; border-radius: 6px; background: #1A1916; color: #F0954A; font: 500 13px/18px 'Atkinson Hyperlegible', system-ui, sans-serif">High 7.6</span><span style="padding: 4px 8px; border-radius: 6px; background: #1A1916; color: #E3B341; font: 500 13px/18px 'Atkinson Hyperlegible', system-ui, sans-serif">Medium 9.0</span><span style="padding: 4px 8px; border-radius: 6px; background: #1A1916; color: #8FB0D9; font: 500 13px/18px 'Atkinson Hyperlegible', system-ui, sans-serif">Low 7.9</span></div>
+</div>
+</div>
+<div style="font: 400 13px/18px 'Atkinson Hyperlegible', system-ui, sans-serif; color: #5C564C">Angka = rasio kontras WCAG terhadap latar. Semua teks lulus 4.5:1; border input lulus 3:1 untuk komponen.</div>
+</section>
+
+<section style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px">
+
+<div style="display: flex; flex-direction: column; gap: 14px">
+<h2 style="margin: 0; font: 600 18px/24px 'Atkinson Hyperlegible', system-ui, sans-serif">Grain dan cahaya</h2>
+<div style="background: #FFFDF9; border: 1px solid #E2DDD3; border-radius: 10px; padding: 24px; display: flex; flex-direction: column; gap: 14px">
+<div style="height: 150px; border-radius: 8px; border: 1px solid #E2DDD3; background-color: #F6F4EF; background-image: radial-gradient(900px 160px at 15% -30%, rgba(255,214,150,0.35), transparent 60%), radial-gradient(rgba(80,56,20,0.06) 0.7px, transparent 0.9px), radial-gradient(rgba(80,56,20,0.045) 0.7px, transparent 0.9px); background-size: auto, 4px 4px, 7px 7px; background-position: 0 0, 0 0, 2px 3px; display: flex; align-items: flex-end; padding: 16px; box-sizing: border-box"><div style="background: #FFFDF9; border: 1px solid #E2DDD3; border-radius: 8px; padding: 10px 14px; font: 500 14px/20px 'Atkinson Hyperlegible', system-ui, sans-serif">Kartu tetap polos agar teks tajam</div></div>
+<div style="font: 400 14px/21px 'Atkinson Hyperlegible', system-ui, sans-serif; color: #3E3930">Dua lapis titik halus (4 px dan 7 px, opasitas 3–6%) memberi kesan kertas tanpa gambar tambahan. Cahaya hangat tipis hanya di area header. Tidak ada latar bergerak. Grain dimatikan saat cetak, ekspor PDF, dan di mode gelap.</div>
+</div>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 14px">
+<h2 style="margin: 0; font: 600 18px/24px 'Atkinson Hyperlegible', system-ui, sans-serif">Gerak: tingkat sedang</h2>
+<div style="background: #FFFDF9; border: 1px solid #E2DDD3; border-radius: 10px; padding: 24px; display: flex; flex-direction: column; gap: 14px">
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px">
+<div style="background: #F6F4EF; border-radius: 8px; padding: 10px 12px"><div style="font: 600 18px/24px 'Atkinson Hyperlegible Mono', ui-monospace, monospace">120 ms</div><div style="font: 400 13px/18px 'Atkinson Hyperlegible', system-ui, sans-serif; color: #5C564C">hover, fokus, warna</div></div>
+<div style="background: #F6F4EF; border-radius: 8px; padding: 10px 12px"><div style="font: 600 18px/24px 'Atkinson Hyperlegible Mono', ui-monospace, monospace">180 ms</div><div style="font: 400 13px/18px 'Atkinson Hyperlegible', system-ui, sans-serif; color: #5C564C">panel, tab, sorotan baris</div></div>
+<div style="background: #F6F4EF; border-radius: 8px; padding: 10px 12px"><div style="font: 600 18px/24px 'Atkinson Hyperlegible Mono', ui-monospace, monospace">240 ms</div><div style="font: 400 13px/18px 'Atkinson Hyperlegible', system-ui, sans-serif; color: #5C564C">dialog, toast, perayaan</div></div>
+</div>
+<div style="font: 400 13px/18px 'Atkinson Hyperlegible Mono', ui-monospace, monospace; color: #3E3930">easing: cubic-bezier(.2, .8, .2, 1)</div>
+<div style="display: flex; flex-direction: column; border: 1px solid #E2DDD3; border-radius: 8px; overflow: hidden">
+<div class="m-row" style="padding: 12px 14px; border-bottom: 1px solid #ECE7DE; font: 500 14px/20px 'Atkinson Hyperlegible', system-ui, sans-serif">Arahkan kursor ke baris ini: tint hangat 120 ms</div>
+<div style="padding: 12px 14px; display: flex; flex-direction: column; gap: 8px"><div class="sk" style="height: 12px; width: 70%; border-radius: 4px"></div><div class="sk" style="height: 12px; width: 45%; border-radius: 4px"></div></div>
+</div>
+<div style="font: 400 14px/21px 'Atkinson Hyperlegible', system-ui, sans-serif; color: #3E3930">Panel triase masuk dengan geser 12 px dan fade. Garis tab meluncur ke tab aktif. Memuat memakai skeleton kertas, bukan spinner. Dengan reduce motion: semua geser dan shimmer mati, tinggal fade.</div>
+</div>
+</div>
+
+</section>
+
+</div>
+
+
+</body>
+</html>
