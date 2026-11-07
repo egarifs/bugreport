@@ -6,3 +6,4 @@ uploads/
 coverage/
 playwright-report/
 test-results/
+*.tsbuildinfo
