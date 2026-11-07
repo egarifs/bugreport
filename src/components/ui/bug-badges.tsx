@@ -9,18 +9,11 @@ export const SEVERITY_STYLE: Record<BugSeverity, { label: string; badge: string;
 
 export const SEVERITY_RANK: Record<BugSeverity, number> = { BLOCKER: 0, HIGH: 1, MEDIUM: 2, LOW: 3 };
 
-export const STATUS_LABEL: Record<BugStatus, string> = {
-  DRAFT: "Draft",
-  OPEN: "Open",
-  IN_PROGRESS: "In progress",
-  READY_FOR_VERIFICATION: "Perlu verifikasi",
-  CLOSED: "Closed",
-  REOPENED: "Reopened",
-  INVALID: "Invalid",
-  DUPLICATE: "Duplikat",
-  CANNOT_REPRODUCE: "Tidak bisa direproduksi",
-  WONT_FIX: "Won't fix",
-};
+import { STATUS_DICTIONARY } from "@/lib/status-dictionary";
+
+export const STATUS_LABEL = Object.fromEntries(
+  Object.entries(STATUS_DICTIONARY).map(([k, v]) => [k, v.internal]),
+) as Record<BugStatus, string>;
 
 // Status stays neutral on purpose: severity is the only loud color in a bug list.
 export function SeverityBadge({ severity }: { severity: BugSeverity }) {
@@ -36,6 +29,7 @@ export function StatusBadge({ status }: { status: BugStatus }) {
         strong ? "border-slate-700 text-slate-900 font-bold" : "border-slate-200 text-slate-600"
       }`}
     >
+      <span aria-hidden="true" className="mr-1">{STATUS_DICTIONARY[status].glyph}</span>
       {STATUS_LABEL[status]}
     </span>
   );
