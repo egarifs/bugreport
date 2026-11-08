@@ -124,6 +124,7 @@ export const BUG_TRANSITIONS: Record<BugStatus, readonly { to: BugStatus; permis
   ],
   READY_FOR_VERIFICATION: [
     { to: "CLOSED", permission: "bug.close" },
+    { to: "REOPENED", permission: "bug.close" }, // "Masih gagal" at verification (AC-BUG-06)
     { to: "IN_PROGRESS", permission: "bug.update" },
   ],
   CLOSED: [

@@ -14,6 +14,7 @@ import { AppShell } from "@/components/layout/app-shell";
 import { SeverityBadge, StatusBadge, STATUS_LABEL } from "@/components/ui/bug-badges";
 import { ActionForm, SubmitButton, type ActionResult } from "@/components/ui/action-form";
 import { activeModules, ownModuleId } from "@/lib/modules";
+import { buildLabel, dueLabel, verifyBug } from "@/lib/verify-service";
 
 export default async function BugDetailPage({
   params,
@@ -95,6 +96,51 @@ export default async function BugDetailPage({
       canTransitionBug(bug.status, target, userRole, user.isAdmin).allowed
   );
 
+  const fixedIn = buildLabel(bug.fixedInVersion, bug.fixedInBuild);
+  const canVerify = hasPermission(userRole, "bug.close", user.isAdmin);
+  const canEditFields = hasPermission(userRole, "bug.update", user.isAdmin);
+  const due = bug.dueAt ? dueLabel(bug.dueAt, bug.status) : null;
+  const back = `/projects/${project.key}/bugs/${bug.number}`;
+  const projectId = project.id;
+  const bugId = bug.id;
+  const prevFixedVersion = bug.fixedInVersion;
+  const prevFixedBuild = bug.fixedInBuild;
+  const prevDue = bug.dueAt?.toISOString() ?? null;
+
+  const handleVerifyPass = async (): Promise<ActionResult> => {
+    "use server";
+    const actor = await requireProjectPermission(projectId, "project.read");
+    const res = await verifyBug(actor, projectId, bugId, "pass");
+    revalidatePath(back);
+    return res;
+  }
+  const handleVerifyFail = async (_prev: ActionResult, formData: FormData): Promise<ActionResult> => {
+    "use server";
+    const actor = await requireProjectPermission(projectId, "project.read");
+    const res = await verifyBug(actor, projectId, bugId, "fail", String(formData.get("reason") ?? ""));
+    revalidatePath(back);
+    return res;
+  }
+  const handleFields = async (_prev: ActionResult, formData: FormData): Promise<ActionResult> => {
+    "use server";
+    const actor = await requireProjectPermission(projectId, "bug.update");
+    const clean = (k: string) => String(formData.get(k) ?? "").trim().slice(0, 80) || null;
+    const dueRaw = String(formData.get("dueAt") ?? "");
+    const dueAt = dueRaw ? new Date(`${dueRaw}T17:00:00+07:00`) : null; // end of working day, WIB
+    if (dueAt && Number.isNaN(dueAt.getTime())) return { error: "Tanggal tenggat tidak valid." };
+    const data = { fixedInVersion: clean("fixedInVersion"), fixedInBuild: clean("fixedInBuild"), dueAt };
+    await prisma.bug.update({ where: { id: bugId }, data });
+    await recordAuditLog({
+      projectId: projectId, actorId: actor.id, actorEmail: actor.email, action: "bug.fields_update", entityType: "bug", entityId: bugId,
+      changes: {
+        before: { fixedInVersion: prevFixedVersion, fixedInBuild: prevFixedBuild, dueAt: prevDue },
+        after: { ...data, dueAt: dueAt?.toISOString() ?? null },
+      },
+    });
+    revalidatePath(back);
+    return { ok: "Tersimpan." };
+  }
+
   return (
     <AppShell activeProjectKey={project.key}>
       <div className="min-h-full flex flex-col">
@@ -125,6 +171,30 @@ export default async function BugDetailPage({
       <main className="p-6 flex-1 grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left: Detail content & comments */}
         <div className="lg:col-span-2 space-y-6">
+          {bug.status === BugStatus.READY_FOR_VERIFICATION && (
+            <section aria-label="Verifikasi" className="bg-violet-50 border border-violet-200 rounded-lg p-4 text-sm text-violet-950 space-y-3">
+              <p className="font-bold">
+                {fixedIn ? `Siap diverifikasi di build ${fixedIn}` : "Siap diverifikasi"}
+              </p>
+              {canVerify ? (
+                <>
+                  <ActionForm action={handleVerifyPass} className="inline">
+                    <SubmitButton pendingText="Menutup..." className="px-3 py-1.5 bg-action hover:bg-action-hover text-white text-sm font-bold rounded">Lolos verifikasi</SubmitButton>
+                  </ActionForm>
+                  <details className="group">
+                    <summary className="cursor-pointer text-sm font-bold underline">Masih gagal…</summary>
+                    <ActionForm action={handleVerifyFail} className="mt-2 space-y-2">
+                      <label htmlFor="verify-reason" className="block text-xs font-medium">Alasan (wajib)</label>
+                      <textarea id="verify-reason" name="reason" rows={2} required className="w-full px-2 py-1.5 border border-violet-300 rounded bg-white text-sm" />
+                      <SubmitButton pendingText="Mengirim..." className="px-3 py-1.5 border border-slate-400 bg-white hover:bg-slate-100 text-sm font-bold rounded">Buka kembali</SubmitButton>
+                    </ActionForm>
+                  </details>
+                </>
+              ) : (
+                <p className="text-xs">Menunggu verifikasi QA.</p>
+              )}
+            </section>
+          )}
           <div className="bg-white border border-slate-200 rounded-lg p-6 shadow-sm">
             <h1 className="text-lg font-bold text-slate-900 mb-4">{bug.title}</h1>
 
@@ -389,6 +459,9 @@ export default async function BugDetailPage({
                       ...(appVersion ? { appVersion } : {}),
                       ...(moduleId ? { moduleId } : {}),
                       ...(duplicateOfId ? { duplicateOfId } : {}),
+                      ...(targetStatus === BugStatus.CLOSED && bug.status === BugStatus.READY_FOR_VERIFICATION
+                        ? { verifiedAt: new Date(), verifiedInBuild: fixedIn || null }
+                        : {}),
                       ...(isReopen
                         ? {
                             reopenCount: { increment: 1 },
@@ -520,10 +593,28 @@ export default async function BugDetailPage({
                 <span className="font-medium text-slate-800">{bug.module?.name ?? "Belum diisi"}</span>
               </div>
 
-              {bug.appVersion && (
+              {(bug.appVersion || bug.buildNumber) && (
                 <div className="flex justify-between py-1 border-b border-slate-100">
-                  <span className="text-slate-400">Versi / Build</span>
-                  <span className="font-medium text-slate-800">{bug.appVersion}</span>
+                  <span className="text-slate-400">Ditemukan di</span>
+                  <span className="font-medium text-slate-800">{buildLabel(bug.appVersion, bug.buildNumber)}</span>
+                </div>
+              )}
+              {fixedIn && (
+                <div className="flex justify-between py-1 border-b border-slate-100">
+                  <span className="text-slate-400">Diperbaiki di</span>
+                  <span className="font-medium text-slate-800">{fixedIn}</span>
+                </div>
+              )}
+              {bug.verifiedAt && (
+                <div className="flex justify-between py-1 border-b border-slate-100">
+                  <span className="text-slate-400">Diverifikasi di</span>
+                  <span className="font-medium text-slate-800">{bug.verifiedInBuild || "-"}</span>
+                </div>
+              )}
+              {due && (
+                <div className="flex justify-between py-1 border-b border-slate-100">
+                  <span className="text-slate-400">Tenggat</span>
+                  <span className={`font-medium ${due.overdue ? "text-sev-blocker font-bold" : "text-slate-800"}`}>{due.text}</span>
                 </div>
               )}
 
@@ -544,6 +635,24 @@ export default async function BugDetailPage({
                 <span className="text-slate-700">{bug.createdAt.toLocaleString()}</span>
               </div>
             </div>
+
+            {canEditFields && (
+              <ActionForm action={handleFields} className="pt-2 space-y-2">
+                <p className="text-slate-400 text-xs font-semibold">Perbaikan &amp; tenggat</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <label className="block text-xs text-slate-600">Versi perbaikan
+                    <input name="fixedInVersion" defaultValue={bug.fixedInVersion ?? ""} placeholder="1.8.0" className="mt-0.5 w-full px-2 py-1 border border-slate-300 rounded bg-white" />
+                  </label>
+                  <label className="block text-xs text-slate-600">Build
+                    <input name="fixedInBuild" defaultValue={bug.fixedInBuild ?? ""} placeholder="b214" className="mt-0.5 w-full px-2 py-1 border border-slate-300 rounded bg-white" />
+                  </label>
+                </div>
+                <label className="block text-xs text-slate-600">Tenggat
+                  <input type="date" name="dueAt" defaultValue={bug.dueAt ? bug.dueAt.toISOString().slice(0, 10) : ""} className="mt-0.5 w-full px-2 py-1 border border-slate-300 rounded bg-white" />
+                </label>
+                <SubmitButton pendingText="Menyimpan..." className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded text-xs">Simpan</SubmitButton>
+              </ActionForm>
+            )}
 
             {/* Assignee form */}
             <form
