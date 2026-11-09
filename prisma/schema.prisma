@@ -74,6 +74,7 @@ model User {
   reportedBugs Bug[]           @relation("BugReporter")
   assignedBugs Bug[]           @relation("BugAssignee")
   reviewedBugs Bug[]           @relation("BugReviewer")
+  coReportedBugs BugCoReporter[] @relation("UserCoReported")
   comments     BugComment[]
   auditLogs    AuditLog[]
 
@@ -196,6 +197,9 @@ model Bug {
   comments    BugComment[]
   attachments BugAttachment[]
 
+  coReporters    BugCoReporter[] @relation("BugCoReporters")
+  mergedAsSource BugCoReporter[] @relation("BugMergedSources")
+
   @@unique([projectId, number])
   @@index([projectId, status])
   @@index([projectId, severity])
@@ -228,6 +232,22 @@ model BugAttachment {
   uploadedAt DateTime @default(now())
 
   @@index([bugId])
+}
+
+model BugCoReporter {
+  id          String   @id @default(uuid())
+  bugId       String
+  bug         Bug      @relation("BugCoReporters", fields: [bugId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User     @relation("UserCoReported", fields: [userId], references: [id], onDelete: Cascade)
+  sourceBugId String
+  sourceBug   Bug      @relation("BugMergedSources", fields: [sourceBugId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@unique([bugId, userId, sourceBugId])
+  @@index([bugId])
+  @@index([userId])
+  @@index([sourceBugId])
 }
 
 model AuditLog {
