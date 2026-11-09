@@ -4,7 +4,7 @@ import { prisma } from "./db";
 import { checkProjectPermission } from "./authz";
 
 test("server action authz re-check", async (t) => {
-  const tag = `authz${Date.now()}`;
+  const tag = `az${Math.random().toString(36).slice(2, 6)}${Date.now().toString().slice(-4)}`;
   const project = await prisma.project.create({ data: { key: tag.toUpperCase().slice(0, 10), name: tag } });
   const other = await prisma.project.create({ data: { key: `O${tag}`.toUpperCase().slice(0, 10), name: `o${tag}` } });
   const vendor = await prisma.user.create({ data: { email: `v-${tag}@t.test`, status: "ACTIVE" } });

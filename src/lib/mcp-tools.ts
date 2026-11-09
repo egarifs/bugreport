@@ -5,6 +5,7 @@ import { notifyBug } from "./notify";
 import { recordAuditLog } from "@/lib/user-service";
 import { activeModules, resolveModuleId } from "@/lib/modules";
 import { BugPriority, BugSeverity, ProjectRole, TestCasePriority } from "@prisma/client";
+import { saveTestCaseCore } from "@/lib/testcase-service";
 import { readDocText } from "./business-docs";
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -559,38 +560,24 @@ export async function executeMcpTool(
             ? item.priority
             : "MEDIUM") as TestCasePriority;
 
-          const data = {
+          const res = await saveTestCaseCore(ctx.projectId, ctx.projectKey, {
+            code,
             title,
             steps,
             expectedResult,
-            moduleArea: item.module ? String(item.module).trim() : null,
             moduleId,
             priority,
             testType: item.testType ? String(item.testType).trim() : null,
             targetRole: item.targetRole ? String(item.targetRole).trim() : null,
             precondition: item.precondition ? redactSecrets(String(item.precondition).trim()) : null,
             referenceUrl: item.referenceUrl ? String(item.referenceUrl).trim() : null,
-          };
-
-          const existing = await prisma.testCase.findUnique({
-            where: { projectId_code: { projectId: ctx.projectId, code } },
+            changelog: "Dibuat/diperbarui via MCP agent",
+            userId: ctx.actorId,
           });
 
-          if (existing) {
-            await prisma.testCase.update({
-              where: { id: existing.id },
-              data,
-            });
-            results.push({ code, title, action: "UPDATED" });
-          } else {
-            await prisma.testCase.create({
-              data: {
-                projectId: ctx.projectId,
-                code,
-                ...data,
-              },
-            });
-            results.push({ code, title, action: "CREATED" });
+          if (res.ok) {
+            const action = (res.version || 1) > 1 ? "UPDATED" : "CREATED";
+            results.push({ code: res.code || code, title, action });
           }
         }
 

@@ -86,6 +86,7 @@ model User {
   focusUntil        DateTime?
   notificationScope String                    @default("INVOLVED_ONLY")
   notificationPreferences NotificationPreference[]
+  testCaseVersions        TestCaseVersion[]
 
   @@index([status])
   @@index([email])
@@ -323,6 +324,12 @@ model BusinessDocChunk {
   @@index([versionId])
 }
 
+enum TestCaseStatus {
+  DRAFT
+  READY
+  DEPRECATED
+}
+
 enum TestCasePriority {
   CRITICAL
   HIGH
@@ -339,6 +346,7 @@ model TestCase {
   moduleId       String?
   module         Module?          @relation(fields: [moduleId], references: [id])
   title          String
+  status         TestCaseStatus   @default(READY)
   priority       TestCasePriority @default(MEDIUM)
   testType       String? // e.g. "Functional", "Negative", "UI"
   targetRole     String? // e.g. "Marketing RS", "RS_Finance"
@@ -350,9 +358,27 @@ model TestCase {
   updatedAt      DateTime         @updatedAt
 
   runItems TestRunItem[]
+  versions TestCaseVersion[]
 
   @@unique([projectId, code])
   @@index([projectId, moduleArea])
+  @@index([projectId, status])
+}
+
+model TestCaseVersion {
+  id          String   @id @default(uuid())
+  testCaseId  String
+  testCase    TestCase @relation(fields: [testCaseId], references: [id], onDelete: Cascade)
+  version     Int
+  changelog   String?
+  snapshot    Json
+  createdById String?
+  createdBy   User?    @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now())
+
+  @@unique([testCaseId, version])
+  @@index([testCaseId])
+  @@index([createdById])
 }
 
 enum TestRunStatus {
