@@ -5,6 +5,7 @@ import { canTransitionBug, hasPermission } from "@/lib/permissions";
 import { guardBugTransition } from "@/lib/bug-transition";
 import { redactSecrets } from "@/lib/redact";
 import { notifyBug } from "@/lib/notify";
+import { flagRerunForBug } from "@/lib/testrun-service";
 import { recordAuditLog } from "@/lib/user-service";
 import { BugStatus, CommentType, ProjectRole } from "@prisma/client";
 import Link from "next/link";
@@ -576,6 +577,7 @@ export default async function BugDetailPage({
                     },
                   });
                   await notifyBug(bug.id, actor, { kind: "status", from: bug.status, to: targetStatus });
+                  if (targetStatus === BugStatus.READY_FOR_VERIFICATION) await flagRerunForBug(bug.id, actor);
 
                   revalidatePath(`/projects/${project.key}/bugs/${bug.number}`);
                   return { ok: `Status diubah ke ${STATUS_LABEL[targetStatus]}.` };
