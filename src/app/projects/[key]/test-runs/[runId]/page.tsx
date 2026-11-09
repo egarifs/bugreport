@@ -142,7 +142,7 @@ export default async function TestRunDetailPage({
               <article aria-label={`Detail ${selected.testCase.code}`} className="bg-white border border-slate-200 rounded-lg p-5 space-y-5">
                 <header>
                   <p className="text-xs text-slate-500">
-                    <span className="font-mono">{selected.testCase.code}</span> · v{selected.testCaseVersion?.version ?? "?"}
+                    <span className="font-mono">{selected.testCase.code}</span>{selected.testCaseVersion && ` · v${selected.testCaseVersion.version}`}
                     {(selected.testCase.module?.name ?? selected.testCase.moduleArea) && ` · ${selected.testCase.module?.name ?? selected.testCase.moduleArea}`}
                   </p>
                   <h2 className="text-lg font-bold text-slate-900">{selected.testCase.title}</h2>

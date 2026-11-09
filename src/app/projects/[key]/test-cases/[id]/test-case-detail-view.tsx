@@ -83,7 +83,7 @@ function renderRunResult(status: TestRunItemStatus) {
         <span className="inline-flex items-center gap-1.5 font-bold text-xs text-ok">
           <svg className="w-3.5 h-3.5 fill-ok" viewBox="0 0 14 14">
             <circle cx="7" cy="7" r="6" />
-            <path d="M4.5 7.2 6.2 9 9.5 5.5" stroke="#fff" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+            <path d="M4.5 7.2 6.2 9 9.5 5.5" className="stroke-surface-raised" strokeWidth="1.5" fill="none" strokeLinecap="round" />
           </svg>
           Lolos
         </span>
@@ -93,7 +93,7 @@ function renderRunResult(status: TestRunItemStatus) {
         <span className="inline-flex items-center gap-1.5 font-bold text-xs text-bad">
           <svg className="w-3.5 h-3.5 fill-bad" viewBox="0 0 14 14">
             <circle cx="7" cy="7" r="6" />
-            <path d="M5 5l4 4M9 5l-4 4" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" />
+            <path d="M5 5l4 4M9 5l-4 4" className="stroke-surface-raised" strokeWidth="1.5" strokeLinecap="round" />
           </svg>
           Gagal
         </span>
