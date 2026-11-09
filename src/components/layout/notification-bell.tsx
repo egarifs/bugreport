@@ -29,13 +29,20 @@ export function NotificationBell({ align = "left" }: { align?: "left" | "right" 
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<NotificationItem[] | null>(null);
   const [failed, setFailed] = useState(false);
+  const [isFocusActive, setIsFocusActive] = useState(false);
+  const [focusUntil, setFocusUntil] = useState<string | null>(null);
   const wrap = useRef<HTMLDivElement>(null);
   const button = useRef<HTMLButtonElement>(null);
 
   const poll = useCallback(async () => {
     if (document.hidden) return;
     const r = await fetch("/api/notifications?count=1").catch(() => null);
-    if (r?.ok) setUnread((await r.json()).unread);
+    if (r?.ok) {
+      const j = await r.json();
+      setUnread(j.unread);
+      setIsFocusActive(Boolean(j.isFocusActive));
+      setFocusUntil(j.focusUntil ?? null);
+    }
   }, []);
 
   const load = useCallback(async () => {
@@ -45,6 +52,8 @@ export function NotificationBell({ align = "left" }: { align?: "left" | "right" 
     const j = await r.json();
     setItems(j.items);
     setUnread(j.unread);
+    setIsFocusActive(Boolean(j.isFocusActive));
+    setFocusUntil(j.focusUntil ?? null);
   }, []);
 
   useEffect(() => {
@@ -95,6 +104,20 @@ export function NotificationBell({ align = "left" }: { align?: "left" | "right" 
     await markRead({ all: true });
   };
 
+  const toggleFocus = async (hours: number | null) => {
+    const res = await fetch("/api/notifications/focus", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ hours }),
+    }).catch(() => null);
+    if (res?.ok) {
+      const data = await res.json();
+      setIsFocusActive(Boolean(data.isFocusActive));
+      setFocusUntil(data.focusUntil ?? null);
+      poll();
+    }
+  };
+
   const label = unread ? `Notifikasi, ${unread} belum dibaca` : "Notifikasi";
 
   return (
@@ -134,6 +157,54 @@ export function NotificationBell({ align = "left" }: { align?: "left" | "right" 
               <button onClick={readAll} className="text-xs font-semibold text-slate-700 hover:text-slate-900 underline-offset-2 hover:underline">
                 Tandai semua dibaca
               </button>
+            )}
+          </div>
+
+          {/* Mode Fokus Quick Toggle Banner */}
+          <div className="px-4 py-2 bg-slate-50 border-b border-slate-100 flex items-center justify-between text-xs">
+            {isFocusActive ? (
+              <>
+                <span className="text-amber-800 font-medium flex items-center gap-1.5 truncate">
+                  <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                  Mode fokus aktif {focusUntil ? `s.d. ${new Date(focusUntil).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}` : ""}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => toggleFocus(null)}
+                  className="text-amber-900 font-semibold hover:underline shrink-0 ml-2"
+                >
+                  Matikan
+                </button>
+              </>
+            ) : (
+              <>
+                <span className="text-slate-600 flex items-center gap-1">
+                  <span>🌙</span> Mode fokus:
+                </span>
+                <div className="flex items-center gap-1 font-medium">
+                  <button
+                    type="button"
+                    onClick={() => toggleFocus(1)}
+                    className="px-1.5 py-0.5 rounded bg-white border border-slate-200 text-slate-700 hover:bg-slate-100"
+                  >
+                    1j
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => toggleFocus(2)}
+                    className="px-1.5 py-0.5 rounded bg-white border border-slate-200 text-slate-700 hover:bg-slate-100"
+                  >
+                    2j
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => toggleFocus(4)}
+                    className="px-1.5 py-0.5 rounded bg-white border border-slate-200 text-slate-700 hover:bg-slate-100"
+                  >
+                    4j
+                  </button>
+                </div>
+              </>
             )}
           </div>
 
@@ -182,9 +253,22 @@ export function NotificationBell({ align = "left" }: { align?: "left" | "right" 
             )}
           </div>
 
-          <Link href="/notifications" className="block px-4 py-2.5 border-t border-slate-200 text-center text-xs font-semibold text-slate-700 hover:bg-slate-50 rounded-b-lg">
-            Lihat semua
-          </Link>
+          <div className="grid grid-cols-2 border-t border-slate-200 text-center text-xs font-semibold text-slate-700">
+            <Link
+              href="/notifications"
+              onClick={() => setOpen(false)}
+              className="px-4 py-2.5 hover:bg-slate-50 border-r border-slate-200"
+            >
+              Lihat semua
+            </Link>
+            <Link
+              href="/profile/notifications"
+              onClick={() => setOpen(false)}
+              className="px-4 py-2.5 hover:bg-slate-50 text-indigo-600 hover:text-indigo-700"
+            >
+              Atur preferensi
+            </Link>
+          </div>
         </div>
       )}
     </div>

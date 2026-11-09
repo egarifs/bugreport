@@ -11,15 +11,41 @@ async function userId() {
 export async function GET(req: NextRequest) {
   const uid = await userId();
   if (!uid) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const unread = await prisma.notification.count({ where: { userId: uid, readAt: null } });
-  if (req.nextUrl.searchParams.get("count")) return NextResponse.json({ unread });
+
+  const user = await prisma.user.findUnique({
+    where: { id: uid },
+    select: { focusUntil: true },
+  });
+
+  const now = new Date();
+  const isFocusActive = user?.focusUntil ? user.focusUntil > now : false;
+
+  const unreadWhere = {
+    userId: uid,
+    readAt: null,
+    ...(isFocusActive
+      ? {
+          OR: [
+            { type: "mention" },
+            { heldUntil: null },
+            { heldUntil: { lte: now } },
+          ],
+        }
+      : {}),
+  };
+
+  const unread = await prisma.notification.count({ where: unreadWhere });
+  if (req.nextUrl.searchParams.get("count")) {
+    return NextResponse.json({ unread, isFocusActive, focusUntil: user?.focusUntil });
+  }
+
   const items = await prisma.notification.findMany({
     where: { userId: uid },
     orderBy: { createdAt: "desc" },
     take: 30,
-    select: { id: true, type: true, title: true, body: true, href: true, actorName: true, readAt: true, createdAt: true },
+    select: { id: true, type: true, title: true, body: true, href: true, actorName: true, readAt: true, createdAt: true, heldUntil: true },
   });
-  return NextResponse.json({ unread, items });
+  return NextResponse.json({ unread, isFocusActive, focusUntil: user?.focusUntil, items });
 }
 
 // POST { id } marks one read; { all: true } marks all read. Always scoped to the caller.
