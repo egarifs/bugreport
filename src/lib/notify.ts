@@ -44,12 +44,17 @@ export async function notifyBug(bugId: string, actor: Actor, ev: BugEvent) {
   try {
     const bug = await prisma.bug.findUniqueOrThrow({
       where: { id: bugId },
-      select: { key: true, number: true, title: true, projectId: true, reporterId: true, assigneeId: true, project: { select: { key: true } } },
+      select: { id: true, key: true, number: true, title: true, projectId: true, reporterId: true, assigneeId: true, project: { select: { key: true } } },
     });
     const href = `/projects/${bug.project.key}/bugs/${bug.number}`;
     const base = { projectId: bug.projectId, href, body: clip(bug.title) };
     const who = actorLabel(actor);
-    const involved = [bug.reporterId, bug.assigneeId];
+
+    const coReporters = await prisma.bugCoReporter.findMany({
+      where: { bugId: bug.id },
+      select: { userId: true },
+    });
+    const involved = [bug.reporterId, bug.assigneeId, ...coReporters.map((c) => c.userId)];
 
     switch (ev.kind) {
       case "assign":

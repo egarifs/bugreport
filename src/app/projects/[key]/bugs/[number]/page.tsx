@@ -15,6 +15,14 @@ import { SeverityBadge, StatusBadge, STATUS_LABEL } from "@/components/ui/bug-ba
 import { ActionForm, SubmitButton, type ActionResult } from "@/components/ui/action-form";
 import { activeModules, ownModuleId } from "@/lib/modules";
 import { buildLabel, dueLabel, verifyBug } from "@/lib/verify-service";
+import {
+  canMergeBug,
+  mergeDuplicateBug,
+  unmergeDuplicateBug,
+  getMergeUndoStatus,
+} from "@/lib/merge-duplicate-service";
+import { MergeDuplicateModal } from "./merge-duplicate-modal";
+import { MergeUndoBanner } from "./merge-undo-banner";
 
 export default async function BugDetailPage({
   params,
@@ -59,6 +67,13 @@ export default async function BugDetailPage({
       assignee: { select: { id: true, name: true, email: true } },
       reviewedBy: { select: { name: true, email: true } },
       duplicateOf: { select: { key: true, number: true, title: true } },
+      duplicates: { select: { key: true, number: true, title: true } },
+      coReporters: {
+        include: {
+          user: { select: { name: true, email: true } },
+          sourceBug: { select: { key: true } },
+        },
+      },
       module: { select: { name: true } },
       attachments: { orderBy: { uploadedAt: "asc" } },
       related: { select: { key: true, number: true, title: true } },
@@ -106,6 +121,44 @@ export default async function BugDetailPage({
   const prevFixedVersion = bug.fixedInVersion;
   const prevFixedBuild = bug.fixedInBuild;
   const prevDue = bug.dueAt?.toISOString() ?? null;
+
+  const canMerge = canMergeBug(userRole, Boolean(user.isAdmin));
+  const undoStatus = await getMergeUndoStatus(bug.id);
+
+  const handleMergeDuplicate = async (formData: FormData): Promise<{ error?: string; success?: boolean; targetKey?: string }> => {
+    "use server";
+    try {
+      const actor = await requireProjectPermission(projectId, "project.read");
+      const targetKey = String(formData.get("targetKey") ?? "").trim();
+      const movePublicComments = formData.get("movePublicComments") === "true";
+      const moveAttachments = formData.get("moveAttachments") === "true";
+      const addCoReporter = formData.get("addCoReporter") === "true";
+      const copyStepsAsComment = formData.get("copyStepsAsComment") === "true";
+
+      const res = await mergeDuplicateBug(projectId, bugId, targetKey, actor, {
+        movePublicComments,
+        moveAttachments,
+        addCoReporter,
+        copyStepsAsComment,
+      });
+      revalidatePath(back);
+      return res;
+    } catch (err: unknown) {
+      return { error: err instanceof Error ? err.message : "Gagal menggabungkan duplikat." };
+    }
+  };
+
+  const handleUndoMerge = async (): Promise<{ error?: string; success?: boolean }> => {
+    "use server";
+    try {
+      const actor = await requireProjectPermission(projectId, "project.read");
+      const res = await unmergeDuplicateBug(projectId, bugId, actor);
+      revalidatePath(back);
+      return res;
+    } catch (err: unknown) {
+      return { error: err instanceof Error ? err.message : "Gagal membatalkan penggabungan." };
+    }
+  };
 
   const handleVerifyPass = async (): Promise<ActionResult> => {
     "use server";
@@ -162,11 +215,44 @@ export default async function BugDetailPage({
           </div>
 
         <div className="flex items-center gap-2">
+          {bug.duplicates.length > 0 && (
+            <span className="text-xs bg-slate-100 text-slate-700 font-medium px-2 py-0.5 rounded border border-slate-200">
+              {bug.duplicates.length} duplikat digabung
+            </span>
+          )}
+
+          {canMerge && bug.status !== BugStatus.DUPLICATE && (
+            <MergeDuplicateModal
+              projectKey={project.key}
+              sourceBug={{
+                id: bug.id,
+                key: bug.key,
+                title: bug.title,
+                reporterName: bug.reporter.name || bug.reporter.email,
+                publicCommentsCount: bug.comments.filter((c) => c.type === CommentType.PUBLIC).length,
+                attachmentsCount: bug.attachments.length,
+                hasSteps: Boolean(bug.stepsToReproduce.trim()),
+              }}
+              onMergeAction={handleMergeDuplicate}
+            />
+          )}
+
           <SeverityBadge severity={bug.severity} />
 
           <StatusBadge status={bug.status} />
         </div>
       </header>
+
+      {undoStatus.canUndo && undoStatus.targetKey && (
+        <div className="px-6 pt-4">
+          <MergeUndoBanner
+            initialRemainingMs={undoStatus.remainingMs}
+            targetKey={undoStatus.targetKey}
+            sourceKey={bug.key}
+            onUndoAction={handleUndoMerge}
+          />
+        </div>
+      )}
 
       <main className="p-6 flex-1 grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left: Detail content & comments */}
@@ -582,6 +668,48 @@ export default async function BugDetailPage({
                   {bug.reporter.name || bug.reporter.email}
                 </span>
               </div>
+
+              {bug.coReporters.length > 0 && (
+                <div className="py-1 border-b border-slate-100 text-xs">
+                  <span className="text-slate-400 block mb-0.5">Dilaporkan juga</span>
+                  <span className="text-slate-800 font-medium">
+                    {bug.coReporters.map((cr) => cr.user.name || cr.user.email).join(", ")}
+                    <span className="text-slate-500 font-normal"> · lewat duplikat</span>
+                  </span>
+                </div>
+              )}
+
+              {bug.duplicateOf && (
+                <div className="py-1 border-b border-slate-100 text-xs">
+                  <span className="text-slate-400 block mb-0.5">Duplikat dari</span>
+                  <Link
+                    href={`/projects/${project.key}/bugs/${bug.duplicateOf.number}`}
+                    className="font-mono font-bold text-blue-600 hover:underline"
+                  >
+                    {bug.duplicateOf.key}
+                  </Link>
+                  <span className="text-slate-600 truncate block mt-0.5">{bug.duplicateOf.title}</span>
+                </div>
+              )}
+
+              {bug.duplicates.length > 0 && (
+                <div className="py-1 border-b border-slate-100 text-xs">
+                  <span className="text-slate-400 block mb-0.5">Duplikat digabung ({bug.duplicates.length})</span>
+                  <div className="space-y-0.5">
+                    {bug.duplicates.map((d) => (
+                      <div key={d.key} className="truncate">
+                        <Link
+                          href={`/projects/${project.key}/bugs/${d.number}`}
+                          className="font-mono font-bold text-blue-600 hover:underline mr-1"
+                        >
+                          {d.key}
+                        </Link>
+                        <span className="text-slate-600">{d.title}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div className="flex justify-between py-1 border-b border-slate-100">
                 <span className="text-slate-400">Environment</span>
