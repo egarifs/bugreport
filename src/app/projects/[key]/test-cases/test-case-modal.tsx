@@ -1,14 +1,17 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { ActionForm, SubmitButton } from "@/components/ui/action-form";
-import { upsertSingleTestCase, deleteSingleTestCase } from "./test-case-actions";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import type { TestCasePriority, TestCaseStatus } from "@prisma/client";
+import { bulkMoveTestCasesAction } from "./test-case-actions";
 
 export type TestCaseItem = {
   id: string;
   code: string;
   title: string;
-  priority: "CRITICAL" | "HIGH" | "MEDIUM" | "LOW";
+  priority: TestCasePriority;
+  status?: TestCaseStatus;
   moduleId: string | null;
   moduleArea: string | null;
   moduleName?: string | null;
@@ -22,7 +25,7 @@ export type TestCaseItem = {
 
 export type ModuleOption = { id: string; name: string };
 
-const KNOWN_TYPES = ["Functional", "E2E", "Integration", "Smoke", "Regression", "Negative", "UI", "Security", "Performance"];
+const KNOWN_TYPES = ["Functional", "Negative", "Security", "UI", "Integration", "Smoke", "Regression"];
 
 export function TestCaseManagementSection({
   projectId,
@@ -37,16 +40,25 @@ export function TestCaseManagementSection({
   modules: ModuleOption[];
   testCases: TestCaseItem[];
 }) {
-  const [activeModal, setActiveModal] = useState<"create" | "view" | "edit" | null>(null);
-  const [selectedTc, setSelectedTc] = useState<TestCaseItem | null>(null);
+  const router = useRouter();
 
   // Filters state
   const [selectedModuleId, setSelectedModuleId] = useState<string | "ALL" | "UNASSIGNED">("ALL");
   const [selectedType, setSelectedType] = useState<string>("ALL");
+  const [selectedPriority, setSelectedPriority] = useState<string>("ALL");
   const [moduleSearch, setModuleSearch] = useState<string>("");
   const [tcSearch, setTcSearch] = useState<string>("");
 
-  // Calculate counts per module
+  // Selection state
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  // Bulk move modal state
+  const [showMoveModal, setShowMoveModal] = useState(false);
+  const [targetMoveModuleId, setTargetMoveModuleId] = useState<string>("");
+  const [moving, setMoving] = useState(false);
+  const [moveError, setMoveError] = useState<string | null>(null);
+
+  // Module counts
   const moduleCounts = useMemo(() => {
     const counts: Record<string, number> = { ALL: testCases.length, UNASSIGNED: 0 };
     for (const m of modules) {
@@ -62,7 +74,7 @@ export function TestCaseManagementSection({
     return counts;
   }, [modules, testCases]);
 
-  // Extract all distinct test types from data + standard known types
+  // Types list
   const availableTypes = useMemo(() => {
     const set = new Set<string>(KNOWN_TYPES);
     for (const tc of testCases) {
@@ -71,30 +83,31 @@ export function TestCaseManagementSection({
     return Array.from(set);
   }, [testCases]);
 
-  // Filtered module list for the left sidebar
+  // Module filter list
   const filteredModules = useMemo(() => {
     const q = moduleSearch.trim().toLowerCase();
     if (!q) return modules;
     return modules.filter((m) => m.name.toLowerCase().includes(q));
   }, [modules, moduleSearch]);
 
-  // Filtered test cases for the right table
+  // Filtered test cases
   const filteredTestCases = useMemo(() => {
     return testCases.filter((tc) => {
-      // Module filter
       if (selectedModuleId === "UNASSIGNED") {
         if (tc.moduleId !== null) return false;
       } else if (selectedModuleId !== "ALL") {
         if (tc.moduleId !== selectedModuleId) return false;
       }
 
-      // Type filter
       if (selectedType !== "ALL") {
         const typeNormalized = (tc.testType || "Functional").trim().toLowerCase();
         if (typeNormalized !== selectedType.toLowerCase()) return false;
       }
 
-      // Text search in title or code
+      if (selectedPriority !== "ALL") {
+        if (tc.priority !== selectedPriority) return false;
+      }
+
       if (tcSearch.trim()) {
         const q = tcSearch.toLowerCase().trim();
         const codeMatch = tc.code.toLowerCase().includes(q);
@@ -105,34 +118,60 @@ export function TestCaseManagementSection({
 
       return true;
     });
-  }, [testCases, selectedModuleId, selectedType, tcSearch]);
+  }, [testCases, selectedModuleId, selectedType, selectedPriority, tcSearch]);
 
-  // Current active module metadata
   const currentModuleName = useMemo(() => {
-    if (selectedModuleId === "ALL") return "Semua Modul";
-    if (selectedModuleId === "UNASSIGNED") return "Tanpa Modul / Belum Diassign";
+    if (selectedModuleId === "ALL") return "Semua";
+    if (selectedModuleId === "UNASSIGNED") return "Tanpa Modul";
     const found = modules.find((m) => m.id === selectedModuleId);
-    return found ? found.name : "Modul Tidak Dikenal";
+    return found ? found.name : "Modul";
   }, [selectedModuleId, modules]);
 
-  function openCreate() {
-    setSelectedTc(null);
-    setActiveModal("create");
+  // Checkbox helpers
+  const allFilteredSelected =
+    filteredTestCases.length > 0 &&
+    filteredTestCases.every((tc) => selectedIds.has(tc.id));
+
+  function toggleSelectAll() {
+    if (allFilteredSelected) {
+      const next = new Set(selectedIds);
+      filteredTestCases.forEach((tc) => next.delete(tc.id));
+      setSelectedIds(next);
+    } else {
+      const next = new Set(selectedIds);
+      filteredTestCases.forEach((tc) => next.add(tc.id));
+      setSelectedIds(next);
+    }
   }
 
-  function openView(tc: TestCaseItem) {
-    setSelectedTc(tc);
-    setActiveModal("view");
+  function toggleSelectOne(id: string) {
+    const next = new Set(selectedIds);
+    if (next.has(id)) {
+      next.delete(id);
+    } else {
+      next.add(id);
+    }
+    setSelectedIds(next);
   }
 
-  function openEdit(tc: TestCaseItem) {
-    setSelectedTc(tc);
-    setActiveModal("edit");
-  }
-
-  function closeModal() {
-    setActiveModal(null);
-    setSelectedTc(null);
+  async function handleBulkMove() {
+    if (!selectedIds.size) return;
+    setMoving(true);
+    setMoveError(null);
+    const res = await bulkMoveTestCasesAction(
+      projectId,
+      projectKey,
+      Array.from(selectedIds),
+      targetMoveModuleId ? targetMoveModuleId : null
+    );
+    setMoving(false);
+    if (res && "error" in res && res.error) {
+      setMoveError(res.error);
+      return;
+    }
+    setShowMoveModal(false);
+    setSelectedIds(new Set());
+    router.refresh();
   }
 
   return (
@@ -140,79 +179,65 @@ export function TestCaseManagementSection({
       {/* Header bar */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-base font-bold text-slate-900">Test Case Repository</h2>
-          <p className="text-xs text-slate-500">
-            Total {testCases.length} skenario pengujian. Pilih modul di sisi kiri untuk navigasi cepat.
+          <h2 className="text-base font-bold text-text-base">Repository Test Case</h2>
+          <p className="text-xs text-text-muted">
+            Total {testCases.length} skenario pengujian di project {projectKey}.
           </p>
         </div>
 
         {canManage && (
-          <button
-            type="button"
-            onClick={openCreate}
-            className="press-snappy px-3.5 py-1.5 bg-action hover:bg-action-hover text-white text-xs font-semibold rounded shadow-xs"
+          <Link
+            href={`/projects/${projectKey}/test-cases/new`}
+            className="px-4 py-2 bg-link hover:bg-link/90 text-white text-xs font-bold rounded-lg shadow-sm transition min-h-[44px] flex items-center"
           >
-            + Test Case Baru
-          </button>
+            + Test case baru
+          </Link>
         )}
       </div>
 
-      {/* Two-Column Master-Detail Layout */}
+      {/* Two-Column Layout (Mockup 23) */}
       <div className="flex flex-col lg:flex-row gap-5 items-start">
-        {/* LEFT COLUMN: MODULE SIDEBAR */}
-        <aside className="w-full lg:w-64 bg-white border border-slate-200 rounded-lg p-3 shadow-xs shrink-0 space-y-3">
-          <div className="flex items-center justify-between px-1">
-            <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">Modul Fitur</span>
-            <span className="text-[11px] font-mono font-semibold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
-              {modules.length}
-            </span>
+        {/* LEFT COLUMN: MODULE NAVIGATION */}
+        <aside className="w-full lg:w-60 bg-surface-raised border border-border-base rounded-lg p-3 shrink-0 space-y-2.5">
+          <div className="px-1 py-0.5 text-xs font-bold text-text-muted">
+            Modul
           </div>
 
-          {/* Module Mini Search */}
           <div className="relative">
             <input
               type="text"
               value={moduleSearch}
               onChange={(e) => setModuleSearch(e.target.value)}
               placeholder="Cari modul..."
-              className="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded bg-slate-50/60 focus:bg-white focus:outline-none focus:border-slate-400 placeholder:text-slate-400"
+              className="w-full px-2.5 py-1.5 text-xs border border-border-base rounded bg-surface-sunken focus:bg-surface-raised focus:outline-none focus:border-border-muted placeholder:text-text-muted"
             />
             {moduleSearch && (
               <button
                 type="button"
                 onClick={() => setModuleSearch("")}
-                className="absolute right-2 top-1.5 text-xs text-slate-400 hover:text-slate-600"
+                className="absolute right-2 top-1.5 text-xs text-text-muted hover:text-text-base"
               >
                 &times;
               </button>
             )}
           </div>
 
-          {/* Module Navigation List */}
-          <nav className="space-y-1 max-h-[600px] overflow-y-auto pr-1">
-            {/* All Modules option */}
+          <nav className="space-y-0.5 max-h-[600px] overflow-y-auto pr-1">
             <button
               type="button"
               onClick={() => setSelectedModuleId("ALL")}
-              className={`w-full flex items-center justify-between px-2.5 py-2 text-xs rounded transition-colors text-left ${
+              className={`w-full flex items-center justify-between px-3 py-2 text-xs rounded-lg transition text-left min-h-[38px] ${
                 selectedModuleId === "ALL"
-                  ? "bg-slate-900 text-white font-semibold"
-                  : "text-slate-700 hover:bg-slate-100"
+                  ? "bg-badge-neutral-bg text-text-base font-bold shadow-xs"
+                  : "text-text-base hover:bg-surface-sunken"
               }`}
             >
-              <span className="truncate">Semua Test Case</span>
-              <span
-                className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${
-                  selectedModuleId === "ALL"
-                    ? "bg-slate-800 text-slate-200"
-                    : "bg-slate-100 text-slate-600 font-medium"
-                }`}
-              >
+              <span>Semua</span>
+              <span className="font-mono text-[11px] text-text-muted">
                 {moduleCounts.ALL}
               </span>
             </button>
 
-            {/* List of custom modules */}
             {filteredModules.map((m) => {
               const count = moduleCounts[m.id] ?? 0;
               const isSelected = selectedModuleId === m.id;
@@ -221,191 +246,200 @@ export function TestCaseManagementSection({
                   key={m.id}
                   type="button"
                   onClick={() => setSelectedModuleId(m.id)}
-                  className={`w-full flex items-center justify-between px-2.5 py-2 text-xs rounded transition-colors text-left ${
+                  className={`w-full flex items-center justify-between px-3 py-2 text-xs rounded-lg transition text-left min-h-[38px] ${
                     isSelected
-                      ? "bg-slate-900 text-white font-semibold"
-                      : "text-slate-700 hover:bg-slate-100"
+                      ? "bg-badge-neutral-bg text-text-base font-bold shadow-xs"
+                      : "text-text-base hover:bg-surface-sunken"
                   }`}
                 >
                   <span className="truncate" title={m.name}>
                     {m.name}
                   </span>
-                  <span
-                    className={`text-[10px] font-mono px-1.5 py-0.5 rounded shrink-0 ml-2 ${
-                      isSelected
-                        ? "bg-slate-800 text-slate-200"
-                        : "bg-slate-100 text-slate-600 font-medium"
-                    }`}
-                  >
+                  <span className="font-mono text-[11px] text-text-muted ml-2">
                     {count}
                   </span>
                 </button>
               );
             })}
 
-            {/* Unassigned Module option */}
             {(moduleCounts.UNASSIGNED > 0 || selectedModuleId === "UNASSIGNED") && (
               <button
                 type="button"
                 onClick={() => setSelectedModuleId("UNASSIGNED")}
-                className={`w-full flex items-center justify-between px-2.5 py-2 text-xs rounded transition-colors text-left ${
+                className={`w-full flex items-center justify-between px-3 py-2 text-xs rounded-lg transition text-left min-h-[38px] ${
                   selectedModuleId === "UNASSIGNED"
-                    ? "bg-slate-900 text-white font-semibold"
-                    : "text-slate-500 hover:bg-slate-100 italic"
+                    ? "bg-badge-neutral-bg text-text-base font-bold shadow-xs"
+                    : "text-text-muted hover:bg-surface-sunken italic"
                 }`}
               >
-                <span className="truncate">Tanpa Modul</span>
-                <span
-                  className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${
-                    selectedModuleId === "UNASSIGNED"
-                      ? "bg-slate-800 text-slate-200"
-                      : "bg-slate-100 text-slate-600 font-medium"
-                  }`}
-                >
+                <span>Tanpa modul</span>
+                <span className="font-mono text-[11px] text-text-muted">
                   {moduleCounts.UNASSIGNED}
                 </span>
               </button>
             )}
-
-            {filteredModules.length === 0 && moduleSearch && (
-              <p className="text-[11px] text-slate-400 p-2 text-center">Modul tidak ditemukan.</p>
-            )}
           </nav>
+
+          {moduleCounts.UNASSIGNED > 0 && (
+            <div className="p-2.5 rounded-lg bg-warn-bg border border-warn-border text-[11px] text-warn leading-relaxed">
+              {moduleCounts.UNASSIGNED} test case belum punya modul.
+            </div>
+          )}
         </aside>
 
-        {/* RIGHT COLUMN: FILTER BAR & TEST CASE TABLE */}
+        {/* RIGHT COLUMN: SEARCH, FILTERS & TABLE */}
         <section className="flex-1 min-w-0 w-full space-y-3">
-          {/* Active Module Header & Sub-Filters Bar */}
-          <div className="bg-white border border-slate-200 rounded-lg p-3.5 shadow-xs flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-sm font-bold text-slate-900">{currentModuleName}</h3>
-                <span className="text-xs text-slate-500 font-mono">
-                  ({filteredTestCases.length} skenario)
-                </span>
-              </div>
+          {/* Filter Bar */}
+          <div className="flex flex-wrap items-center gap-2.5">
+            <div className="flex-1 min-w-[200px] max-w-sm">
+              <input
+                type="search"
+                value={tcSearch}
+                onChange={(e) => setTcSearch(e.target.value)}
+                placeholder="Cari kode, judul, atau langkah..."
+                className="w-full px-3 py-2 text-xs border border-border-base rounded-lg bg-surface-raised focus:outline-none focus:border-border-muted"
+              />
             </div>
 
-            {/* Filter controls: Search and Type Pills */}
-            <div className="flex flex-wrap items-center gap-2.5">
-              {/* Type Filter Select */}
-              <div className="flex items-center gap-1.5 text-xs">
-                <span className="text-slate-500 font-medium">Tipe:</span>
-                <select
-                  value={selectedType}
-                  onChange={(e) => setSelectedType(e.target.value)}
-                  className="px-2.5 py-1 text-xs border border-slate-300 rounded bg-white text-slate-700 font-medium focus:outline-none focus:border-slate-400"
-                >
-                  <option value="ALL">Semua Tipe</option>
-                  {availableTypes.map((t) => (
-                    <option key={t} value={t}>
-                      {t}
-                    </option>
-                  ))}
-                </select>
-              </div>
+            <select
+              value={selectedType}
+              onChange={(e) => setSelectedType(e.target.value)}
+              className="px-3 py-2 text-xs border border-border-base rounded-lg bg-surface-raised text-text-base focus:outline-none"
+            >
+              <option value="ALL">Semua Tipe</option>
+              {availableTypes.map((t) => (
+                <option key={t} value={t}>
+                  {t}
+                </option>
+              ))}
+            </select>
 
-              {/* In-Module Text Search */}
-              <div className="relative">
-                <input
-                  type="text"
-                  value={tcSearch}
-                  onChange={(e) => setTcSearch(e.target.value)}
-                  placeholder="Cari kode atau judul..."
-                  className="w-48 sm:w-56 px-2.5 py-1 text-xs border border-slate-300 rounded bg-white focus:outline-none focus:border-slate-400 placeholder:text-slate-400"
-                />
-                {tcSearch && (
-                  <button
-                    type="button"
-                    onClick={() => setTcSearch("")}
-                    className="absolute right-2 top-1 text-xs text-slate-400 hover:text-slate-600"
-                  >
-                    &times;
-                  </button>
-                )}
-              </div>
-            </div>
+            <select
+              value={selectedPriority}
+              onChange={(e) => setSelectedPriority(e.target.value)}
+              className="px-3 py-2 text-xs border border-border-base rounded-lg bg-surface-raised text-text-base focus:outline-none"
+            >
+              <option value="ALL">Semua Prioritas</option>
+              <option value="CRITICAL">Critical</option>
+              <option value="HIGH">High</option>
+              <option value="MEDIUM">Medium</option>
+              <option value="LOW">Low</option>
+            </select>
+
+            {(selectedModuleId !== "ALL" || selectedType !== "ALL" || selectedPriority !== "ALL" || tcSearch) && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedModuleId("ALL");
+                  setSelectedType("ALL");
+                  setSelectedPriority("ALL");
+                  setTcSearch("");
+                }}
+                className="text-xs text-link hover:underline font-semibold px-2 py-1"
+              >
+                Reset filter
+              </button>
+            )}
           </div>
 
-          {/* Table list */}
+          {/* Table */}
           {filteredTestCases.length === 0 ? (
-            <div className="bg-white border border-slate-200 rounded-lg p-10 text-center text-xs text-slate-500 space-y-2">
-              <p>Tidak ada test case yang cocok dengan filter yang dipilih.</p>
-              {(selectedModuleId !== "ALL" || selectedType !== "ALL" || tcSearch) && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSelectedModuleId("ALL");
-                    setSelectedType("ALL");
-                    setTcSearch("");
-                  }}
-                  className="text-action underline text-xs font-semibold"
-                >
-                  Reset semua filter
-                </button>
-              )}
+            <div className="bg-surface-raised border border-border-base rounded-lg p-10 text-center text-xs text-text-muted">
+              Tidak ada test case yang cocok dengan filter yang dipilih.
             </div>
           ) : (
-            <div className="bg-white border border-slate-200 rounded-lg overflow-x-auto shadow-xs">
+            <div className="bg-surface-raised border border-border-base rounded-lg overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold text-xs">
+                <thead className="bg-surface-sunken border-b border-border-base text-text-muted font-bold">
                   <tr>
-                    <th className="py-3 px-4 w-28">Code</th>
-                    <th className="py-3 px-4">Judul Test Case</th>
-                    <th className="py-3 px-4 w-28">Tipe</th>
-                    <th className="py-3 px-4 w-24">Prioritas</th>
-                    <th className="py-3 px-4 w-32">Role</th>
-                    {canManage && <th className="py-3 px-4 text-right">Aksi</th>}
+                    <th className="py-2.5 px-3 w-10 text-center">
+                      <input
+                        type="checkbox"
+                        checked={allFilteredSelected}
+                        onChange={toggleSelectAll}
+                        aria-label="Pilih semua test case di tabel"
+                        className="w-4 h-4 cursor-pointer"
+                      />
+                    </th>
+                    <th className="py-2.5 px-3 w-28">Kode</th>
+                    <th className="py-2.5 px-3">Judul Test Case</th>
+                    <th className="py-2.5 px-3 w-24">Tipe</th>
+                    <th className="py-2.5 px-3 w-24">Prioritas</th>
+                    <th className="py-2.5 px-3 w-20">Status</th>
+                    {canManage && <th className="py-2.5 px-3 w-20 text-right">Aksi</th>}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {filteredTestCases.map((tc) => (
-                    <tr
-                      key={tc.id}
-                      onClick={() => openView(tc)}
-                      className="hover:bg-slate-50 transition-colors duration-100 cursor-pointer"
-                    >
-                      <td className="py-3 px-4 font-mono font-semibold text-slate-900 whitespace-nowrap">
-                        {tc.code}
-                      </td>
-                      <td className="py-3 px-4 w-full max-w-0">
-                        <span className="block font-medium text-slate-900">{tc.title}</span>
-                        <span className="block text-slate-500 truncate" title={tc.expectedResult}>{tc.expectedResult}</span>
-                      </td>
-                      <td className="py-3 px-4 whitespace-nowrap">
-                        <span className="px-2 py-0.5 rounded text-[11px] font-mono bg-slate-100 text-slate-700 font-medium">
-                          {tc.testType || "Functional"}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4 whitespace-nowrap">
-                        <span
-                          className={`px-2 py-0.5 rounded text-xs font-semibold ${
-                            tc.priority === "CRITICAL"
-                              ? "bg-red-100 text-red-700"
-                              : tc.priority === "HIGH"
-                              ? "bg-orange-100 text-orange-700"
-                              : "bg-blue-100 text-blue-700"
-                          }`}
-                        >
-                          {tc.priority}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4 text-slate-500 truncate max-w-[8rem]" title={tc.targetRole ?? undefined}>
-                        {tc.targetRole || "-"}
-                      </td>
-                      {canManage && (
-                        <td className="py-3 px-4 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
-                          <button
-                            type="button"
-                            onClick={() => openEdit(tc)}
-                            className="text-action hover:underline font-medium text-xs"
-                          >
-                            Edit
-                          </button>
+                <tbody className="divide-y divide-border-base">
+                  {filteredTestCases.map((tc) => {
+                    const isChecked = selectedIds.has(tc.id);
+                    return (
+                      <tr
+                        key={tc.id}
+                        className={`hover:bg-surface-sunken/60 transition ${
+                          isChecked ? "bg-link/5" : ""
+                        }`}
+                      >
+                        <td className="py-3 px-3 text-center">
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={() => toggleSelectOne(tc.id)}
+                            aria-label={`Pilih ${tc.code}`}
+                            className="w-4 h-4 cursor-pointer"
+                          />
                         </td>
-                      )}
-                    </tr>
-                  ))}
+                        <td className="py-3 px-3 font-mono font-bold text-text-base whitespace-nowrap">
+                          <Link
+                            href={`/projects/${projectKey}/test-cases/${tc.id}`}
+                            className="text-link hover:underline"
+                          >
+                            {tc.code}
+                          </Link>
+                        </td>
+                        <td className="py-3 px-3">
+                          <Link
+                            href={`/projects/${projectKey}/test-cases/${tc.id}`}
+                            className="block font-semibold text-text-base hover:text-link"
+                          >
+                            {tc.title}
+                          </Link>
+                          <div className="text-[11px] text-text-muted mt-0.5 flex items-center gap-2">
+                            <span>{tc.moduleName || tc.moduleArea || "Tanpa modul"}</span>
+                            {tc.targetRole && <span>• Peran {tc.targetRole}</span>}
+                          </div>
+                        </td>
+                        <td className="py-3 px-3 whitespace-nowrap">
+                          <span className="font-mono text-[11px] text-text-muted">
+                            {tc.testType || "Functional"}
+                          </span>
+                        </td>
+                        <td className="py-3 px-3 whitespace-nowrap">
+                          <span className="font-semibold text-text-base capitalize">
+                            {tc.priority.toLowerCase()}
+                          </span>
+                        </td>
+                        <td className="py-3 px-3 whitespace-nowrap">
+                          {tc.status === "DEPRECATED" ? (
+                            <span className="text-[11px] text-text-muted line-through">Usang</span>
+                          ) : tc.status === "DRAFT" ? (
+                            <span className="text-[11px] text-text-muted">Draf</span>
+                          ) : (
+                            <span className="text-[11px] text-ok font-semibold">Siap</span>
+                          )}
+                        </td>
+                        {canManage && (
+                          <td className="py-3 px-3 text-right whitespace-nowrap">
+                            <Link
+                              href={`/projects/${projectKey}/test-cases/${tc.id}/edit`}
+                              className="text-xs text-link hover:underline font-semibold"
+                            >
+                              Ubah
+                            </Link>
+                          </td>
+                        )}
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -413,321 +447,83 @@ export function TestCaseManagementSection({
         </section>
       </div>
 
-      {/* VIEW MODAL */}
-      {activeModal === "view" && selectedTc && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg shadow-xl border border-slate-200 max-w-2xl w-full max-h-[90vh] flex flex-col chat-in">
-            <header className="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="font-mono font-bold text-sm bg-slate-100 text-slate-800 px-2 py-0.5 rounded">
-                  {selectedTc.code}
-                </span>
-                <span className="px-2 py-0.5 rounded text-xs font-mono font-semibold bg-slate-100 text-slate-700">
-                  {selectedTc.testType || "Functional"}
-                </span>
-                <span
-                  className={`px-2 py-0.5 rounded text-xs font-semibold ${
-                    selectedTc.priority === "CRITICAL"
-                      ? "bg-red-100 text-red-700"
-                      : selectedTc.priority === "HIGH"
-                      ? "bg-orange-100 text-orange-700"
-                      : "bg-blue-100 text-blue-700"
-                  }`}
-                >
-                  {selectedTc.priority}
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={closeModal}
-                className="text-slate-400 hover:text-slate-600 font-bold text-lg leading-none"
-              >
-                &times;
-              </button>
-            </header>
-
-            <div className="p-5 space-y-4 overflow-y-auto flex-1 text-xs">
-              <div>
-                <h3 className="text-base font-bold text-slate-900 mb-1">{selectedTc.title}</h3>
-                <div className="flex flex-wrap gap-4 text-slate-500 text-xs">
-                  <div>Modul: <strong className="text-slate-700">{selectedTc.moduleName || selectedTc.moduleArea || "-"}</strong></div>
-                  <div>Tipe: <strong className="text-slate-700">{selectedTc.testType || "Functional"}</strong></div>
-                  <div>Aktor / Role: <strong className="text-slate-700">{selectedTc.targetRole || "-"}</strong></div>
-                </div>
-              </div>
-
-              {selectedTc.referenceUrl && (
-                <div>
-                  <span className="font-semibold text-slate-700 block mb-0.5">Tautan Referensi (Figma/Doc):</span>
-                  <a
-                    href={selectedTc.referenceUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-action underline font-mono break-all"
-                  >
-                    {selectedTc.referenceUrl}
-                  </a>
-                </div>
-              )}
-
-              {selectedTc.precondition && (
-                <div className="bg-slate-50 border border-slate-200 rounded p-3">
-                  <span className="font-semibold text-slate-700 block mb-1">Prasyarat (Preconditions):</span>
-                  <p className="text-slate-800 whitespace-pre-wrap">{selectedTc.precondition}</p>
-                </div>
-              )}
-
-              <div>
-                <span className="font-semibold text-slate-700 block mb-1">Langkah Pengujian (Steps):</span>
-                <div className="bg-slate-50 border border-slate-200 rounded p-3 text-slate-800 font-mono text-[11px] whitespace-pre-wrap leading-relaxed">
-                  {selectedTc.steps}
-                </div>
-              </div>
-
-              <div>
-                <span className="font-semibold text-slate-700 block mb-1">Hasil yang Diharapkan (Expected Result):</span>
-                <div className="bg-emerald-50/50 border border-emerald-200 rounded p-3 text-emerald-950 font-medium whitespace-pre-wrap">
-                  {selectedTc.expectedResult}
-                </div>
-              </div>
-            </div>
-
-            <footer className="px-5 py-3 border-t border-slate-200 flex items-center justify-between bg-slate-50 rounded-b-lg">
-              <div>
-                {canManage && (
-                  <ActionForm
-                    action={async (prev, fd) => {
-                      const res = await deleteSingleTestCase(projectId, projectKey, prev, fd);
-                      if (res && "ok" in res && res.ok) closeModal();
-                      return res;
-                    }}
-                  >
-                    <input type="hidden" name="id" value={selectedTc.id} />
-                    <SubmitButton pendingText="Menghapus..." className="press-snappy px-3 py-1.5 text-xs text-rose-600 hover:text-rose-700 font-semibold">
-                      Hapus Test Case
-                    </SubmitButton>
-                  </ActionForm>
-                )}
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={closeModal}
-                  className="press-snappy px-3 py-1.5 text-xs font-semibold text-slate-600 hover:text-slate-800"
-                >
-                  Tutup
-                </button>
-                {canManage && (
-                  <button
-                    type="button"
-                    onClick={() => setActiveModal("edit")}
-                    className="press-snappy px-3 py-1.5 text-xs font-semibold rounded bg-action hover:bg-action-hover text-white"
-                  >
-                    Edit Test Case
-                  </button>
-                )}
-              </div>
-            </footer>
-          </div>
+      {/* Floating Action Bar when items selected (Mockup 23) */}
+      {selectedIds.size > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 bg-zinc-900 text-zinc-100 px-5 py-3 rounded-xl shadow-2xl flex items-center gap-4 text-xs font-semibold">
+          <span>{selectedIds.size} dipilih</span>
+          <div className="h-4 w-px bg-zinc-700" />
+          {canManage && (
+            <button
+              type="button"
+              onClick={() => setShowMoveModal(true)}
+              className="text-zinc-200 hover:text-white transition"
+            >
+              Pindah modul
+            </button>
+          )}
+          <Link
+            href={`/projects/${projectKey}/test-runs/new?cases=${Array.from(selectedIds).join(",")}`}
+            className="bg-link hover:bg-link/90 text-white px-3.5 py-1.5 rounded-lg transition"
+          >
+            Buat test run dari pilihan
+          </Link>
+          <button
+            type="button"
+            onClick={() => setSelectedIds(new Set())}
+            className="text-zinc-400 hover:text-zinc-200"
+          >
+            Batal
+          </button>
         </div>
       )}
 
-      {/* CREATE & EDIT MODAL */}
-      {(activeModal === "create" || activeModal === "edit") && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg shadow-xl border border-slate-200 max-w-2xl w-full max-h-[90vh] flex flex-col chat-in">
-            <header className="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
-              <h3 className="text-sm font-bold text-slate-900">
-                {activeModal === "create" ? "Buat Test Case Baru" : `Edit Test Case ${selectedTc?.code}`}
-              </h3>
+      {/* Move Module Modal */}
+      {showMoveModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="bg-surface-raised border border-border-base rounded-xl p-5 max-w-md w-full space-y-4 shadow-xl">
+            <h3 className="text-sm font-bold text-text-base">
+              Pindahkan {selectedIds.size} Test Case ke Modul
+            </h3>
+            {moveError && (
+              <div className="p-2.5 bg-bad-bg border border-bad-border rounded text-bad text-xs">
+                {moveError}
+              </div>
+            )}
+            <div>
+              <label htmlFor="targetModule" className="block text-xs font-bold text-text-base mb-1">
+                Pilih Modul Tujuan
+              </label>
+              <select
+                id="targetModule"
+                value={targetMoveModuleId}
+                onChange={(e) => setTargetMoveModuleId(e.target.value)}
+                className="w-full px-3 py-2 text-xs border border-border-base rounded-lg bg-surface-sunken text-text-base focus:outline-none"
+              >
+                <option value="">Tanpa modul</option>
+                {modules.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex items-center justify-end gap-2 pt-2">
               <button
                 type="button"
-                onClick={closeModal}
-                className="text-slate-400 hover:text-slate-600 font-bold text-lg leading-none"
+                onClick={() => setShowMoveModal(false)}
+                className="px-3 py-1.5 text-xs font-medium text-text-muted hover:text-text-base rounded-lg"
               >
-                &times;
+                Batal
               </button>
-            </header>
-
-            <ActionForm
-              action={async (prev, fd) => {
-                const res = await upsertSingleTestCase(projectId, projectKey, prev, fd);
-                if (res && "ok" in res && res.ok) closeModal();
-                return res;
-              }}
-              className="flex flex-col flex-1 overflow-hidden"
-            >
-              {activeModal === "edit" && selectedTc && (
-                <input type="hidden" name="id" value={selectedTc.id} />
-              )}
-
-              <div className="p-5 space-y-3.5 overflow-y-auto flex-1 text-xs">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <div>
-                    <label className="block text-slate-700 font-medium mb-1">
-                      Kode (Opsional)
-                    </label>
-                    <input
-                      name="code"
-                      defaultValue={selectedTc?.code || ""}
-                      placeholder="e.g. TC-AUTH-001"
-                      className="w-full px-2.5 py-1.5 border border-slate-300 rounded font-mono text-xs uppercase"
-                    />
-                    <p className="text-[10px] text-slate-400 mt-0.5">Kosongkan untuk auto-code</p>
-                  </div>
-                  <div>
-                    <label className="block text-slate-700 font-medium mb-1">
-                      Modul / Area
-                    </label>
-                    <select
-                      name="moduleId"
-                      defaultValue={
-                        selectedTc?.moduleId ||
-                        (selectedModuleId !== "ALL" && selectedModuleId !== "UNASSIGNED"
-                          ? selectedModuleId
-                          : "")
-                      }
-                      className="w-full px-2.5 py-1.5 border border-slate-300 rounded text-xs bg-white"
-                    >
-                      <option value="">-- Tanpa Modul --</option>
-                      {modules.map((m) => (
-                        <option key={m.id} value={m.id}>
-                          {m.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-slate-700 font-medium mb-1">
-                      Prioritas *
-                    </label>
-                    <select
-                      name="priority"
-                      defaultValue={selectedTc?.priority || "MEDIUM"}
-                      className="w-full px-2.5 py-1.5 border border-slate-300 rounded text-xs bg-white font-medium"
-                    >
-                      <option value="CRITICAL">CRITICAL</option>
-                      <option value="HIGH">HIGH</option>
-                      <option value="MEDIUM">MEDIUM</option>
-                      <option value="LOW">LOW</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-slate-700 font-medium mb-1">
-                    Judul Skenario Test Case *
-                  </label>
-                  <input
-                    name="title"
-                    required
-                    defaultValue={selectedTc?.title || ""}
-                    placeholder="Contoh: Verifikasi validasi format nomor WhatsApp saat registrasi"
-                    className="w-full px-2.5 py-1.5 border border-slate-300 rounded text-xs"
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-slate-700 font-medium mb-1">
-                      Tipe Pengujian (Opsional)
-                    </label>
-                    <input
-                      name="testType"
-                      list="test-types-datalist"
-                      defaultValue={selectedTc?.testType || (selectedType !== "ALL" ? selectedType : "Functional")}
-                      placeholder="Functional, E2E, Regression, UI, dsb"
-                      className="w-full px-2.5 py-1.5 border border-slate-300 rounded text-xs"
-                    />
-                    <datalist id="test-types-datalist">
-                      {availableTypes.map((t) => (
-                        <option key={t} value={t} />
-                      ))}
-                    </datalist>
-                  </div>
-                  <div>
-                    <label className="block text-slate-700 font-medium mb-1">
-                      Target Role / Aktor (Opsional)
-                    </label>
-                    <input
-                      name="targetRole"
-                      defaultValue={selectedTc?.targetRole || ""}
-                      placeholder="Admin, Marketing, Pasien, dsb"
-                      className="w-full px-2.5 py-1.5 border border-slate-300 rounded text-xs"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-slate-700 font-medium mb-1">
-                    Prasyarat (Preconditions)
-                  </label>
-                  <input
-                    name="precondition"
-                    defaultValue={selectedTc?.precondition || ""}
-                    placeholder="Contoh: User sudah login dengan akun role Staf Gudang"
-                    className="w-full px-2.5 py-1.5 border border-slate-300 rounded text-xs"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-slate-700 font-medium mb-1">
-                    Langkah-langkah Pengujian (Steps) *
-                  </label>
-                  <textarea
-                    name="steps"
-                    rows={4}
-                    required
-                    defaultValue={selectedTc?.steps || ""}
-                    placeholder="1. Buka menu Pengaturan > Pengguna&#10;2. Klik tombol Tambah Pengguna&#10;3. Masukkan nomor HP tanpa kode negara"
-                    className="w-full px-2.5 py-1.5 border border-slate-300 rounded text-xs font-mono"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-slate-700 font-medium mb-1">
-                    Hasil yang Diharapkan (Expected Result) *
-                  </label>
-                  <textarea
-                    name="expectedResult"
-                    rows={2}
-                    required
-                    defaultValue={selectedTc?.expectedResult || ""}
-                    placeholder="Contoh: Muncul pesan error 'Nomor telepon harus diawali 08 atau +62'"
-                    className="w-full px-2.5 py-1.5 border border-slate-300 rounded text-xs"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-slate-700 font-medium mb-1">
-                    Link Referensi Figma / PRD (Opsional)
-                  </label>
-                  <input
-                    name="referenceUrl"
-                    type="url"
-                    defaultValue={selectedTc?.referenceUrl || ""}
-                    placeholder="https://figma.com/file/... atau link dokumen"
-                    className="w-full px-2.5 py-1.5 border border-slate-300 rounded text-xs"
-                  />
-                </div>
-              </div>
-
-              <footer className="px-5 py-3 border-t border-slate-200 flex items-center justify-end gap-2 bg-slate-50 rounded-b-lg">
-                <button
-                  type="button"
-                  onClick={closeModal}
-                  className="press-snappy px-3 py-1.5 text-xs font-semibold text-slate-600 hover:text-slate-800"
-                >
-                  Batal
-                </button>
-                <SubmitButton
-                  pendingText="Menyimpan..."
-                  className="press-snappy px-4 py-1.5 text-xs font-semibold rounded bg-action hover:bg-action-hover text-white"
-                >
-                  Simpan Test Case
-                </SubmitButton>
-              </footer>
-            </ActionForm>
+              <button
+                type="button"
+                disabled={moving}
+                onClick={handleBulkMove}
+                className="px-4 py-1.5 text-xs font-bold text-white bg-link hover:bg-link/90 rounded-lg disabled:opacity-50"
+              >
+                {moving ? "Memindahkan..." : "Pindahkan"}
+              </button>
+            </div>
           </div>
         </div>
       )}

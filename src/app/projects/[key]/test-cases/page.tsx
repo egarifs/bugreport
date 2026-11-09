@@ -12,6 +12,7 @@ import { ProjectRole } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { parseTestCaseWorkbook } from "@/lib/testcase-importer";
 import { parseMarkdownTestCases } from "@/lib/markdown-importer";
+import { saveTestCaseCore } from "@/lib/testcase-service";
 import { TestCaseManagementSection } from "./test-case-modal";
 
 export default async function TestCasesPage({
@@ -96,39 +97,19 @@ export default async function TestCasesPage({
                       const area = item.moduleArea?.trim();
                       const moduleId = area ? byName.get(area.toLowerCase()) ?? null : null;
                       if (area && !moduleId) unknown.add(area);
-                      await prisma.testCase.upsert({
-                        where: {
-                          projectId_code: {
-                            projectId: project.id,
-                            code: item.code,
-                          },
-                        },
-                        create: {
-                          projectId: project.id,
-                          code: item.code,
-                          moduleArea: item.moduleArea || null,
-                          moduleId,
-                          title: item.title,
-                          priority: item.priority,
-                          testType: item.testType || null,
-                          targetRole: item.targetRole || null,
-                          precondition: item.precondition || null,
-                          steps: item.steps || "-",
-                          expectedResult: item.expectedResult || "-",
-                          referenceUrl: item.referenceUrl || null,
-                        },
-                        update: {
-                          moduleArea: item.moduleArea || null,
-                          moduleId,
-                          title: item.title,
-                          priority: item.priority,
-                          testType: item.testType || null,
-                          targetRole: item.targetRole || null,
-                          precondition: item.precondition || null,
-                          steps: item.steps || "-",
-                          expectedResult: item.expectedResult || "-",
-                          referenceUrl: item.referenceUrl || null,
-                        },
+                      await saveTestCaseCore(project.id, project.key, {
+                        code: item.code,
+                        moduleId,
+                        title: item.title,
+                        priority: item.priority,
+                        testType: item.testType || null,
+                        targetRole: item.targetRole || null,
+                        precondition: item.precondition || null,
+                        steps: item.steps || "-",
+                        expectedResult: item.expectedResult || "-",
+                        referenceUrl: item.referenceUrl || null,
+                        changelog: "Diimpor dari file",
+                        userId: user.id,
                       });
                     }
                     revalidatePath(`/projects/${project.key}/test-cases`);
@@ -235,6 +216,7 @@ export default async function TestCasesPage({
                 code: tc.code,
                 title: tc.title,
                 priority: tc.priority,
+                status: tc.status,
                 moduleId: tc.moduleId,
                 moduleArea: tc.moduleArea,
                 moduleName: tc.module?.name ?? null,
