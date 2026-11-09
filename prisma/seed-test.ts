@@ -29,6 +29,18 @@ async function main() {
       update: { role: ProjectRole.QA },
     });
 
+    // E2E test runner QA user (admin so it has full QA + review + close rights across suites)
+    const qaUser = await tx.user.upsert({
+      where: { email: "step1-qa@example.test" },
+      create: { email: "step1-qa@example.test", name: "Step1 QA", status: UserStatus.ACTIVE, isAdmin: true },
+      update: { status: UserStatus.ACTIVE, isAdmin: true },
+    });
+    await tx.projectMember.upsert({
+      where: { projectId_userId: { projectId: project.id, userId: qaUser.id } },
+      create: { projectId: project.id, userId: qaUser.id, role: ProjectRole.QA },
+      update: { role: ProjectRole.QA },
+    });
+
     for (const name of data.project.modules as string[]) {
       await tx.module.upsert({
         where: { projectId_name: { projectId: project.id, name } },

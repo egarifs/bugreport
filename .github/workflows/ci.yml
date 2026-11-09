@@ -1,0 +1,85 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  check:
+    name: Lint, Typecheck & Tests
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: bugreport
+          POSTGRES_PASSWORD: bugreport_dev_password
+          POSTGRES_DB: bugreport_test
+        ports:
+          - 5434:5432
+        options: >-
+          --health-cmd "pg_isready -U bugreport -d bugreport_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Setup PostgreSQL extensions
+        run: |
+          sudo apt-get install -y postgresql-client
+          PGPASSWORD=bugreport_dev_password psql -h 127.0.0.1 -p 5434 -U bugreport -d bugreport_test -f initdb/01-extensions.sql
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Sync Database Schema
+        env:
+          DATABASE_URL: postgresql://bugreport:bugreport_dev_password@127.0.0.1:5434/bugreport_test?schema=public
+        run: npx prisma db push --skip-generate
+
+      - name: Generate Prisma Client
+        run: npx prisma generate
+
+      - name: Seed Test Database
+        env:
+          DATABASE_URL: postgresql://bugreport:bugreport_dev_password@127.0.0.1:5434/bugreport_test?schema=public
+        run: npm run seed:test
+
+      - name: Unit & Integration Tests
+        env:
+          DATABASE_URL: postgresql://bugreport:bugreport_dev_password@127.0.0.1:5434/bugreport_test?schema=public
+        run: npm test
+
+      - name: Build Next.js
+        env:
+          DATABASE_URL: postgresql://bugreport:bugreport_dev_password@127.0.0.1:5434/bugreport_test?schema=public
+          AUTH_SECRET: test-secret-at-least-32-chars-long-e2e
+        run: npm run build
+
+      - name: Playwright E2E Tests
+        env:
+          DATABASE_URL: postgresql://bugreport:bugreport_dev_password@127.0.0.1:5434/bugreport_test?schema=public
+          AUTH_SECRET: test-secret-at-least-32-chars-long-e2e
+          ADMIN_EMAILS: step1-qa@example.test,admin@example.com
+        run: npx playwright test
