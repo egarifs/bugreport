@@ -10,7 +10,7 @@ type VersionItem = {
   id: string;
   version: number;
   changelog: string | null;
-  snapshot: any;
+  snapshot: Record<string, string | null | undefined>;
   createdAt: Date | string;
   createdBy: { id: string; name: string | null; email: string | null } | null;
 };

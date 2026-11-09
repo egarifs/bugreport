@@ -42,7 +42,7 @@ export default async function TestCaseDetailPage({
         projectId={project.id}
         projectKey={project.key}
         canManage={canManage}
-        testCase={testCase as any}
+        testCase={testCase as unknown as React.ComponentProps<typeof TestCaseDetailView>["testCase"]}
       />
     </AppShell>
   );
