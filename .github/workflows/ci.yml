@@ -81,4 +81,5 @@ jobs:
         env:
           DATABASE_URL: postgresql://bugreport:bugreport_dev_password@127.0.0.1:5434/bugreport_test?schema=public
           AUTH_SECRET: test-secret-at-least-32-chars-long-e2e
+          ADMIN_EMAILS: step1-qa@example.test,admin@example.com
         run: npx playwright test
