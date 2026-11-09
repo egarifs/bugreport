@@ -171,6 +171,13 @@ model Bug {
   reopenCount  Int     @default(0)
   reopenReason String?
 
+  // appVersion/buildNumber = "ditemukan di". Fix/verify info below (step 6).
+  fixedInVersion  String?
+  fixedInBuild    String?
+  dueAt           DateTime?
+  verifiedAt      DateTime?
+  verifiedInBuild String?
+
   duplicateOfId String?
   duplicateOf   Bug?    @relation("BugDuplicates", fields: [duplicateOfId], references: [id])
   duplicates    Bug[]   @relation("BugDuplicates")
