@@ -9,7 +9,7 @@ async function login(page: Page, email: string) {
 
 test.describe("Step #10: Test run log percobaan", () => {
   test("AC-RUN-01 AC-RUN-04 AC-RUN-05 catat percobaan, validasi, tutup run", async ({ page }) => {
-    await login(page, "admin@local.test");
+    await login(page, "step1-qa@example.test");
     await page.goto("/projects/CRM/test-runs/new");
     const name = `E2E Run ${Date.now()}`;
     await page.getByPlaceholder(/Regression Release/).fill(name);

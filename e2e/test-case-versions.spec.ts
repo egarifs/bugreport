@@ -17,7 +17,7 @@ test.describe("Step #9: Test Case Form, Versi & Riwayat (F8)", () => {
     page.on("requestfailed", (request) => console.log("REQUEST FAILED:", request.url(), request.failure()?.errorText));
 
     // 1. Dev login admin/qa
-    await login(page, "admin@local.test");
+    await login(page, "step1-qa@example.test");
 
     // 2. Buka repository test cases di project CRM
     await page.goto("/projects/CRM/test-cases");
