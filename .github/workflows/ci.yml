@@ -53,10 +53,10 @@ jobs:
       - name: Lint
         run: npm run lint
 
-      - name: Run Prisma Migrations
+      - name: Sync Database Schema
         env:
           DATABASE_URL: postgresql://bugreport:bugreport_dev_password@127.0.0.1:5434/bugreport_test?schema=public
-        run: npx prisma migrate deploy
+        run: npx prisma db push --skip-generate
 
       - name: Generate Prisma Client
         run: npx prisma generate
