@@ -5,6 +5,7 @@ import { canTransitionBug, hasPermission } from "@/lib/permissions";
 import { guardBugTransition } from "@/lib/bug-transition";
 import { redactSecrets } from "@/lib/redact";
 import { notifyBug } from "@/lib/notify";
+import { rerunPassFromBugAction } from "../../test-runs/test-run-actions";
 import { flagRerunForBug } from "@/lib/testrun-service";
 import { recordAuditLog } from "@/lib/user-service";
 import { BugStatus, CommentType, ProjectRole } from "@prisma/client";
@@ -112,6 +113,12 @@ export default async function BugDetailPage({
       canTransitionBug(bug.status, target, userRole, user.isAdmin).allowed
   );
 
+  // AC-BUG-05: items waiting for a retest of this bug (kept after the bug closes until a PASS is logged).
+  const rerunItems = await prisma.testRunItem.findMany({
+    where: { rerunBugId: bug.id, needsRerun: true, testRun: { status: "IN_PROGRESS" } },
+    select: { id: true, rerunBuild: true, testRunId: true, testRun: { select: { name: true } }, testCase: { select: { code: true, title: true } } },
+  });
+  const canRerun = hasPermission(userRole, "testrun.execute", user.isAdmin);
   const fixedIn = buildLabel(bug.fixedInVersion, bug.fixedInBuild);
   const canVerify = hasPermission(userRole, "bug.close", user.isAdmin);
   const canEditFields = hasPermission(userRole, "bug.update", user.isAdmin);
@@ -280,6 +287,28 @@ export default async function BugDetailPage({
               ) : (
                 <p className="text-xs">Menunggu verifikasi QA.</p>
               )}
+            </section>
+          )}
+          {rerunItems.length > 0 && (
+            <section aria-label="Menunggu re-run" className="bg-warn-bg border border-warn-border rounded-lg p-4 text-sm text-slate-900 space-y-2">
+              <p className="font-bold">↻ Perlu re-run</p>
+              <ul className="space-y-2">
+                {rerunItems.map((it) => (
+                  <li key={it.id} className="flex flex-wrap items-center justify-between gap-2">
+                    <span>
+                      <span className="font-mono font-bold">{it.testCase.code}</span> {it.testCase.title}
+                      <Link href={`/projects/${project.key}/test-runs/${it.testRunId}`} className="ml-2 text-link underline text-xs">{it.testRun.name}</Link>
+                    </span>
+                    {canRerun && (
+                      <ActionForm action={rerunPassFromBugAction.bind(null, project.id, it.id)} className="inline">
+                        <SubmitButton pendingText="Mencatat..." className="px-3 py-2 min-h-[44px] bg-action hover:bg-action-hover text-on-action text-xs font-bold rounded">
+                          Catat percobaan Lolos untuk {it.testCase.code}
+                        </SubmitButton>
+                      </ActionForm>
+                    )}
+                  </li>
+                ))}
+              </ul>
             </section>
           )}
           <div className="bg-surface border border-slate-200 rounded-lg p-6 shadow-sm">

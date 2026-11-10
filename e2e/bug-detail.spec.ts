@@ -64,3 +64,31 @@ test("detail bug: QA mengisi versi perbaikan dan tenggat", async ({ page }) => {
   await expect(page.getByText("Diperbaiki di")).toBeVisible();
   await prisma.$disconnect();
 });
+
+test("AC-BUG-05 lolos verifikasi menawarkan catat percobaan Lolos untuk item tertaut", async ({ page }) => {
+  const prisma = new PrismaClient();
+  const [project, qa, tc] = await Promise.all([
+    prisma.project.findUniqueOrThrow({ where: { key: "CRM" } }),
+    prisma.user.findUniqueOrThrow({ where: { email: "step1-qa@example.test" } }),
+    prisma.testCase.findFirstOrThrow({ where: { project: { key: "CRM" } } }),
+  ]);
+  const n = ((await prisma.bug.findFirst({ where: { projectId: project.id }, orderBy: { number: "desc" } }))?.number ?? 0) + 1;
+  const bug = await prisma.bug.create({
+    data: { projectId: project.id, number: n, key: `CRM-${n}`, title: "E2E retest", severity: "HIGH", status: "READY_FOR_VERIFICATION", reporterId: qa.id, fixedInVersion: "1.8.0", fixedInBuild: "b214" },
+  });
+  const run = await prisma.testRun.create({ data: { projectId: project.id, name: `E2E Retest ${Date.now()}`, environment: "Staging", createdById: qa.id } });
+  const item = await prisma.testRunItem.create({
+    data: { testRunId: run.id, testCaseId: tc.id, status: "FAIL", needsRerun: true, rerunBuild: "1.8.0 · b214", rerunBugId: bug.id },
+  });
+
+  await login(page, "step1-qa@example.test");
+  await page.goto(`/projects/CRM/bugs/${bug.number}`);
+  await page.getByRole("button", { name: "Lolos verifikasi" }).click();
+  const panel = page.getByRole("region", { name: "Menunggu re-run" });
+  await expect(panel).toBeVisible(); // tetap tampil setelah bug Closed
+  await panel.getByRole("button", { name: `Catat percobaan Lolos untuk ${tc.code}` }).click();
+  await expect(page.getByRole("region", { name: "Menunggu re-run" })).toHaveCount(0);
+  const after = await prisma.testRunItem.findUniqueOrThrow({ where: { id: item.id }, include: { attempts: true } });
+  expect([after.status, after.needsRerun, after.attempts.length, after.attempts[0].build]).toEqual(["PASS", false, 1, "1.8.0 · b214"]);
+  await prisma.$disconnect();
+});

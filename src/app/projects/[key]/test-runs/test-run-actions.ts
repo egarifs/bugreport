@@ -73,3 +73,17 @@ export async function reopenRunAction(projectId: string, runId: string): Promise
   await refresh(projectId);
   return res;
 }
+
+// AC-BUG-05: one-click "Catat percobaan Lolos" from the bug page, in the build the bug was fixed in.
+export async function rerunPassFromBugAction(projectId: string, itemId: string): Promise<ActionResult> {
+  const actor = await requireProjectPermission(projectId, "testrun.execute");
+  const item = await prisma.testRunItem.findFirst({
+    where: { id: itemId, needsRerun: true, testRun: { projectId } },
+    select: { rerunBuild: true, rerunBug: { select: { key: true, number: true } } },
+  });
+  if (!item) return { error: "Item ini sudah tidak menunggu re-run." };
+  const res = await logAttempt(actor, projectId, itemId, { result: "PASS", build: item.rerunBuild ?? undefined, notes: item.rerunBug ? `Retest ${item.rerunBug.key}` : undefined });
+  const { key } = await refresh(projectId);
+  revalidatePath(`/projects/${key}/bugs`, "layout");
+  return res;
+}
