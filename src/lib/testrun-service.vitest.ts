@@ -1,5 +1,4 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import { readFileSync } from "node:fs";
 import { prisma } from "./db";
 import { saveTestCaseCore } from "./testcase-service";
 import {
@@ -108,31 +107,5 @@ describe("test run attempts (F8)", () => {
     expect(await reopenRun(actor, projectId, runId)).toHaveProperty("ok");
     expect(await prisma.auditLog.count({ where: { projectId, action: { in: ["test_run.close", "test_run.reopen"] } } })).toBe(2);
     expect(await logAttempt(actor, projectId, itemId, { result: "PASS" })).toHaveProperty("ok");
-  });
-});
-
-// AC-RUN-03: run the real backfill SQL from the migration against legacy-shaped rows, scoped to this project.
-describe("migration 20261110090000 backfill", () => {
-  it("moves Bug.testRunItemId into TestRunItemBug and old results into attempt #1", async () => {
-    const tc = await prisma.testCase.create({ data: { projectId, code: "TC-LEG", title: "Legacy", steps: "1) a", expectedResult: "ok" } });
-    const v = await prisma.testCaseVersion.create({ data: { testCaseId: tc.id, version: 1, snapshot: {} } });
-    const legacyRun = await prisma.testRun.create({ data: { projectId, name: "Old", environment: "UAT", buildVersion: "0.9", createdById: actor.id } });
-    const failed = await prisma.testRunItem.create({ data: { testRunId: legacyRun.id, testCaseId: tc.id, status: "FAIL", actualResult: "boom", executedById: actor.id } });
-    const bug = await prisma.bug.create({
-      data: { projectId, number: 99, key: `${key}-99`, title: "legacy", description: "d", severity: "HIGH", reporterId: actor.id, testRunItemId: failed.id },
-    });
-
-    const sql = readFileSync("prisma/migrations/20261110090000_add_test_run_attempts/migration.sql", "utf8").split("-- Backfill")[1].replace(/^[^\n]*\n/, "");
-    const scoped = sql
-        .replace(/\) ?;\n\n-- 2\)/, `) WHERE i."id" = '${failed.id}';\n\n-- 2)`)
-      .replace(`WHERE i."status" <> 'NOT_RUN'`, `WHERE i."status" <> 'NOT_RUN' AND i."id" = '${failed.id}'`)
-      .replace(`WHERE b."testRunItemId" IS NOT NULL`, `WHERE b."testRunItemId" = '${failed.id}'`);
-    for (const stmt of scoped.split(";\n").map((s) => s.replace(/^(\s*--.*\n)+/gm, "").trim()).filter(Boolean)) await prisma.$executeRawUnsafe(stmt);
-
-    const it = await prisma.testRunItem.findUniqueOrThrow({ where: { id: failed.id }, include: { attempts: true, bugLinks: true } });
-    expect(it.testCaseVersionId).toBe(v.id);
-    expect(it.attempts).toHaveLength(1);
-    expect(it.attempts[0]).toMatchObject({ seq: 1, result: "FAIL", actualResult: "boom", build: "0.9", environment: "UAT" });
-    expect(it.bugLinks.map((l) => [l.bugId, l.attemptId])).toEqual([[bug.id, it.attempts[0].id]]);
   });
 });

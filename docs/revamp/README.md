@@ -354,7 +354,7 @@ Peran Client mendapat tampilan sendiri yang lebih sederhana, berisi:
 
 ### F8. Test case dan test run sesuai standar QA (keputusan 2 Nov 2026)
 Mockup: `23b`, `24a`, `24b` (menggantikan `24` untuk eksekusi). Nama, angka, dan tanggal di mockup adalah contoh.
-Kondisi kode sekarang: `TestRunItem` hanya menyimpan hasil terakhir (re-run menimpa), test run membaca test case langsung dari repository (edit ikut berubah tanpa jejak), satu item hanya bisa punya satu bug (`Bug.testRunItemId` unik), dan test case tidak punya versi atau status.
+Kondisi kode sebelum Step #10 (kolom `Bug.testRunItemId` sudah dihapus di migrasi `20261111090000`): `TestRunItem` hanya menyimpan hasil terakhir (re-run menimpa), test run membaca test case langsung dari repository (edit ikut berubah tanpa jejak), satu item hanya bisa punya satu bug (`Bug.testRunItemId` unik), dan test case tidak punya versi atau status.
 
 **Repository test case**
 - Status `DRAFT` / `READY` / `DEPRECATED`. Hanya `READY` yang bisa dimasukkan ke run. `DEPRECATED` disembunyikan dari daftar default, riwayat tetap ada.
