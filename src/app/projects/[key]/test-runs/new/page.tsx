@@ -23,7 +23,7 @@ export default async function NewTestRunPage({
     where: { key: key.toUpperCase() },
     include: {
       members: { where: { userId: user.id } },
-      testCases: true,
+      testCases: { where: { status: "READY" }, select: { id: true } },
     },
   });
 
@@ -129,11 +129,12 @@ async function createTestRun(pid: string, _prev: ActionResult, formData: FormDat
 
   if (!name) return { error: "Nama test run wajib diisi." };
 
+  // Only READY cases join a run; each item pins the latest version (AC-TC-02).
   const allCases = await prisma.testCase.findMany({
-    where: { projectId: pid },
-    select: { id: true },
+    where: { projectId: pid, status: "READY" },
+    select: { id: true, versions: { orderBy: { version: "desc" }, take: 1, select: { id: true } } },
   });
-  if (allCases.length === 0) return { error: "Project belum punya test case. Import test case dulu." };
+  if (allCases.length === 0) return { error: "Project belum punya test case berstatus Siap." };
 
   const testRun = await prisma.testRun.create({
     data: {
@@ -145,6 +146,7 @@ async function createTestRun(pid: string, _prev: ActionResult, formData: FormDat
       items: {
         create: allCases.map((tc) => ({
           testCaseId: tc.id,
+          testCaseVersionId: tc.versions[0]?.id,
           status: "NOT_RUN",
         })),
       },

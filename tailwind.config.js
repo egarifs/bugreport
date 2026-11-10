@@ -12,6 +12,15 @@ module.exports = {
           50: "#F4F6F7", 100: "#E9EDF0", 200: "#D3DAE0", 300: "#B8C2CB", 400: "#5F6B76",
           500: "#4E5A65", 600: "#3B4752", 700: "#2A3641", 800: "#1E2A35", 900: "#15212B",
         },
+        // Semantic tokens used by Step #9 test-case screens (values from the revamp theme archive, light only).
+        surface: { base: "#F4F6F7", raised: "#FFFFFF", sunken: "#E9EDF0" },
+        text: { base: "#15212B", muted: "#4E5A65" },
+        border: { base: "#D3DAE0", muted: "#E9EDF0" },
+        link: "#1E5AA8",
+        "badge-neutral": { bg: "#E9EDF0", text: "#3B4752" },
+        ok: { DEFAULT: "#14783D", bg: "#E9F3EA", border: "#BFDCC6" },
+        warn: { DEFAULT: "#7A5600", bg: "#FDF6DC", border: "#EBD9A1" },
+        bad: { DEFAULT: "#B42318", bg: "#FDECEA", border: "#F0C2BC" },
         action: { DEFAULT: "#1E5AA8", hover: "#174A8C", soft: "#E8EFF8" },
         sev: {
           blocker: "#B42318", "blocker-bg": "#FDECEA",

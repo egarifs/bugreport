@@ -120,13 +120,6 @@ export function TestCaseManagementSection({
     });
   }, [testCases, selectedModuleId, selectedType, selectedPriority, tcSearch]);
 
-  const currentModuleName = useMemo(() => {
-    if (selectedModuleId === "ALL") return "Semua";
-    if (selectedModuleId === "UNASSIGNED") return "Tanpa Modul";
-    const found = modules.find((m) => m.id === selectedModuleId);
-    return found ? found.name : "Modul";
-  }, [selectedModuleId, modules]);
-
   // Checkbox helpers
   const allFilteredSelected =
     filteredTestCases.length > 0 &&

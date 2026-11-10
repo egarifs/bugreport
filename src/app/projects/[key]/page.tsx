@@ -89,7 +89,7 @@ export default async function ProjectDetailPage({
       include: {
         assignee: { select: { name: true, email: true } },
         module: { select: { name: true } },
-        _count: { select: { comments: true } },
+        _count: { select: { comments: true, testRunLinks: true } },
       },
     }),
   ]);
@@ -109,7 +109,7 @@ export default async function ProjectDetailPage({
   const selected = bugs.find((b) => b.key === sp.sel) ?? null;
   const filtered = Boolean(status || severity || sp.module || q);
   const bugHref = (n: number) => `/projects/${project.key}/bugs/${n}`;
-  const source = (b: (typeof bugs)[number]) => (b.agentRunId ? "Agent" : b.testRunItemId ? "Test run" : null);
+  const source = (b: (typeof bugs)[number]) => (b.agentRunId ? "Agent" : b._count.testRunLinks ? "Test run" : null);
 
   const empty =
     filtered ? "Tidak ada bug yang cocok dengan filter ini. Ubah atau reset filter."

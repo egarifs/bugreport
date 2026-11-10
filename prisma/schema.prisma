@@ -70,21 +70,23 @@ model User {
   reviewedUsers User[]    @relation("UserReviewer")
   reviewedAt    DateTime?
 
-  memberships  ProjectMember[]
-  reportedBugs Bug[]           @relation("BugReporter")
-  assignedBugs Bug[]           @relation("BugAssignee")
-  reviewedBugs Bug[]           @relation("BugReviewer")
+  memberships    ProjectMember[]
+  reportedBugs   Bug[]           @relation("BugReporter")
+  assignedBugs   Bug[]           @relation("BugAssignee")
+  reviewedBugs   Bug[]           @relation("BugReviewer")
   coReportedBugs BugCoReporter[] @relation("UserCoReported")
-  comments     BugComment[]
-  auditLogs    AuditLog[]
+  comments       BugComment[]
+  auditLogs      AuditLog[]
 
-  testRunsCreated   TestRun[]
-  testItemsExecuted TestRunItem[]
-  apiKeysCreated    ApiKey[]
-  chatMessages      ChatMessage[]
-  notifications     Notification[]
-  focusUntil        DateTime?
-  notificationScope String                    @default("INVOLVED_ONLY")
+  testRunsCreated         TestRun[]
+  testItemsExecuted       TestRunItem[]
+  attemptsExecuted        TestRunAttempt[]         @relation("AttemptExecutor")
+  testRunsClosed          TestRun[]                @relation("TestRunClosedBy")
+  apiKeysCreated          ApiKey[]
+  chatMessages            ChatMessage[]
+  notifications           Notification[]
+  focusUntil              DateTime?
+  notificationScope       String                   @default("INVOLVED_ONLY")
   notificationPreferences NotificationPreference[]
   testCaseVersions        TestCaseVersion[]
 
@@ -107,13 +109,13 @@ model Project {
   bugSeq    Int             @default(0) // auto-incrementing per project for CRM-1, CRM-2
   auditLogs AuditLog[]
 
-  businessDocs BusinessDoc[]
-  testCases    TestCase[]
-  testRuns     TestRun[]
-  apiKeys      ApiKey[]
-  agentRuns    AgentRun[]
-  chatMessages ChatMessage[]
-  modules      Module[]
+  businessDocs            BusinessDoc[]
+  testCases               TestCase[]
+  testRuns                TestRun[]
+  apiKeys                 ApiKey[]
+  agentRuns               AgentRun[]
+  chatMessages            ChatMessage[]
+  modules                 Module[]
   notificationPreferences NotificationPreference[]
 
   @@index([key])
@@ -148,11 +150,11 @@ model Bug {
   actualResult     String @default("")
 
   // Evidence & context links (http/https only, validated in src/lib/bug-input.ts)
-  jamUrl  String?
-  taskUrl String?
-  links   String[] @default([])
-  related   Bug[] @relation("BugRelated")
-  relatedBy Bug[] @relation("BugRelated")
+  jamUrl    String?
+  taskUrl   String?
+  links     String[] @default([])
+  related   Bug[]    @relation("BugRelated")
+  relatedBy Bug[]    @relation("BugRelated")
 
   severity BugSeverity
   priority BugPriority @default(NORMAL)
@@ -189,8 +191,11 @@ model Bug {
   duplicates    Bug[]   @relation("BugDuplicates")
 
   // Phase 2B Bridge
-  testRunItemId String?      @unique
-  testRunItem   TestRunItem? @relation("TestRunItemBug", fields: [testRunItemId], references: [id])
+  // Deprecated (Step 10): replaced by testRunLinks; column dropped in a later migration.
+  testRunItemId String?          @unique
+  testRunItem   TestRunItem?     @relation("TestRunItemBug", fields: [testRunItemId], references: [id])
+  testRunLinks  TestRunItemBug[]
+  rerunItems    TestRunItem[]    @relation("RerunBug")
 
   // Phase 3 Agent Run link
   agentRunId String?
@@ -376,6 +381,9 @@ model TestCaseVersion {
   createdBy   User?    @relation(fields: [createdById], references: [id], onDelete: SetNull)
   createdAt   DateTime @default(now())
 
+  runItems TestRunItem[]
+  attempts TestRunAttempt[]
+
   @@unique([testCaseId, version])
   @@index([testCaseId])
   @@index([createdById])
@@ -400,9 +408,21 @@ model TestRun {
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
 
+  decision     TestRunDecision?
+  decisionNote String?
+  closedAt     DateTime?
+  closedById   String?
+  closedBy     User?            @relation("TestRunClosedBy", fields: [closedById], references: [id], onDelete: SetNull)
+
   items TestRunItem[]
 
   @@index([projectId, status])
+}
+
+enum TestRunDecision {
+  PASS
+  PASS_WITH_NOTES
+  FAIL
 }
 
 enum TestRunItemStatus {
@@ -410,6 +430,7 @@ enum TestRunItemStatus {
   PASS
   FAIL
   BLOCKED
+  SKIPPED
 }
 
 model TestRunItem {
@@ -425,10 +446,57 @@ model TestRunItem {
   executedBy   User?             @relation(fields: [executedById], references: [id], onDelete: SetNull)
   executedAt   DateTime?
 
-  createdBug Bug? @relation("TestRunItemBug")
+  skipReason        String?
+  testCaseVersionId String?
+  testCaseVersion   TestCaseVersion? @relation(fields: [testCaseVersionId], references: [id], onDelete: SetNull)
+  needsRerun        Boolean          @default(false)
+  rerunBuild        String?
+  rerunBugId        String?
+  rerunBug          Bug?             @relation("RerunBug", fields: [rerunBugId], references: [id], onDelete: SetNull)
+
+  createdBug Bug?             @relation("TestRunItemBug") // deprecated, see Bug.testRunLinks
+  attempts   TestRunAttempt[]
+  bugLinks   TestRunItemBug[]
 
   @@unique([testRunId, testCaseId])
   @@index([testRunId, status])
+  @@index([rerunBugId])
+}
+
+model TestRunAttempt {
+  id                String            @id @default(uuid())
+  itemId            String
+  item              TestRunItem       @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  seq               Int
+  result            TestRunItemStatus
+  actualResult      String?
+  notes             String?
+  build             String?
+  environment       String?
+  evidenceUrl       String?
+  testCaseVersionId String?
+  testCaseVersion   TestCaseVersion?  @relation(fields: [testCaseVersionId], references: [id], onDelete: SetNull)
+  executedById      String?
+  executedBy        User?             @relation("AttemptExecutor", fields: [executedById], references: [id], onDelete: SetNull)
+  viaAgent          Boolean           @default(false)
+  createdAt         DateTime          @default(now())
+
+  bugLinks TestRunItemBug[]
+
+  @@unique([itemId, seq])
+}
+
+model TestRunItemBug {
+  itemId    String
+  item      TestRunItem     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  bugId     String
+  bug       Bug             @relation(fields: [bugId], references: [id], onDelete: Cascade)
+  attemptId String?
+  attempt   TestRunAttempt? @relation(fields: [attemptId], references: [id], onDelete: SetNull)
+  createdAt DateTime        @default(now())
+
+  @@id([itemId, bugId])
+  @@index([bugId])
 }
 
 // -------------------------------------------------------------
@@ -559,7 +627,7 @@ model NotificationPreference {
   user      User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
   projectId String?
   project   Project?                 @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  type      String                   // assign | comment | status | draft | rerun | agent_session | doc_approval | mention
+  type      String // assign | comment | status | draft | rerun | agent_session | doc_approval | mention
   mode      NotificationDeliveryMode @default(IMMEDIATE)
   createdAt DateTime                 @default(now())
   updatedAt DateTime                 @updatedAt
@@ -567,4 +635,3 @@ model NotificationPreference {
   @@unique([userId, projectId, type])
   @@index([userId])
 }
-

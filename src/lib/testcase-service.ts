@@ -371,7 +371,8 @@ export async function getTestCaseDetail(projectId: string, id: string) {
         include: {
           testRun: { select: { id: true, name: true, environment: true, createdAt: true } },
           executedBy: { select: { id: true, name: true, email: true } },
-          createdBug: { select: { id: true, key: true, number: true, title: true, status: true } },
+          bugLinks: { select: { bug: { select: { id: true, key: true, number: true, title: true, status: true } } } },
+          attempts: { orderBy: { seq: "desc" }, take: 1, select: { build: true, viaAgent: true } },
         },
       },
     },

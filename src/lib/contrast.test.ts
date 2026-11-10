@@ -16,13 +16,21 @@ const ratio = (a: string, b: string) => {
 };
 
 test("PRD-06 token contrast meets WCAG AA", () => {
-  const { slate, action, sev } = colors;
+  const { slate, action, sev, ok, warn, bad, link, text, surface } = colors;
   const pairs: [string, string, string][] = [
     ["muted text (slate-400) on page", slate[400], slate[50]],
     ["muted text (slate-400) on card", slate[400], "#FFFFFF"],
     ["body text on page", slate[900], slate[50]],
     ["button text on action", "#FFFFFF", action.DEFAULT],
     ["button text on action hover", "#FFFFFF", action.hover],
+    ["link on card", link, surface.raised],
+    ["text-base on card", text.base, surface.raised],
+    ["text-muted on card", text.muted, surface.raised],
+    ["text-muted on sunken", text.muted, surface.sunken],
+    ["neutral badge", colors["badge-neutral"].text, colors["badge-neutral"].bg],
+    ...([["ok", ok], ["warn", warn], ["bad", bad]] as const).map(
+      ([n, c]): [string, string, string] => [`${n} on its bg`, c.DEFAULT, c.bg],
+    ),
     ...(["blocker", "high", "medium", "low"] as const).map(
       (s): [string, string, string] => [`severity ${s}`, sev[s], sev[`${s}-bg`]],
     ),

@@ -10,7 +10,7 @@ type VersionItem = {
   id: string;
   version: number;
   changelog: string | null;
-  snapshot: any;
+  snapshot: Record<string, string | null | undefined>;
   createdAt: Date | string;
   createdBy: { id: string; name: string | null; email: string | null } | null;
 };
@@ -28,13 +28,8 @@ type RunItemHistory = {
     environment: string;
     createdAt: Date | string;
   };
-  createdBug: {
-    id: string;
-    key: string;
-    number: number;
-    title: string;
-    status: string;
-  } | null;
+  bugLinks: { bug: { id: string; key: string; number: number; title: string; status: string } }[];
+  attempts: { build: string | null; viaAgent: boolean }[];
 };
 
 interface TestCaseDetailProps {
@@ -88,7 +83,7 @@ function renderRunResult(status: TestRunItemStatus) {
         <span className="inline-flex items-center gap-1.5 font-bold text-xs text-ok">
           <svg className="w-3.5 h-3.5 fill-ok" viewBox="0 0 14 14">
             <circle cx="7" cy="7" r="6" />
-            <path d="M4.5 7.2 6.2 9 9.5 5.5" stroke="#fff" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+            <path d="M4.5 7.2 6.2 9 9.5 5.5" className="stroke-surface-raised" strokeWidth="1.5" fill="none" strokeLinecap="round" />
           </svg>
           Lolos
         </span>
@@ -98,7 +93,7 @@ function renderRunResult(status: TestRunItemStatus) {
         <span className="inline-flex items-center gap-1.5 font-bold text-xs text-bad">
           <svg className="w-3.5 h-3.5 fill-bad" viewBox="0 0 14 14">
             <circle cx="7" cy="7" r="6" />
-            <path d="M5 5l4 4M9 5l-4 4" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" />
+            <path d="M5 5l4 4M9 5l-4 4" className="stroke-surface-raised" strokeWidth="1.5" strokeLinecap="round" />
           </svg>
           Gagal
         </span>
@@ -113,6 +108,8 @@ function renderRunResult(status: TestRunItemStatus) {
           Terblokir
         </span>
       );
+    case "SKIPPED":
+      return <span className="text-xs text-text-muted font-medium">Dilewati</span>;
     default:
       return (
         <span className="inline-flex items-center gap-1.5 text-xs text-text-muted font-medium">
@@ -146,8 +143,8 @@ export function TestCaseDetailView({
   const linkedBugs = Array.from(
     new Map(
       testCase.runItems
-        .filter((i) => i.createdBug)
-        .map((i) => [i.createdBug!.id, i.createdBug!])
+        .flatMap((i) => i.bugLinks)
+        .map((l) => [l.bug.id, l.bug] as const)
     ).values()
   );
 
@@ -425,13 +422,16 @@ export function TestCaseDetailView({
                         </td>
                         <td className="px-4 py-3">{renderRunResult(item.status)}</td>
                         <td className="px-4 py-3 text-text-muted">
-                          {item.createdBug ? (
-                            <Link
-                              href={`/projects/${projectKey}/bugs/${item.createdBug.number}`}
-                              className="inline-flex items-center gap-1 font-mono text-link hover:underline font-bold"
-                            >
-                              {item.createdBug.key}
-                            </Link>
+                          {item.bugLinks.length ? (
+                            item.bugLinks.map(({ bug }) => (
+                              <Link
+                                key={bug.id}
+                                href={`/projects/${projectKey}/bugs/${bug.number}`}
+                                className="mr-2 inline-flex items-center gap-1 font-mono text-link hover:underline font-bold"
+                              >
+                                {bug.key}
+                              </Link>
+                            ))
                           ) : (
                             item.notes || "—"
                           )}
