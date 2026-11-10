@@ -135,7 +135,7 @@ export function NotificationBell({ align = "left" }: { align?: "left" | "right" 
           <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
         </svg>
         {unread > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-600 text-white text-[11px] font-bold leading-[18px] text-center ring-2 ring-white chat-in" aria-hidden="true">
+          <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-600 text-white text-[11px] font-bold leading-[18px] text-center ring-2 ring-surface chat-in" aria-hidden="true">
             {unread > 99 ? "99+" : unread}
           </span>
         )}
@@ -145,7 +145,7 @@ export function NotificationBell({ align = "left" }: { align?: "left" | "right" 
         <div
           role="dialog"
           aria-label="Notifikasi"
-          className={`absolute z-[60] mt-2 w-[min(24rem,calc(100vw-1.5rem))] bg-white border border-slate-200 rounded-lg shadow-lg chat-in ${
+          className={`absolute z-[60] mt-2 w-[min(24rem,calc(100vw-1.5rem))] bg-surface border border-slate-200 rounded-lg shadow-lg chat-in ${
             align === "right" ? "right-0" : "left-0"
           }`}
         >
@@ -164,14 +164,14 @@ export function NotificationBell({ align = "left" }: { align?: "left" | "right" 
           <div className="px-4 py-2 bg-slate-50 border-b border-slate-100 flex items-center justify-between text-xs">
             {isFocusActive ? (
               <>
-                <span className="text-amber-800 font-medium flex items-center gap-1.5 truncate">
+                <span className="text-warn font-medium flex items-center gap-1.5 truncate">
                   <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
                   Mode fokus aktif {focusUntil ? `s.d. ${new Date(focusUntil).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}` : ""}
                 </span>
                 <button
                   type="button"
                   onClick={() => toggleFocus(null)}
-                  className="text-amber-900 font-semibold hover:underline shrink-0 ml-2"
+                  className="text-warn font-semibold hover:underline shrink-0 ml-2"
                 >
                   Matikan
                 </button>
@@ -185,21 +185,21 @@ export function NotificationBell({ align = "left" }: { align?: "left" | "right" 
                   <button
                     type="button"
                     onClick={() => toggleFocus(1)}
-                    className="px-1.5 py-0.5 rounded bg-white border border-slate-200 text-slate-700 hover:bg-slate-100"
+                    className="px-1.5 py-0.5 rounded bg-surface border border-slate-200 text-slate-700 hover:bg-slate-100"
                   >
                     1j
                   </button>
                   <button
                     type="button"
                     onClick={() => toggleFocus(2)}
-                    className="px-1.5 py-0.5 rounded bg-white border border-slate-200 text-slate-700 hover:bg-slate-100"
+                    className="px-1.5 py-0.5 rounded bg-surface border border-slate-200 text-slate-700 hover:bg-slate-100"
                   >
                     2j
                   </button>
                   <button
                     type="button"
                     onClick={() => toggleFocus(4)}
-                    className="px-1.5 py-0.5 rounded bg-white border border-slate-200 text-slate-700 hover:bg-slate-100"
+                    className="px-1.5 py-0.5 rounded bg-surface border border-slate-200 text-slate-700 hover:bg-slate-100"
                   >
                     4j
                   </button>
@@ -264,7 +264,7 @@ export function NotificationBell({ align = "left" }: { align?: "left" | "right" 
             <Link
               href="/profile/notifications"
               onClick={() => setOpen(false)}
-              className="px-4 py-2.5 hover:bg-slate-50 text-indigo-600 hover:text-indigo-700"
+              className="px-4 py-2.5 hover:bg-slate-50 text-link hover:text-link"
             >
               Atur preferensi
             </Link>

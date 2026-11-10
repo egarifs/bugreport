@@ -25,8 +25,8 @@ export function StatePanel({
   reference?: string;
 }) {
   const cls =
-    "bg-white border border-slate-200 rounded p-10 text-center text-sm text-slate-600 flex flex-col items-center gap-2";
-  const btn = "mt-2 px-3.5 py-2 bg-action hover:bg-action-hover text-white text-sm font-bold rounded";
+    "bg-surface border border-slate-200 rounded p-10 text-center text-sm text-slate-600 flex flex-col items-center gap-2";
+  const btn = "mt-2 px-3.5 py-2 bg-action hover:bg-action-hover text-on-action text-sm font-bold rounded";
   return (
     <div className={cls} role={kind === "error" ? "alert" : "status"}>
       <p className="font-bold text-slate-900">{title ?? DEFAULT_TITLE[kind]}</p>

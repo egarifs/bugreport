@@ -198,7 +198,7 @@ export default async function BugDetailPage({
   return (
     <AppShell activeProjectKey={project.key}>
       <div className="min-h-full flex flex-col">
-        <header className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between">
+        <header className="bg-surface border-b border-slate-200 px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Link
               href={`/projects/${project.key}`}
@@ -259,21 +259,21 @@ export default async function BugDetailPage({
         {/* Left: Detail content & comments */}
         <div className="lg:col-span-2 space-y-6">
           {bug.status === BugStatus.READY_FOR_VERIFICATION && (
-            <section aria-label="Verifikasi" className="bg-violet-50 border border-violet-200 rounded-lg p-4 text-sm text-violet-950 space-y-3">
+            <section aria-label="Verifikasi" className="bg-action-soft border border-action/30 rounded-lg p-4 text-sm text-slate-900 space-y-3">
               <p className="font-bold">
                 {fixedIn ? `Siap diverifikasi di build ${fixedIn}` : "Siap diverifikasi"}
               </p>
               {canVerify ? (
                 <>
                   <ActionForm action={handleVerifyPass} className="inline">
-                    <SubmitButton pendingText="Menutup..." className="px-3 py-1.5 bg-action hover:bg-action-hover text-white text-sm font-bold rounded">Lolos verifikasi</SubmitButton>
+                    <SubmitButton pendingText="Menutup..." className="px-3 py-1.5 bg-action hover:bg-action-hover text-on-action text-sm font-bold rounded">Lolos verifikasi</SubmitButton>
                   </ActionForm>
                   <details className="group">
                     <summary className="cursor-pointer text-sm font-bold underline">Masih gagal…</summary>
                     <ActionForm action={handleVerifyFail} className="mt-2 space-y-2">
                       <label htmlFor="verify-reason" className="block text-xs font-medium">Alasan (wajib)</label>
-                      <textarea id="verify-reason" name="reason" rows={2} required className="w-full px-2 py-1.5 border border-violet-300 rounded bg-white text-sm" />
-                      <SubmitButton pendingText="Mengirim..." className="px-3 py-1.5 border border-slate-400 bg-white hover:bg-slate-100 text-sm font-bold rounded">Buka kembali</SubmitButton>
+                      <textarea id="verify-reason" name="reason" rows={2} required className="w-full px-2 py-1.5 border border-action/30 rounded bg-surface text-sm" />
+                      <SubmitButton pendingText="Mengirim..." className="px-3 py-1.5 border border-slate-400 bg-surface hover:bg-slate-100 text-sm font-bold rounded">Buka kembali</SubmitButton>
                     </ActionForm>
                   </details>
                 </>
@@ -282,7 +282,7 @@ export default async function BugDetailPage({
               )}
             </section>
           )}
-          <div className="bg-white border border-slate-200 rounded-lg p-6 shadow-sm">
+          <div className="bg-surface border border-slate-200 rounded-lg p-6 shadow-sm">
             <h1 className="text-lg font-bold text-slate-900 mb-4">{bug.title}</h1>
 
             <div className="space-y-4 text-xs">
@@ -357,7 +357,7 @@ export default async function BugDetailPage({
               )}
 
               {bug.duplicateOf && (
-                <div className="bg-amber-50 border border-amber-200 rounded p-3 text-amber-900">
+                <div className="bg-warn-bg border border-warn-border rounded p-3 text-warn">
                   <span className="font-semibold">Ditandai duplikat dari:</span>{" "}
                   <Link
                     href={`/projects/${project.key}/bugs/${bug.duplicateOf.number}`}
@@ -370,7 +370,7 @@ export default async function BugDetailPage({
               )}
 
               {bug.reopenReason && (
-                <div className="bg-rose-50 border border-rose-200 rounded p-3 text-rose-900">
+                <div className="bg-bad-bg border border-bad-border rounded p-3 text-bad">
                   <span className="font-semibold">Alasan Reopen:</span> {bug.reopenReason}
                 </div>
               )}
@@ -378,7 +378,7 @@ export default async function BugDetailPage({
           </div>
 
           {/* Comments */}
-          <div className="bg-white border border-slate-200 rounded-lg p-6 shadow-sm">
+          <div className="bg-surface border border-slate-200 rounded-lg p-6 shadow-sm">
             <h2 className="text-sm font-bold text-slate-900 mb-4">
               Komentar & Diskusi ({bug.comments.length})
             </h2>
@@ -392,7 +392,7 @@ export default async function BugDetailPage({
                     key={c.id}
                     className={`p-3 rounded text-xs border ${
                       c.type === CommentType.INTERNAL
-                        ? "bg-amber-50/50 border-amber-200"
+                        ? "bg-warn-bg/50 border-warn-border"
                         : "bg-slate-50 border-slate-200"
                     }`}
                   >
@@ -402,7 +402,7 @@ export default async function BugDetailPage({
                       </span>
                       <div className="flex items-center gap-2">
                         {c.type === CommentType.INTERNAL && (
-                          <span className="text-xs font-semibold bg-amber-200 text-amber-800 px-1.5 py-0.2 rounded">
+                          <span className="text-xs font-semibold bg-warn-bg text-warn px-1.5 py-0.2 rounded">
                             Catatan Internal
                           </span>
                         )}
@@ -480,7 +480,7 @@ export default async function BugDetailPage({
 
                 <button
                   type="submit"
-                  className="px-3 py-1.5 bg-action hover:bg-action-hover text-white rounded text-xs font-medium"
+                  className="px-3 py-1.5 bg-action hover:bg-action-hover text-on-action rounded text-xs font-medium"
                 >
                   Kirim Komentar
                 </button>
@@ -492,7 +492,7 @@ export default async function BugDetailPage({
         {/* Right: Metadata & Actions */}
         <div className="space-y-6 text-xs">
           {/* Status transition panel */}
-          <div className="bg-white border border-slate-200 rounded-lg p-5 shadow-sm space-y-3">
+          <div className="bg-surface border border-slate-200 rounded-lg p-5 shadow-sm space-y-3">
             <h3 className="font-bold text-slate-900">Ubah Status</h3>
 
             {possibleStatuses.length === 0 ? (
@@ -587,7 +587,7 @@ export default async function BugDetailPage({
                 <select
                   name="targetStatus"
                   required
-                  className="w-full px-2 py-1.5 border border-slate-300 rounded bg-white text-xs font-medium"
+                  className="w-full px-2 py-1.5 border border-slate-300 rounded bg-surface text-xs font-medium"
                 >
                   {possibleStatuses.map((s) => (
                     <option key={s} value={s}>
@@ -604,7 +604,7 @@ export default async function BugDetailPage({
                     {modules.length === 0 ? (
                       <p className="text-xs text-sev-blocker">Project belum punya modul. Admin perlu menambahkannya di Settings.</p>
                     ) : (
-                      <select id="moduleId" name="moduleId" defaultValue={bug.moduleId ?? ""} className="w-full px-2 py-1.5 border border-slate-300 rounded bg-white text-sm">
+                      <select id="moduleId" name="moduleId" defaultValue={bug.moduleId ?? ""} className="w-full px-2 py-1.5 border border-slate-300 rounded bg-surface text-sm">
                         <option value="">Pilih modul</option>
                         {modules.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
                       </select>
@@ -652,7 +652,7 @@ export default async function BugDetailPage({
                   />
                 </div>
 
-                <SubmitButton pendingText="Menyimpan..." className="w-full py-2 bg-action hover:bg-action-hover text-white font-bold rounded text-sm">
+                <SubmitButton pendingText="Menyimpan..." className="w-full py-2 bg-action hover:bg-action-hover text-on-action font-bold rounded text-sm">
                   Ubah status
                 </SubmitButton>
               </ActionForm>
@@ -660,7 +660,7 @@ export default async function BugDetailPage({
           </div>
 
           {/* Assignment & Details */}
-          <div className="bg-white border border-slate-200 rounded-lg p-5 shadow-sm space-y-3">
+          <div className="bg-surface border border-slate-200 rounded-lg p-5 shadow-sm space-y-3">
             <h3 className="font-bold text-slate-900">Informasi Bug</h3>
 
             <div className="space-y-2 text-slate-600">
@@ -686,7 +686,7 @@ export default async function BugDetailPage({
                   <span className="text-slate-400 block mb-0.5">Duplikat dari</span>
                   <Link
                     href={`/projects/${project.key}/bugs/${bug.duplicateOf.number}`}
-                    className="font-mono font-bold text-blue-600 hover:underline"
+                    className="font-mono font-bold text-link hover:underline"
                   >
                     {bug.duplicateOf.key}
                   </Link>
@@ -702,7 +702,7 @@ export default async function BugDetailPage({
                       <div key={d.key} className="truncate">
                         <Link
                           href={`/projects/${project.key}/bugs/${d.number}`}
-                          className="font-mono font-bold text-blue-600 hover:underline mr-1"
+                          className="font-mono font-bold text-link hover:underline mr-1"
                         >
                           {d.key}
                         </Link>
@@ -756,7 +756,7 @@ export default async function BugDetailPage({
               {bug.reopenCount > 0 && (
                 <div className="flex justify-between py-1 border-b border-slate-100">
                   <span className="text-slate-400">Reopen Count</span>
-                  <span className="font-bold text-rose-700">{bug.reopenCount}x</span>
+                  <span className="font-bold text-bad">{bug.reopenCount}x</span>
                 </div>
               )}
 
@@ -771,14 +771,14 @@ export default async function BugDetailPage({
                 <p className="text-slate-400 text-xs font-semibold">Perbaikan &amp; tenggat</p>
                 <div className="grid grid-cols-2 gap-2">
                   <label className="block text-xs text-slate-600">Versi perbaikan
-                    <input name="fixedInVersion" defaultValue={bug.fixedInVersion ?? ""} placeholder="1.8.0" className="mt-0.5 w-full px-2 py-1 border border-slate-300 rounded bg-white" />
+                    <input name="fixedInVersion" defaultValue={bug.fixedInVersion ?? ""} placeholder="1.8.0" className="mt-0.5 w-full px-2 py-1 border border-slate-300 rounded bg-surface" />
                   </label>
                   <label className="block text-xs text-slate-600">Build
-                    <input name="fixedInBuild" defaultValue={bug.fixedInBuild ?? ""} placeholder="b214" className="mt-0.5 w-full px-2 py-1 border border-slate-300 rounded bg-white" />
+                    <input name="fixedInBuild" defaultValue={bug.fixedInBuild ?? ""} placeholder="b214" className="mt-0.5 w-full px-2 py-1 border border-slate-300 rounded bg-surface" />
                   </label>
                 </div>
                 <label className="block text-xs text-slate-600">Tenggat
-                  <input type="date" name="dueAt" defaultValue={bug.dueAt ? bug.dueAt.toISOString().slice(0, 10) : ""} className="mt-0.5 w-full px-2 py-1 border border-slate-300 rounded bg-white" />
+                  <input type="date" name="dueAt" defaultValue={bug.dueAt ? bug.dueAt.toISOString().slice(0, 10) : ""} className="mt-0.5 w-full px-2 py-1 border border-slate-300 rounded bg-surface" />
                 </label>
                 <SubmitButton pendingText="Menyimpan..." className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded text-xs">Simpan</SubmitButton>
               </ActionForm>
@@ -822,7 +822,7 @@ export default async function BugDetailPage({
                 <select
                   name="assigneeId"
                   defaultValue={bug.assigneeId ?? ""}
-                  className="flex-1 px-2 py-1 border border-slate-300 rounded bg-white text-xs"
+                  className="flex-1 px-2 py-1 border border-slate-300 rounded bg-surface text-xs"
                 >
                   <option value="">-- Belum di-assign --</option>
                   {members.map((m) => (
@@ -842,7 +842,7 @@ export default async function BugDetailPage({
           </div>
 
           {/* Activity Timeline */}
-          <div className="bg-white border border-slate-200 rounded-lg p-5 shadow-sm space-y-3">
+          <div className="bg-surface border border-slate-200 rounded-lg p-5 shadow-sm space-y-3">
             <h3 className="font-bold text-slate-900">Riwayat Aktivitas</h3>
             {timeline.length === 0 ? (
               <p className="text-slate-400 text-xs italic">Belum ada riwayat aktivitas.</p>

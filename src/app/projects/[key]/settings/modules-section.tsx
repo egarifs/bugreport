@@ -60,7 +60,7 @@ export async function ModulesSection({ projectId, projectKey, canManage }: { pro
 
   const active = modules.filter((m) => !m.archivedAt);
   return (
-    <section className="bg-white border border-slate-200 rounded p-6" aria-labelledby="modules-heading">
+    <section className="bg-surface border border-slate-200 rounded p-6" aria-labelledby="modules-heading">
       <h2 id="modules-heading" className="text-base font-bold text-slate-900">Modul aplikasi</h2>
       <p className="text-sm text-slate-600 mb-4 max-w-prose">
         Daftar area aplikasi yang diuji. Bug wajib punya modul sebelum dibuka dari Draft, dan test case diimpor

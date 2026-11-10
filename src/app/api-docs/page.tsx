@@ -4,20 +4,20 @@ import Script from "next/script";
 export default function SwaggerDocsPage() {
   return (
     <AppShell>
-      <div className="min-h-full flex flex-col bg-white">
+      <div className="min-h-full flex flex-col bg-surface">
         <header className="border-b border-slate-200 px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <span className="font-semibold text-slate-900 text-sm">
               API Documentation & Swagger UI
             </span>
-            <span className="text-xs font-mono px-2 py-0.5 rounded bg-emerald-100 text-emerald-800">
+            <span className="text-xs font-mono px-2 py-0.5 rounded bg-ok-bg text-ok">
               OpenAPI 3.0
             </span>
           </div>
           <a
             href="/api/docs/openapi.json"
             target="_blank"
-            className="text-xs text-blue-600 hover:underline"
+            className="text-xs text-link hover:underline"
           >
             Raw OpenAPI Spec JSON ↗
           </a>

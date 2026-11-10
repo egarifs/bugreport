@@ -39,13 +39,13 @@ export default async function ReportsPage({
           <h1 className="text-lg font-semibold text-slate-900">Laporan kesiapan rilis</h1>
           <a
             href={`/api/projects/${project.key}/export`}
-            className="press-snappy px-3.5 py-2 text-sm font-bold rounded bg-white border border-slate-300 text-slate-800 hover:bg-slate-50 hover:border-slate-400 shadow-xs"
+            className="press-snappy px-3.5 py-2 text-sm font-bold rounded bg-surface border border-slate-300 text-slate-800 hover:bg-slate-50 hover:border-slate-400 shadow-xs"
           >
             Export CSV
           </a>
         </header>
 
-        <section className="bg-white border border-slate-200 rounded-lg p-4 space-y-3">
+        <section className="bg-surface border border-slate-200 rounded-lg p-4 space-y-3">
           <form className="flex items-center gap-2 text-xs">
             <label htmlFor="version" className="text-slate-600">Target version / build</label>
             <input
@@ -61,8 +61,8 @@ export default async function ReportsPage({
             role="status"
             className={`rounded-lg p-4 text-sm font-semibold flex items-center justify-between border transition-all duration-200 ${
               r.releaseReady 
-                ? "bg-emerald-50/80 border-emerald-200 text-emerald-900" 
-                : "bg-rose-50/90 border-rose-200 text-rose-900"
+                ? "bg-ok-bg/80 border-ok-border text-ok" 
+                : "bg-bad-bg/90 border-bad-border text-bad"
             }`}
           >
             <div className="flex items-center gap-3">
@@ -74,7 +74,7 @@ export default async function ReportsPage({
               </span>
             </div>
             <span className={`text-xs px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider ${
-              r.releaseReady ? "bg-emerald-100 text-emerald-800" : "bg-rose-100 text-rose-800"
+              r.releaseReady ? "bg-ok-bg text-ok" : "bg-bad-bg text-bad"
             }`}>
               {r.releaseReady ? "Ready" : "Blocked"}
             </span>
@@ -100,7 +100,7 @@ export default async function ReportsPage({
 
         <div className="grid gap-5 md:grid-cols-2">
           {/* Card 1: Severity Progress Bar */}
-          <section className="bg-white border border-slate-200 rounded-lg p-5 shadow-xs hover:border-slate-300 transition-colors duration-150">
+          <section className="bg-surface border border-slate-200 rounded-lg p-5 shadow-xs hover:border-slate-300 transition-colors duration-150">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-sm font-bold text-slate-900">Bug aktif per severity</h2>
               <span className="text-xs text-slate-500 font-mono">Beban rilis</span>
@@ -131,7 +131,7 @@ export default async function ReportsPage({
           </section>
 
           {/* Card 2: Status Breakdown */}
-          <section className="bg-white border border-slate-200 rounded-lg p-5 shadow-xs hover:border-slate-300 transition-colors duration-150">
+          <section className="bg-surface border border-slate-200 rounded-lg p-5 shadow-xs hover:border-slate-300 transition-colors duration-150">
             <h2 className="text-sm font-bold text-slate-900 mb-4">Distribusi status bug</h2>
             <table className="w-full text-xs">
               <tbody className="divide-y divide-slate-100">
@@ -143,14 +143,14 @@ export default async function ReportsPage({
                 ))}
                 <tr className="hover:bg-slate-50 transition-colors duration-100">
                   <td className="py-2 text-slate-500">Pernah reopen (terdeteksi regresi)</td>
-                  <td className="py-2 text-right font-mono font-semibold text-amber-700 tabular-nums">{r.reopened}</td>
+                  <td className="py-2 text-right font-mono font-semibold text-warn tabular-nums">{r.reopened}</td>
                 </tr>
               </tbody>
             </table>
           </section>
 
           {/* Card 3: Workload per Assignee */}
-          <section className="bg-white border border-slate-200 rounded-lg p-5 shadow-xs hover:border-slate-300 transition-colors duration-150">
+          <section className="bg-surface border border-slate-200 rounded-lg p-5 shadow-xs hover:border-slate-300 transition-colors duration-150">
             <h2 className="text-sm font-bold text-slate-900 mb-4">Workload aktif per assignee</h2>
             {r.workload.length === 0 ? (
               <p className="text-xs text-slate-400">Belum ada bug aktif yang ditugaskan.</p>
@@ -169,7 +169,7 @@ export default async function ReportsPage({
           </section>
 
           {/* Card 4: Stale Drafts */}
-          <section className="bg-white border border-slate-200 rounded-lg p-5 shadow-xs hover:border-slate-300 transition-colors duration-150">
+          <section className="bg-surface border border-slate-200 rounded-lg p-5 shadow-xs hover:border-slate-300 transition-colors duration-150">
             <h2 className="text-sm font-bold text-slate-900 mb-4">Draft &gt; 3 hari belum direview</h2>
             {r.staleDrafts.length === 0 ? (
               <p className="text-xs text-slate-500">Tidak ada.</p>

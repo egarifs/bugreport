@@ -455,7 +455,7 @@ export function TestCaseForm({
             type="button"
             disabled={loading}
             onClick={() => handleSubmit(false)}
-            className="px-5 py-2 text-xs font-bold text-white bg-link hover:bg-link/90 rounded-lg shadow-sm transition min-h-[44px] flex items-center disabled:opacity-50"
+            className="px-5 py-2 text-xs font-bold text-on-action bg-action hover:bg-action-hover rounded-lg shadow-sm transition min-h-[44px] flex items-center disabled:opacity-50"
           >
             {loading ? "Menyimpan..." : isEditing ? "Simpan Perubahan" : "Simpan"}
           </button>

@@ -38,11 +38,11 @@ export default async function ProjectsPage() {
   return (
     <AppShell>
       <div className="min-h-full flex flex-col">
-        <header className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between">
+        <header className="bg-surface border-b border-slate-200 px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <span className="font-semibold text-slate-900 text-sm">Semua Project</span>
             {user.isAdmin && (
-              <span className="text-xs bg-purple-100 text-purple-700 font-medium px-2 py-0.5 rounded">
+              <span className="text-xs bg-action-soft text-link font-medium px-2 py-0.5 rounded">
                 Admin
               </span>
             )}
@@ -58,7 +58,7 @@ export default async function ProjectsPage() {
             >
               <button
                 type="submit"
-                className="text-xs text-slate-600 hover:text-red-600"
+                className="text-xs text-slate-600 hover:text-bad"
               >
                 Sign Out
               </button>
@@ -78,7 +78,7 @@ export default async function ProjectsPage() {
             {user.isAdmin && (
               <Link
                 href="/projects/new"
-                className="px-3 py-1.5 bg-action hover:bg-action-hover text-white text-xs font-medium rounded"
+                className="px-3 py-1.5 bg-action hover:bg-action-hover text-on-action text-xs font-medium rounded"
               >
                 + Project Baru
               </Link>
@@ -86,7 +86,7 @@ export default async function ProjectsPage() {
           </div>
 
           {projects.length === 0 ? (
-            <div className="bg-white border border-slate-200 rounded-lg p-12 text-center">
+            <div className="bg-surface border border-slate-200 rounded-lg p-12 text-center">
               <p className="text-sm text-slate-600 mb-2">
                 Belum ada project yang di-assign untuk akun Anda.
               </p>
@@ -100,7 +100,7 @@ export default async function ProjectsPage() {
                 <Link
                   key={p.id}
                   href={`/projects/${p.key}`}
-                  className="bg-white border border-slate-200 hover:border-slate-300 rounded-lg p-5 transition block shadow-sm"
+                  className="bg-surface border border-slate-200 hover:border-slate-300 rounded-lg p-5 transition block shadow-sm"
                 >
                   <div className="flex items-start justify-between">
                     <div>

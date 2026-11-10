@@ -191,7 +191,7 @@ export default async function ProjectDetailPage({
   return (
     <AppShell activeProjectKey={project.key}>
       <div className="min-h-full flex flex-col">
-        <header className="bg-white border-b border-slate-200 px-4 md:px-6 py-3 md:py-4 flex items-center justify-between gap-3">
+        <header className="bg-surface border-b border-slate-200 px-4 md:px-6 py-3 md:py-4 flex items-center justify-between gap-3">
           <div className="min-w-0">
             <h1 className="font-bold text-slate-900 text-base truncate">{project.name}</h1>
             <p className="text-xs text-slate-500">
@@ -203,7 +203,7 @@ export default async function ProjectDetailPage({
               <BugImportModal importAction={handleImportMarkdownBugs} />
               <Link
                 href={`/projects/${project.key}/bugs/new`}
-                className="shrink-0 px-3.5 py-2 bg-action hover:bg-action-hover text-white text-sm font-bold rounded"
+                className="shrink-0 px-3.5 py-2 bg-action hover:bg-action-hover text-on-action text-sm font-bold rounded"
               >
                 Laporkan bug
               </Link>
@@ -214,7 +214,7 @@ export default async function ProjectDetailPage({
         <main className="p-4 md:p-6 flex-1">
           {sp.done && <p role="status" className="mb-4 px-4 py-2 bg-green-50 border border-green-200 text-green-800 text-sm rounded">{sp.done.slice(0, 120)}</p>}
           {canReview && (
-            <div aria-label="Ringkasan hari ini" className="flex flex-wrap items-center gap-x-6 gap-y-1 mb-4 px-4 py-2.5 bg-white border border-slate-200 rounded text-sm">
+            <div aria-label="Ringkasan hari ini" className="flex flex-wrap items-center gap-x-6 gap-y-1 mb-4 px-4 py-2.5 bg-surface border border-slate-200 rounded text-sm">
               <span className="font-bold text-slate-900">Hari ini</span>
               <span className="text-slate-700"><b className="font-mono">{reviewedToday}</b> direview</span>
               <span className="text-slate-700"><b className="font-mono">{closedToday}</b> ditutup</span>
@@ -246,25 +246,25 @@ export default async function ProjectDetailPage({
               name="q"
               defaultValue={q ?? ""}
               placeholder={`Cari ID (${project.key}-1) atau judul`}
-              className="px-3 py-1.5 border border-slate-300 rounded flex-1 min-w-[200px] bg-white"
+              className="px-3 py-1.5 border border-slate-300 rounded flex-1 min-w-[200px] bg-surface"
             />
-            <select name="severity" defaultValue={severity ?? ""} aria-label="Severity" className="px-2 py-1.5 border border-slate-300 rounded bg-white">
+            <select name="severity" defaultValue={severity ?? ""} aria-label="Severity" className="px-2 py-1.5 border border-slate-300 rounded bg-surface">
               <option value="">Semua severity</option>
               {Object.values(BugSeverity).map((s) => <option key={s} value={s}>{SEVERITY_STYLE[s].label}</option>)}
             </select>
             {view === "all" && (
-              <select name="status" defaultValue={status ?? ""} aria-label="Status" className="px-2 py-1.5 border border-slate-300 rounded bg-white">
+              <select name="status" defaultValue={status ?? ""} aria-label="Status" className="px-2 py-1.5 border border-slate-300 rounded bg-surface">
                 <option value="">Semua status</option>
                 {Object.values(BugStatus).map((s) => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
               </select>
             )}
             {modules.length > 0 && (
-              <select name="module" defaultValue={sp.module ?? ""} aria-label="Modul" className="px-2 py-1.5 border border-slate-300 rounded bg-white">
+              <select name="module" defaultValue={sp.module ?? ""} aria-label="Modul" className="px-2 py-1.5 border border-slate-300 rounded bg-surface">
                 <option value="">Semua modul</option>
                 {modules.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
               </select>
             )}
-            <button type="submit" className="px-3 py-1.5 border border-slate-300 bg-white hover:bg-slate-100 rounded font-bold">
+            <button type="submit" className="px-3 py-1.5 border border-slate-300 bg-surface hover:bg-slate-100 rounded font-bold">
               Terapkan
             </button>
             {filtered && <Link href={href(view)} className="px-2 py-1.5 text-slate-500 hover:text-slate-900 underline">Reset</Link>}
@@ -283,7 +283,7 @@ export default async function ProjectDetailPage({
             <div className="flex flex-wrap items-start gap-5">
             <div className="flex-[999_1_520px] min-w-0">
               {/* Desktop: dense table. Left strip = severity, readable at a glance. */}
-              <table className="hidden md:table w-full text-left text-sm bg-white border border-slate-200 rounded overflow-hidden">
+              <table className="hidden md:table w-full text-left text-sm bg-surface border border-slate-200 rounded overflow-hidden">
                 <thead className="bg-slate-50 border-b border-slate-200 text-xs text-slate-600">
                   <tr>
                     <th scope="col" className="w-[3px] p-0"><span className="sr-only">Severity</span></th>
@@ -297,7 +297,7 @@ export default async function ProjectDetailPage({
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {bugs.map((b) => (
-                    <tr key={b.id} aria-selected={selected?.id === b.id} className={`row-interactive hover:bg-slate-50/80 ${selected?.id === b.id ? "bg-blue-50" : ""}`}>
+                    <tr key={b.id} aria-selected={selected?.id === b.id} className={`row-interactive hover:bg-slate-50/80 ${selected?.id === b.id ? "bg-action-soft" : ""}`}>
                       <td className={`p-0 ${SEVERITY_STYLE[b.severity].strip} strip-accent`} />
                       <td className="py-2 px-3 font-bold whitespace-nowrap">
                         <Link href={bugHref(b.number)} className="text-action hover:underline">{b.key}</Link>
@@ -325,7 +325,7 @@ export default async function ProjectDetailPage({
               <ul className="md:hidden space-y-2">
                 {bugs.map((b) => (
                   <li key={b.id}>
-                    <Link href={bugHref(b.number)} className="press-snappy flex bg-white border border-slate-200 hover:border-slate-300 rounded overflow-hidden shadow-xs">
+                    <Link href={bugHref(b.number)} className="press-snappy flex bg-surface border border-slate-200 hover:border-slate-300 rounded overflow-hidden shadow-xs">
                       <span className={`w-[3px] shrink-0 ${SEVERITY_STYLE[b.severity].strip}`} aria-hidden />
                       <span className="p-3 min-w-0 flex-1">
                         <span className="flex flex-wrap items-center gap-2 mb-1">
@@ -347,7 +347,7 @@ export default async function ProjectDetailPage({
               )}
             </div>
             {selected && (
-              <aside aria-label={`Pratinjau dan triase ${selected.key}`} className="hidden md:flex flex-[1_1_340px] max-w-[440px] min-w-0 flex-col bg-white border border-slate-200 rounded">
+              <aside aria-label={`Pratinjau dan triase ${selected.key}`} className="hidden md:flex flex-[1_1_340px] max-w-[440px] min-w-0 flex-col bg-surface border border-slate-200 rounded">
                 <div className="p-4 border-b border-slate-100 space-y-1">
                   <div className="flex items-center justify-between gap-2">
                     <span className="font-mono text-xs font-bold text-action">{selected.key}</span>
@@ -365,28 +365,28 @@ export default async function ProjectDetailPage({
                     <input type="hidden" name="bugId" value={selected.id} />
                     <div className="grid grid-cols-2 gap-3 text-xs font-medium text-slate-700">
                       <label className="space-y-1 block">Severity
-                        <select name="severity" defaultValue={selected.severity} className="w-full px-2 py-1.5 border border-slate-300 rounded bg-white text-sm">
+                        <select name="severity" defaultValue={selected.severity} className="w-full px-2 py-1.5 border border-slate-300 rounded bg-surface text-sm">
                           {Object.values(BugSeverity).map((v) => <option key={v} value={v}>{SEVERITY_STYLE[v].label}</option>)}
                         </select></label>
                       <label className="space-y-1 block">Priority
-                        <select name="priority" defaultValue={selected.priority} className="w-full px-2 py-1.5 border border-slate-300 rounded bg-white text-sm">
+                        <select name="priority" defaultValue={selected.priority} className="w-full px-2 py-1.5 border border-slate-300 rounded bg-surface text-sm">
                           {Object.values(BugPriority).map((v) => <option key={v} value={v}>{v}</option>)}
                         </select></label>
                       <label className="space-y-1 block">Modul
-                        <select name="moduleId" defaultValue={selected.moduleId ?? ""} className="w-full px-2 py-1.5 border border-slate-300 rounded bg-white text-sm">
+                        <select name="moduleId" defaultValue={selected.moduleId ?? ""} className="w-full px-2 py-1.5 border border-slate-300 rounded bg-surface text-sm">
                           <option value="">Pilih modul</option>
                           {modules.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
                         </select></label>
                       <label className="space-y-1 block">Assignee
-                        <select name="assigneeId" defaultValue={selected.assigneeId ?? ""} className="w-full px-2 py-1.5 border border-slate-300 rounded bg-white text-sm">
+                        <select name="assigneeId" defaultValue={selected.assigneeId ?? ""} className="w-full px-2 py-1.5 border border-slate-300 rounded bg-surface text-sm">
                           <option value="">Belum di-assign</option>
                           {members.map((m) => <option key={m.userId} value={m.userId}>{m.user.name || m.user.email}</option>)}
                         </select></label>
                     </div>
                     <div className="flex flex-wrap gap-2">
-                      <button id="triage-accept" type="submit" name="intent" value="accept" className="flex-1 min-w-[120px] px-3 py-2 bg-action hover:bg-action-hover text-white text-sm font-bold rounded">Terima</button>
-                      <button type="submit" name="intent" value="save" className="px-3 py-2 border border-slate-300 bg-white hover:bg-slate-100 text-sm font-bold rounded">Simpan</button>
-                      <button id="triage-reject" type="submit" name="intent" value="reject" className="px-3 py-2 border border-slate-300 bg-white hover:bg-slate-100 text-sm font-bold rounded">Tolak</button>
+                      <button id="triage-accept" type="submit" name="intent" value="accept" className="flex-1 min-w-[120px] px-3 py-2 bg-action hover:bg-action-hover text-on-action text-sm font-bold rounded">Terima</button>
+                      <button type="submit" name="intent" value="save" className="px-3 py-2 border border-slate-300 bg-surface hover:bg-slate-100 text-sm font-bold rounded">Simpan</button>
+                      <button id="triage-reject" type="submit" name="intent" value="reject" className="px-3 py-2 border border-slate-300 bg-surface hover:bg-slate-100 text-sm font-bold rounded">Tolak</button>
                     </div>
                   </ActionForm>
                 ) : (

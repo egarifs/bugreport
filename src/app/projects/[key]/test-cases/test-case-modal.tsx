@@ -181,7 +181,7 @@ export function TestCaseManagementSection({
         {canManage && (
           <Link
             href={`/projects/${projectKey}/test-cases/new`}
-            className="px-4 py-2 bg-link hover:bg-link/90 text-white text-xs font-bold rounded-lg shadow-sm transition min-h-[44px] flex items-center"
+            className="px-4 py-2 bg-action hover:bg-action-hover text-on-action text-xs font-bold rounded-lg shadow-sm transition min-h-[44px] flex items-center"
           >
             + Test case baru
           </Link>
@@ -442,28 +442,28 @@ export function TestCaseManagementSection({
 
       {/* Floating Action Bar when items selected (Mockup 23) */}
       {selectedIds.size > 0 && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 bg-zinc-900 text-zinc-100 px-5 py-3 rounded-xl shadow-2xl flex items-center gap-4 text-xs font-semibold">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 bg-ink text-on-ink px-5 py-3 rounded-xl shadow-2xl flex items-center gap-4 text-xs font-semibold">
           <span>{selectedIds.size} dipilih</span>
-          <div className="h-4 w-px bg-zinc-700" />
+          <div className="h-4 w-px bg-on-ink/30" />
           {canManage && (
             <button
               type="button"
               onClick={() => setShowMoveModal(true)}
-              className="text-zinc-200 hover:text-white transition"
+              className="opacity-80 hover:opacity-100 transition"
             >
               Pindah modul
             </button>
           )}
           <Link
             href={`/projects/${projectKey}/test-runs/new?cases=${Array.from(selectedIds).join(",")}`}
-            className="bg-link hover:bg-link/90 text-white px-3.5 py-1.5 rounded-lg transition"
+            className="bg-action hover:bg-action-hover text-on-action px-3.5 py-1.5 rounded-lg transition"
           >
             Buat test run dari pilihan
           </Link>
           <button
             type="button"
             onClick={() => setSelectedIds(new Set())}
-            className="text-zinc-400 hover:text-zinc-200"
+            className="opacity-70 hover:opacity-100"
           >
             Batal
           </button>
@@ -512,7 +512,7 @@ export function TestCaseManagementSection({
                 type="button"
                 disabled={moving}
                 onClick={handleBulkMove}
-                className="px-4 py-1.5 text-xs font-bold text-white bg-link hover:bg-link/90 rounded-lg disabled:opacity-50"
+                className="px-4 py-1.5 text-xs font-bold text-on-action bg-action hover:bg-action-hover rounded-lg disabled:opacity-50"
               >
                 {moving ? "Memindahkan..." : "Pindahkan"}
               </button>

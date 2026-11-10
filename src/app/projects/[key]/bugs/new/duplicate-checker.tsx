@@ -67,34 +67,34 @@ export function DuplicateChecker({ projectKey }: { projectKey: string }) {
   if (duplicates.length === 0) return null;
 
   return (
-    <div role="status" aria-live="polite" className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs space-y-2">
+    <div role="status" aria-live="polite" className="p-3 bg-warn-bg border border-warn-border rounded-lg text-xs space-y-2">
       <div className="flex items-center justify-between">
-        <span className="font-semibold text-amber-900 flex items-center gap-1.5">
+        <span className="font-semibold text-warn flex items-center gap-1.5">
           Mirip {duplicates[0].key}{duplicates.length > 1 ? ` dan ${duplicates.length - 1} lainnya` : ""}
         </span>
-        {loading && <span className="text-xs text-amber-700">Mencari...</span>}
+        {loading && <span className="text-xs text-warn">Mencari...</span>}
       </div>
-      <p className="text-xs text-amber-700">
+      <p className="text-xs text-warn">
         Bug yang sama? Tambahkan info Anda sebagai komentar di sana. Laporan tetap bisa dikirim.
       </p>
       <ul className="space-y-1.5 divide-y divide-amber-200/50">
         {duplicates.map((d) => (
           <li key={d.id} className="pt-1.5 first:pt-0 flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 min-w-0">
-              <span className="font-mono font-bold text-amber-900 shrink-0">{d.key}</span>
+              <span className="font-mono font-bold text-warn shrink-0">{d.key}</span>
               <span className="text-slate-800 truncate">{d.title}</span>
             </div>
             <div className="flex items-center gap-2 shrink-0">
-              <span className="px-1.5 py-0.5 rounded text-xs bg-amber-200/60 text-amber-900 font-medium">
+              <span className="px-1.5 py-0.5 rounded text-xs bg-warn-bg/60 text-warn font-medium">
                 {statusLabel(d.status as BugStatus)}
               </span>
-              <span className="text-xs text-amber-700">
+              <span className="text-xs text-warn">
                 {(d.similarity * 100).toFixed(0)}% mirip
               </span>
               <Link
                 href={`/projects/${projectKey}/bugs/${d.number}`}
                 target="_blank"
-                className="text-amber-900 font-semibold underline hover:text-amber-950"
+                className="text-warn font-semibold underline hover:text-warn"
               >
                 Buka ↗
               </Link>
