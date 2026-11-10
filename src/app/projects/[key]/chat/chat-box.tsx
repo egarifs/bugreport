@@ -94,25 +94,25 @@ export function ProjectChatBox({
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-140px)] bg-white border border-slate-200 rounded-lg overflow-hidden shadow-sm">
+    <div className="flex flex-col h-[calc(100vh-140px)] bg-surface border border-slate-200 rounded-lg overflow-hidden shadow-sm">
       {/* Quick Prompt Suggestions */}
       <div className="p-3 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center gap-2 text-xs">
         <span className="text-slate-500 font-medium">Contoh Pertanyaan:</span>
         <button
           onClick={() => sendMessage("Apakah project ini sudah siap release?")}
-          className="px-2.5 py-1 bg-white hover:bg-slate-100 border border-slate-200 rounded text-slate-700 transition"
+          className="px-2.5 py-1 bg-surface hover:bg-slate-100 border border-slate-200 rounded text-slate-700 transition"
         >
           Siap Release?
         </button>
         <button
           onClick={() => sendMessage("Tampilkan ringkasan statistik kesehatan bug saat ini")}
-          className="px-2.5 py-1 bg-white hover:bg-slate-100 border border-slate-200 rounded text-slate-700 transition"
+          className="px-2.5 py-1 bg-surface hover:bg-slate-100 border border-slate-200 rounded text-slate-700 transition"
         >
           Ringkasan Statistik
         </button>
         <button
           onClick={() => sendMessage("Apa saja bug dengan severity BLOCKER atau HIGH yang masih Open?")}
-          className="px-2.5 py-1 bg-white hover:bg-slate-100 border border-slate-200 rounded text-slate-700 transition"
+          className="px-2.5 py-1 bg-surface hover:bg-slate-100 border border-slate-200 rounded text-slate-700 transition"
         >
           Blocker & High Bugs
         </button>
@@ -136,7 +136,7 @@ export function ProjectChatBox({
               <div
                 className={`max-w-2xl rounded-lg p-4 text-xs leading-relaxed ${
                   m.role === "USER"
-                    ? "whitespace-pre-wrap bg-slate-900 text-white rounded-br-none"
+                    ? "whitespace-pre-wrap bg-ink text-on-ink rounded-br-none"
                     : "bg-slate-50 border border-slate-200 text-slate-900 rounded-bl-none shadow-xs"
                 }`}
               >
@@ -151,7 +151,7 @@ export function ProjectChatBox({
 
         {loading && (
           <div className="flex justify-start chat-in" role="status">
-            <div className="w-full max-w-md bg-white border border-slate-200 rounded-lg rounded-bl-none p-4 text-sm shadow-sm">
+            <div className="w-full max-w-md bg-surface border border-slate-200 rounded-lg rounded-bl-none p-4 text-sm shadow-sm">
               <div className="flex items-center justify-between gap-3 mb-3">
                 <span className="flex items-center gap-2 font-semibold text-slate-900">
                   <span className="typing-dots" aria-hidden="true"><i /><i /><i /></span>
@@ -167,7 +167,7 @@ export function ProjectChatBox({
                       {active ? (
                         <span className="mt-1 h-3 w-3 shrink-0 rounded-full border-2 border-slate-300 border-t-slate-900 animate-spin motion-reduce:animate-none" aria-hidden="true" />
                       ) : (
-                        <span className="mt-0.5 shrink-0 text-emerald-700" aria-hidden="true">✓</span>
+                        <span className="mt-0.5 shrink-0 text-ok" aria-hidden="true">✓</span>
                       )}
                       <span className={active ? "shimmer-text" : ""}>{s}</span>
                     </li>
@@ -175,14 +175,14 @@ export function ProjectChatBox({
                 })}
               </ol>
               <div className="mt-3 h-1 rounded-full overflow-hidden bg-slate-100" aria-hidden="true">
-                <div className="h-full w-1/3 bg-slate-900 rounded-full progress-slide" />
+                <div className="h-full w-1/3 bg-ink rounded-full progress-slide" />
               </div>
             </div>
           </div>
         )}
 
         {error && (
-          <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded">
+          <div className="p-3 bg-bad-bg border border-bad-border text-bad text-xs rounded">
             {error}
           </div>
         )}
@@ -190,7 +190,7 @@ export function ProjectChatBox({
       </div>
 
       {/* Chat Input Bar */}
-      <div className="p-3 border-t border-slate-200 bg-white">
+      <div className="p-3 border-t border-slate-200 bg-surface">
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -211,7 +211,7 @@ export function ProjectChatBox({
           <button
             type="submit"
             disabled={loading || !input.trim()}
-            className="px-4 py-2 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-300 text-white text-xs font-medium rounded transition"
+            className="px-4 py-2 bg-ink hover:bg-ink-hover disabled:bg-slate-300 text-on-ink text-xs font-medium rounded transition"
           >
             Kirim
           </button>

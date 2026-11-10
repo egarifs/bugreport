@@ -2,8 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { createRequire } from "node:module";
 
-// WCAG AA guard for design tokens: text pairs >= 4.5:1. Edit tailwind.config.js, this test re-checks it.
-const { colors } = createRequire(import.meta.url)("../../tailwind.config.js").theme.extend;
+// WCAG AA guard for design tokens: text pairs >= 4.5:1, in BOTH themes. Edit src/lib/theme-tokens.cjs, this re-checks it.
+const themes = createRequire(import.meta.url)("./theme-tokens.cjs") as Record<"light" | "dark", Record<string, string>>;
 
 const lum = (hex: string) => {
   const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255)
@@ -15,27 +15,26 @@ const ratio = (a: string, b: string) => {
   return (hi + 0.05) / (lo + 0.05);
 };
 
-test("PRD-06 token contrast meets WCAG AA", () => {
-  const { slate, action, sev, ok, warn, bad, link, text, surface } = colors;
-  const pairs: [string, string, string][] = [
-    ["muted text (slate-400) on page", slate[400], slate[50]],
-    ["muted text (slate-400) on card", slate[400], "#FFFFFF"],
-    ["body text on page", slate[900], slate[50]],
-    ["button text on action", "#FFFFFF", action.DEFAULT],
-    ["button text on action hover", "#FFFFFF", action.hover],
-    ["link on card", link, surface.raised],
-    ["text-base on card", text.base, surface.raised],
-    ["text-muted on card", text.muted, surface.raised],
-    ["text-muted on sunken", text.muted, surface.sunken],
-    ["neutral badge", colors["badge-neutral"].text, colors["badge-neutral"].bg],
-    ...([["ok", ok], ["warn", warn], ["bad", bad]] as const).map(
-      ([n, c]): [string, string, string] => [`${n} on its bg`, c.DEFAULT, c.bg],
-    ),
-    ...(["blocker", "high", "medium", "low"] as const).map(
-      (s): [string, string, string] => [`severity ${s}`, sev[s], sev[`${s}-bg`]],
-    ),
-  ];
-  for (const [name, fg, bg] of pairs) {
-    assert.ok(ratio(fg, bg) >= 4.5, `${name}: ${ratio(fg, bg).toFixed(2)} < 4.5`);
-  }
-});
+// [foreground token, background token]
+const pairs: [string, string][] = [
+  ["slate-400", "slate-50"], ["slate-400", "surface"], ["slate-400", "slate-100"],
+  ["slate-500", "slate-100"], ["slate-900", "slate-50"], ["slate-900", "surface"],
+  ["text-base", "surface-raised"], ["text-base", "surface-base"],
+  ["text-muted", "surface-raised"], ["text-muted", "surface-sunken"], ["text-muted", "surface-base"],
+  ["badge-neutral-text", "badge-neutral-bg"],
+  ["link", "surface"], ["link", "slate-50"],
+  ["on-action", "action"], ["on-action", "action-hover"],
+  ["on-ink", "ink"], ["on-ink", "ink-hover"],
+  ...(["blocker", "high", "medium", "low"] as const).map((s): [string, string] => [`sev-${s}`, `sev-${s}-bg`]),
+  ...(["ok", "warn", "bad"] as const).map((s): [string, string] => [s, `${s}-bg`]),
+  ...(["ok", "warn", "bad"] as const).map((s): [string, string] => [s, "surface"]),
+];
+
+for (const name of ["light", "dark"] as const) {
+  test(`PRD-06 token contrast meets WCAG AA (${name})`, () => {
+    const t = themes[name];
+    for (const [fg, bg] of pairs) {
+      assert.ok(ratio(t[fg], t[bg]) >= 4.5, `${name} ${fg} on ${bg}: ${ratio(t[fg], t[bg]).toFixed(2)} < 4.5`);
+    }
+  });
+}

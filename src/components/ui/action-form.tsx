@@ -34,7 +34,7 @@ export function ActionForm({
 export function SubmitButton({
   children,
   pendingText,
-  className = "px-3.5 py-2 bg-action hover:bg-action-hover text-white text-sm font-bold rounded",
+  className = "px-3.5 py-2 bg-action hover:bg-action-hover text-on-action text-sm font-bold rounded",
 }: {
   children: React.ReactNode;
   pendingText: string;

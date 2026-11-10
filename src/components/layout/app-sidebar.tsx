@@ -182,7 +182,7 @@ export function AppSidebar({ user, projects, activeProjectKey }: AppSidebarProps
   return (
     <>
       {/* Mobile Top Bar */}
-      <div className="md:hidden flex items-center justify-between bg-white border-b border-slate-200 px-4 py-3">
+      <div className="md:hidden flex items-center justify-between bg-surface border-b border-slate-200 px-4 py-3">
         <div className="flex items-center gap-2">
           <button
             ref={menuButtonRef}
@@ -212,7 +212,7 @@ export function AppSidebar({ user, projects, activeProjectKey }: AppSidebarProps
       {mobileOpen && (
         <button
           type="button"
-          className="fixed inset-0 bg-slate-900/40 z-40 md:hidden cursor-default"
+          className="fixed inset-0 bg-scrim/40 z-40 md:hidden cursor-default"
           aria-label="Tutup navigasi"
           onClick={() => {
             setMobileOpen(false);
@@ -227,7 +227,7 @@ export function AppSidebar({ user, projects, activeProjectKey }: AppSidebarProps
         ref={sidebarRef}
         role="dialog"
         aria-label="Navigasi utama"
-        className={`fixed inset-y-0 left-0 z-50 bg-white border-r border-slate-200 flex flex-col transition-all duration-200 motion-reduce:transition-none md:static ${
+        className={`fixed inset-y-0 left-0 z-50 bg-surface border-r border-slate-200 flex flex-col transition-all duration-200 motion-reduce:transition-none md:static ${
           collapsed ? "w-16" : "w-64"
         } ${mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}`}
       >
@@ -235,7 +235,7 @@ export function AppSidebar({ user, projects, activeProjectKey }: AppSidebarProps
         <div className="h-16 border-b border-slate-200 px-3 flex items-center justify-between">
           {!collapsed ? (
             <div className="flex items-center gap-2 min-w-0">
-              <div className="w-8 h-8 rounded-lg bg-slate-900 text-white font-mono font-bold text-xs flex items-center justify-center shrink-0">
+              <div className="w-8 h-8 rounded-lg bg-ink text-on-ink font-mono font-bold text-xs flex items-center justify-center shrink-0">
                 {currentProject ? currentProject.key.slice(0, 3) : "BR"}
               </div>
               <div className="min-w-0">
@@ -248,7 +248,7 @@ export function AppSidebar({ user, projects, activeProjectKey }: AppSidebarProps
               </div>
             </div>
           ) : (
-            <div className="w-8 h-8 mx-auto rounded-lg bg-slate-900 text-white font-mono font-bold text-xs flex items-center justify-center">
+            <div className="w-8 h-8 mx-auto rounded-lg bg-ink text-on-ink font-mono font-bold text-xs flex items-center justify-center">
               {currentProject ? currentProject.key.slice(0, 3) : "BR"}
             </div>
           )}
@@ -295,7 +295,7 @@ export function AppSidebar({ user, projects, activeProjectKey }: AppSidebarProps
                   window.location.href = `/projects/${e.target.value}`;
                 }
               }}
-              className="w-full text-xs px-2 py-1.5 border border-slate-300 rounded bg-white text-slate-800 font-medium truncate focus:outline-none focus:ring-1 focus:ring-slate-900 mb-2"
+              className="w-full text-xs px-2 py-1.5 border border-slate-300 rounded bg-surface text-slate-800 font-medium truncate focus:outline-none focus:ring-1 focus:ring-slate-900 mb-2"
             >
               {projects.map((p) => (
                 <option key={p.id} value={p.key}>
@@ -322,7 +322,7 @@ export function AppSidebar({ user, projects, activeProjectKey }: AppSidebarProps
               title={collapsed ? item.label : undefined}
               className={`flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium transition motion-reduce:transition-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900 ${
                 item.active
-                  ? "bg-slate-900 text-white shadow-xs"
+                  ? "bg-ink text-on-ink shadow-xs"
                   : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
               } ${collapsed ? "justify-center px-2" : ""}`}
             >
@@ -350,7 +350,7 @@ export function AppSidebar({ user, projects, activeProjectKey }: AppSidebarProps
               title={collapsed ? "API & Swagger Docs" : undefined}
               className={`flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium transition ${
                 pathname === "/api-docs"
-                  ? "bg-slate-900 text-white"
+                  ? "bg-ink text-on-ink"
                   : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
               } ${collapsed ? "justify-center px-2" : ""}`}
             >
@@ -374,7 +374,7 @@ export function AppSidebar({ user, projects, activeProjectKey }: AppSidebarProps
                 title={collapsed ? "Approval Queue" : undefined}
                 className={`flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium transition ${
                   pathname.startsWith("/admin")
-                    ? "bg-slate-900 text-white"
+                    ? "bg-ink text-on-ink"
                     : "text-slate-700 hover:bg-slate-100"
                 } ${collapsed ? "justify-center px-2" : ""}`}
               >

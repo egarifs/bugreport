@@ -43,7 +43,7 @@ export default async function AdminUsersPage() {
   return (
     <AppShell>
       <div className="min-h-full flex flex-col">
-        <header className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between">
+        <header className="bg-surface border-b border-slate-200 px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <span className="font-semibold text-slate-900 text-sm">
               Admin: User Approval & Management
@@ -61,17 +61,17 @@ export default async function AdminUsersPage() {
             <h2 className="text-base font-bold text-slate-900">
               Antrean Persetujuan (Pending)
             </h2>
-            <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">
+            <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-warn-bg text-warn">
               {pendingUsers.length}
             </span>
           </div>
 
           {pendingUsers.length === 0 ? (
-            <div className="bg-white border border-slate-200 rounded p-6 text-center text-xs text-slate-500">
+            <div className="bg-surface border border-slate-200 rounded p-6 text-center text-xs text-slate-500">
               Tidak ada pendaftar baru yang menunggu persetujuan.
             </div>
           ) : (
-            <div className="bg-white border border-slate-200 rounded divide-y divide-slate-100">
+            <div className="bg-surface border border-slate-200 rounded divide-y divide-slate-100">
               {pendingUsers.map((p) => (
                 <div key={p.id} className="p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div>
@@ -156,7 +156,7 @@ export default async function AdminUsersPage() {
                   >
                     <select
                       name="projectId"
-                      className="text-xs border border-slate-300 rounded px-2 py-1.5 bg-white"
+                      className="text-xs border border-slate-300 rounded px-2 py-1.5 bg-surface"
                       defaultValue=""
                     >
                       <option value="">-- Pilih Project Awal --</option>
@@ -169,7 +169,7 @@ export default async function AdminUsersPage() {
 
                     <select
                       name="role"
-                      className="text-xs border border-slate-300 rounded px-2 py-1.5 bg-white"
+                      className="text-xs border border-slate-300 rounded px-2 py-1.5 bg-surface"
                       defaultValue="QA"
                     >
                       <option value="QA">QA</option>
@@ -184,7 +184,7 @@ export default async function AdminUsersPage() {
                       type="submit"
                       name="action"
                       value="approve"
-                      className="text-xs px-3 py-1.5 bg-action hover:bg-action-hover text-white font-bold rounded"
+                      className="text-xs px-3 py-1.5 bg-action hover:bg-action-hover text-on-action font-bold rounded"
                     >
                       Setujui
                     </button>
@@ -208,7 +208,7 @@ export default async function AdminUsersPage() {
           <h2 className="text-base font-bold text-slate-900 mb-3">
             Pengguna Terdaftar
           </h2>
-          <div className="bg-white border border-slate-200 rounded divide-y divide-slate-100">
+          <div className="bg-surface border border-slate-200 rounded divide-y divide-slate-100">
             {activeUsers.map((u) => (
               <div key={u.id} className="p-4 flex items-center justify-between text-xs">
                 <div>
@@ -222,10 +222,10 @@ export default async function AdminUsersPage() {
                     <span
                       className={`px-1.5 py-0.2 rounded text-xs ${
                         u.status === "ACTIVE"
-                          ? "bg-emerald-100 text-emerald-800"
+                          ? "bg-ok-bg text-ok"
                           : u.status === "SUSPENDED"
-                          ? "bg-amber-100 text-amber-800"
-                          : "bg-red-100 text-red-800"
+                          ? "bg-warn-bg text-warn"
+                          : "bg-bad-bg text-bad"
                       }`}
                     >
                       {u.status}

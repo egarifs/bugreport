@@ -59,7 +59,7 @@ export function MergeDuplicateModal({ projectKey, sourceBug, onMergeAction }: Me
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="px-2.5 py-1 text-xs font-medium text-slate-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded flex items-center gap-1.5 transition-colors"
+        className="px-2.5 py-1 text-xs font-medium text-slate-700 bg-warn-bg hover:bg-warn-bg border border-warn-border rounded flex items-center gap-1.5 transition-colors"
         title="Tandai bug ini sebagai duplikat dan gabungkan ke bug utama"
       >
         <span aria-hidden="true" className="text-amber-600 font-mono font-bold">≡</span>
@@ -73,7 +73,7 @@ export function MergeDuplicateModal({ projectKey, sourceBug, onMergeAction }: Me
           aria-labelledby="merge-dialog-title"
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
         >
-          <div className="w-full max-w-lg bg-white rounded-lg shadow-xl border border-slate-200 overflow-hidden text-slate-900 animate-in fade-in zoom-in-95 duration-100">
+          <div className="w-full max-w-lg bg-surface rounded-lg shadow-xl border border-slate-200 overflow-hidden text-slate-900 animate-in fade-in zoom-in-95 duration-100">
             <div className="p-4 border-b border-slate-100 flex items-start justify-between bg-slate-50">
               <div>
                 <h2 id="merge-dialog-title" className="text-base font-bold text-slate-900">
@@ -95,14 +95,14 @@ export function MergeDuplicateModal({ projectKey, sourceBug, onMergeAction }: Me
 
             <form onSubmit={handleSubmit} className="p-4 space-y-4">
               {error && (
-                <div role="alert" className="p-2.5 text-xs text-red-700 bg-red-50 border border-red-200 rounded">
+                <div role="alert" className="p-2.5 text-xs text-bad bg-bad-bg border border-bad-border rounded">
                   {error}
                 </div>
               )}
 
               {/* Source -> Target Comparison */}
               <div className="grid grid-cols-[1fr,auto,1fr] gap-2 items-center bg-slate-50 p-3 rounded border border-slate-200">
-                <div className="p-2 bg-white rounded border border-slate-200 text-xs">
+                <div className="p-2 bg-surface rounded border border-slate-200 text-xs">
                   <div className="font-mono font-bold text-slate-700">{sourceBug.key}</div>
                   <div className="font-semibold text-slate-900 truncate" title={sourceBug.title}>
                     {sourceBug.title}
@@ -112,8 +112,8 @@ export function MergeDuplicateModal({ projectKey, sourceBug, onMergeAction }: Me
 
                 <span className="text-slate-400 font-bold px-1" aria-hidden="true">→</span>
 
-                <div className="p-2 bg-blue-50/60 rounded border border-blue-200 text-xs">
-                  <label htmlFor="target-bug-input" className="block text-[11px] font-bold text-blue-900">
+                <div className="p-2 bg-action-soft/60 rounded border border-action/30 text-xs">
+                  <label htmlFor="target-bug-input" className="block text-[11px] font-bold text-link">
                     Bug Utama (Target)
                   </label>
                   <input
@@ -123,7 +123,7 @@ export function MergeDuplicateModal({ projectKey, sourceBug, onMergeAction }: Me
                     onChange={(e) => setTargetKey(e.target.value.toUpperCase())}
                     placeholder={`mis. ${projectKey}-6`}
                     required
-                    className="mt-1 w-full px-2 py-1 text-xs font-mono font-bold border border-blue-300 rounded bg-white text-blue-950 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    className="mt-1 w-full px-2 py-1 text-xs font-mono font-bold border border-action/30 rounded bg-surface text-slate-900 focus:outline-none focus:ring-1 focus:ring-blue-500"
                   />
                 </div>
               </div>
@@ -136,7 +136,7 @@ export function MergeDuplicateModal({ projectKey, sourceBug, onMergeAction }: Me
                     type="checkbox"
                     checked={moveComments}
                     onChange={(e) => setMoveComments(e.target.checked)}
-                    className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                    className="rounded border-slate-300 text-link focus:ring-blue-500"
                   />
                   <span>
                     {sourceBug.publicCommentsCount} komentar publik
@@ -148,7 +148,7 @@ export function MergeDuplicateModal({ projectKey, sourceBug, onMergeAction }: Me
                     type="checkbox"
                     checked={moveAttachments}
                     onChange={(e) => setMoveAttachments(e.target.checked)}
-                    className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                    className="rounded border-slate-300 text-link focus:ring-blue-500"
                   />
                   <span>
                     {sourceBug.attachmentsCount} bukti / lampiran
@@ -160,7 +160,7 @@ export function MergeDuplicateModal({ projectKey, sourceBug, onMergeAction }: Me
                     type="checkbox"
                     checked={addCoReporter}
                     onChange={(e) => setAddCoReporter(e.target.checked)}
-                    className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                    className="rounded border-slate-300 text-link focus:ring-blue-500"
                   />
                   <span>
                     {sourceBug.reporterName} ditambahkan sebagai pelapor (Co-Reporter)
@@ -173,7 +173,7 @@ export function MergeDuplicateModal({ projectKey, sourceBug, onMergeAction }: Me
                     checked={copySteps}
                     onChange={(e) => setCopySteps(e.target.checked)}
                     disabled={!sourceBug.hasSteps}
-                    className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 disabled:opacity-50"
+                    className="rounded border-slate-300 text-link focus:ring-blue-500 disabled:opacity-50"
                   />
                   <span className={!sourceBug.hasSteps ? "text-slate-400" : ""}>
                     Langkah reproduksi {sourceBug.key} ditambahkan sebagai komentar

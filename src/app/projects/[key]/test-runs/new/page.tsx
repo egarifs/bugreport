@@ -36,7 +36,7 @@ export default async function NewTestRunPage({
   return (
     <AppShell activeProjectKey={project.key}>
       <div className="min-h-full flex flex-col">
-        <header className="bg-white border-b border-slate-200 px-6 py-4 flex items-center gap-3">
+        <header className="bg-surface border-b border-slate-200 px-6 py-4 flex items-center gap-3">
           <Link
             href={`/projects/${project.key}/test-cases`}
             className="text-sm text-slate-500 hover:text-slate-900"
@@ -50,7 +50,7 @@ export default async function NewTestRunPage({
         </header>
 
         <main className="p-6 flex-1">
-          <div className="bg-white border border-slate-200 rounded-lg p-6 shadow-sm">
+          <div className="bg-surface border border-slate-200 rounded-lg p-6 shadow-sm">
             <h1 className="text-lg font-bold text-slate-900 mb-1">Test Run Baru</h1>
             <p className="text-xs text-slate-500 mb-6">
               Test run akan mengikutsertakan semua ({project.testCases.length}) test case aktif di project ini untuk dieksekusi.

@@ -15,8 +15,8 @@ const LABEL: Record<string, string> = { NOT_RUN: "Belum dijalankan", PASS: "Lolo
 const DECISION: Record<string, string> = { PASS: "Lolos", PASS_WITH_NOTES: "Lolos dengan catatan", FAIL: "Gagal" };
 const wib = (d: Date) =>
   new Intl.DateTimeFormat("id-ID", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Jakarta" }).format(d);
-const field = "w-full px-3 py-2 border border-slate-300 rounded text-sm bg-white min-h-[44px]";
-const btn = "px-3.5 py-2 min-h-[44px] bg-action hover:bg-action-hover text-white text-sm font-bold rounded duration-fast";
+const field = "w-full px-3 py-2 border border-slate-300 rounded text-sm bg-surface min-h-[44px]";
+const btn = "px-3.5 py-2 min-h-[44px] bg-action hover:bg-action-hover text-on-action text-sm font-bold rounded duration-fast";
 const btnLine = "px-3.5 py-2 min-h-[44px] border border-slate-300 text-slate-700 text-sm font-bold rounded hover:bg-slate-50 duration-fast";
 
 export default async function TestRunDetailPage({
@@ -79,7 +79,7 @@ export default async function TestRunDetailPage({
   return (
     <AppShell activeProjectKey={project.key}>
       <div className="min-h-full flex flex-col">
-        <header className="bg-white border-b border-slate-200 px-6 py-4 flex flex-wrap items-center gap-3">
+        <header className="bg-surface border-b border-slate-200 px-6 py-4 flex flex-wrap items-center gap-3">
           <Link href={`/projects/${project.key}/test-cases`} className="text-sm text-slate-500 hover:text-slate-900">← Test Runs</Link>
           <span aria-hidden="true" className="text-slate-300">/</span>
           <h1 className="font-bold text-slate-900 text-sm">{run.name}</h1>
@@ -121,7 +121,7 @@ export default async function TestRunDetailPage({
           )}
 
           <div className="grid lg:grid-cols-[304px_1fr] gap-4 items-start">
-            <nav aria-label="Daftar test case" className="bg-white border border-slate-200 rounded-lg divide-y divide-slate-100 overflow-hidden">
+            <nav aria-label="Daftar test case" className="bg-surface border border-slate-200 rounded-lg divide-y divide-slate-100 overflow-hidden">
               {visible.length === 0 && <p className="p-4 text-sm text-slate-500">Tidak ada item yang perlu re-run.</p>}
               {visible.map((i) => (
                 <Link key={i.id} href={href(`item=${i.id}${sp.filter ? `&filter=${sp.filter}` : ""}`)} aria-current={selected?.id === i.id ? "true" : undefined}
@@ -139,7 +139,7 @@ export default async function TestRunDetailPage({
             </nav>
 
             {selected && (
-              <article aria-label={`Detail ${selected.testCase.code}`} className="bg-white border border-slate-200 rounded-lg p-5 space-y-5">
+              <article aria-label={`Detail ${selected.testCase.code}`} className="bg-surface border border-slate-200 rounded-lg p-5 space-y-5">
                 <header>
                   <p className="text-xs text-slate-500">
                     <span className="font-mono">{selected.testCase.code}</span>{selected.testCaseVersion && ` · v${selected.testCaseVersion.version}`}
@@ -257,7 +257,7 @@ export default async function TestRunDetailPage({
           </div>
 
           {open && canExecute && (
-            <details className="bg-white border border-slate-200 rounded-lg p-4" open={sp.filter === "close"}>
+            <details className="bg-surface border border-slate-200 rounded-lg p-4" open={sp.filter === "close"}>
               <summary className="cursor-pointer font-bold text-sm text-slate-900 min-h-[44px] flex items-center">Tutup test run</summary>
               <ActionForm action={closeRunAction.bind(null, pid, run.id)} className="space-y-4 mt-2">
                 {pending.length > 0 && (

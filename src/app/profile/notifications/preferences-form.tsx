@@ -90,7 +90,7 @@ export function PreferencesForm({
 
   return (
     <form onSubmit={handleSave} className="flex-1 flex flex-col min-h-0">
-      <header className="px-6 py-4 border-b border-slate-200 bg-white">
+      <header className="px-6 py-4 border-b border-slate-200 bg-surface">
         <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
           Profil · {userName}
         </div>
@@ -101,12 +101,12 @@ export function PreferencesForm({
       </header>
 
       {toastMessage && (
-        <div className="px-6 py-2.5 bg-indigo-50 border-b border-indigo-200 text-indigo-800 text-sm font-medium flex items-center justify-between">
+        <div className="px-6 py-2.5 bg-action-soft border-b border-action/30 text-link text-sm font-medium flex items-center justify-between">
           <span>{toastMessage}</span>
           <button
             type="button"
             onClick={() => setToastMessage(null)}
-            className="text-indigo-600 hover:text-indigo-900 text-xs font-bold ml-4"
+            className="text-link hover:text-link text-xs font-bold ml-4"
           >
             ✕
           </button>
@@ -125,8 +125,8 @@ export function PreferencesForm({
               <label
                 className={`inline-flex items-center gap-2.5 px-3.5 py-2 rounded-lg border text-sm font-medium cursor-pointer transition-colors ${
                   scope === "ALL_IN_PROJECT"
-                    ? "border-indigo-600 bg-indigo-50/50 text-indigo-900 font-semibold"
-                    : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                    ? "border-indigo-600 bg-action-soft/50 text-link font-semibold"
+                    : "border-slate-300 bg-surface text-slate-700 hover:bg-slate-50"
                 }`}
               >
                 <input
@@ -135,7 +135,7 @@ export function PreferencesForm({
                   value="ALL_IN_PROJECT"
                   checked={scope === "ALL_IN_PROJECT"}
                   onChange={() => setScope("ALL_IN_PROJECT")}
-                  className="w-4 h-4 text-indigo-600 focus:ring-indigo-500"
+                  className="w-4 h-4 text-link focus:ring-indigo-500"
                 />
                 <span>Semua di project saya</span>
               </label>
@@ -143,8 +143,8 @@ export function PreferencesForm({
               <label
                 className={`inline-flex items-center gap-2.5 px-3.5 py-2 rounded-lg border text-sm font-medium cursor-pointer transition-colors ${
                   scope === "INVOLVED_ONLY"
-                    ? "border-indigo-600 bg-indigo-50/50 text-indigo-900 font-semibold"
-                    : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                    ? "border-indigo-600 bg-action-soft/50 text-link font-semibold"
+                    : "border-slate-300 bg-surface text-slate-700 hover:bg-slate-50"
                 }`}
               >
                 <input
@@ -153,7 +153,7 @@ export function PreferencesForm({
                   value="INVOLVED_ONLY"
                   checked={scope === "INVOLVED_ONLY"}
                   onChange={() => setScope("INVOLVED_ONLY")}
-                  className="w-4 h-4 text-indigo-600 focus:ring-indigo-500"
+                  className="w-4 h-4 text-link focus:ring-indigo-500"
                 />
                 <span>Hanya yang melibatkan saya</span>
               </label>
@@ -161,7 +161,7 @@ export function PreferencesForm({
           </div>
 
           {/* Preferences Table */}
-          <div className="border border-slate-200 rounded-lg overflow-hidden bg-white shadow-2xs mb-4">
+          <div className="border border-slate-200 rounded-lg overflow-hidden bg-surface shadow-2xs mb-4">
             <table className="w-full text-left text-sm">
               <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold text-xs uppercase tracking-wider">
                 <tr>
@@ -182,7 +182,7 @@ export function PreferencesForm({
                         onChange={(e) =>
                           handleModeChange(item.type, e.target.value as NotificationDeliveryMode)
                         }
-                        className="w-full px-2.5 py-1.5 rounded-md border border-slate-300 bg-white text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 font-medium"
+                        className="w-full px-2.5 py-1.5 rounded-md border border-slate-300 bg-surface text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 font-medium"
                       >
                         <option value="IMMEDIATE">Segera</option>
                         <option value="DAILY">Ringkasan harian</option>
@@ -217,7 +217,7 @@ export function PreferencesForm({
             <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
               Contoh ringkasan per sesi
             </h3>
-            <div className="p-3.5 bg-white border border-slate-200 rounded-lg text-xs leading-relaxed text-slate-700 shadow-2xs">
+            <div className="p-3.5 bg-surface border border-slate-200 rounded-lg text-xs leading-relaxed text-slate-700 shadow-2xs">
               <strong className="block text-slate-900 font-semibold mb-1">
                 Agent pi (Ega) selesai
               </strong>
@@ -225,7 +225,7 @@ export function PreferencesForm({
             </div>
           </div>
 
-          <div className="p-3.5 bg-white border border-slate-200 rounded-lg text-xs shadow-2xs">
+          <div className="p-3.5 bg-surface border border-slate-200 rounded-lg text-xs shadow-2xs">
             <h3 className="font-bold text-slate-800 mb-1.5 flex items-center gap-1.5">
               <span>🌙</span> Mode Fokus
             </h3>
@@ -234,9 +234,9 @@ export function PreferencesForm({
             </p>
 
             {isFocusActive ? (
-              <div className="p-2.5 rounded bg-amber-50 border border-amber-200 text-amber-900">
+              <div className="p-2.5 rounded bg-warn-bg border border-warn-border text-warn">
                 <p className="font-semibold text-xs mb-1">Mode fokus sedang aktif</p>
-                <p className="text-[11px] text-amber-700 mb-2">
+                <p className="text-[11px] text-warn mb-2">
                   Berakhir:{" "}
                   {focusUntil
                     ? new Date(focusUntil).toLocaleTimeString("id-ID", {
@@ -248,7 +248,7 @@ export function PreferencesForm({
                 <button
                   type="button"
                   onClick={() => handleToggleFocus(null)}
-                  className="w-full py-1 text-xs font-semibold bg-white border border-amber-300 rounded text-amber-900 hover:bg-amber-100/50"
+                  className="w-full py-1 text-xs font-semibold bg-surface border border-warn-border rounded text-warn hover:bg-warn-bg/50"
                 >
                   Matikan Mode Fokus
                 </button>
@@ -258,21 +258,21 @@ export function PreferencesForm({
                 <button
                   type="button"
                   onClick={() => handleToggleFocus(1)}
-                  className="flex-1 py-1 text-xs font-semibold border border-slate-300 rounded bg-white hover:bg-slate-50 text-slate-700"
+                  className="flex-1 py-1 text-xs font-semibold border border-slate-300 rounded bg-surface hover:bg-slate-50 text-slate-700"
                 >
                   1 Jam
                 </button>
                 <button
                   type="button"
                   onClick={() => handleToggleFocus(2)}
-                  className="flex-1 py-1 text-xs font-semibold border border-slate-300 rounded bg-white hover:bg-slate-50 text-slate-700"
+                  className="flex-1 py-1 text-xs font-semibold border border-slate-300 rounded bg-surface hover:bg-slate-50 text-slate-700"
                 >
                   2 Jam
                 </button>
                 <button
                   type="button"
                   onClick={() => handleToggleFocus(4)}
-                  className="flex-1 py-1 text-xs font-semibold border border-slate-300 rounded bg-white hover:bg-slate-50 text-slate-700"
+                  className="flex-1 py-1 text-xs font-semibold border border-slate-300 rounded bg-surface hover:bg-slate-50 text-slate-700"
                 >
                   4 Jam
                 </button>

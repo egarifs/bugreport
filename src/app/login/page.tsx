@@ -22,9 +22,9 @@ export default async function LoginPage({
 
   return (
     <main className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
-      <div className="max-w-md w-full bg-white rounded-lg shadow-sm border border-slate-200 p-8">
+      <div className="max-w-md w-full bg-surface rounded-lg shadow-sm border border-slate-200 p-8">
         <div className="text-center mb-6">
-          <div className="inline-block p-2 bg-slate-900 text-white rounded mb-2 font-mono font-bold text-lg">
+          <div className="inline-block p-2 bg-ink text-on-ink rounded mb-2 font-mono font-bold text-lg">
             BR
           </div>
           <h1 className="text-2xl font-bold text-slate-900">BugReport</h1>

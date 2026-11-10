@@ -53,7 +53,7 @@ export function MergeUndoBanner({ initialRemainingMs, targetKey, onUndoAction }:
   return (
     <div
       role="status"
-      className="p-3 bg-amber-50 border border-amber-200 rounded-lg flex flex-wrap items-center justify-between gap-3 text-xs text-amber-900"
+      className="p-3 bg-warn-bg border border-warn-border rounded-lg flex flex-wrap items-center justify-between gap-3 text-xs text-warn"
     >
       <div className="flex items-center gap-2">
         <span aria-hidden="true" className="font-bold text-amber-600">≡</span>
@@ -61,7 +61,7 @@ export function MergeUndoBanner({ initialRemainingMs, targetKey, onUndoAction }:
           <span>
             Bug ini digabung ke <b>{targetKey}</b>. Batalkan dalam <b>{timeLabel}</b>.
           </span>
-          {error && <p className="text-red-600 mt-0.5">{error}</p>}
+          {error && <p className="text-bad mt-0.5">{error}</p>}
         </div>
       </div>
 
@@ -69,7 +69,7 @@ export function MergeUndoBanner({ initialRemainingMs, targetKey, onUndoAction }:
         type="button"
         onClick={handleUndo}
         disabled={isPending}
-        className="px-3 py-1 font-semibold text-amber-900 bg-amber-200/70 hover:bg-amber-300 disabled:opacity-50 border border-amber-300 rounded transition-colors"
+        className="px-3 py-1 font-semibold text-warn bg-warn-bg/70 hover:bg-amber-300 disabled:opacity-50 border border-warn-border rounded transition-colors"
       >
         {isPending ? "Membatalkan..." : "Urungkan gabung"}
       </button>
