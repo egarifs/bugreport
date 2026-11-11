@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import { prisma } from "./db";
 
-export const AGENT_QA_SCOPES = ["bug:read", "bug:create", "bug:comment", "testcase:read", "testrun:execute", "evidence:upload"];
+export const AGENT_QA_SCOPES = ["bug:read", "bug:create", "bug:comment", "testcase:read", "testrun:execute", "testrun:create", "evidence:upload"];
 
 export function hashApiKey(key: string): string {
   return crypto.createHash("sha256").update(key).digest("hex");
