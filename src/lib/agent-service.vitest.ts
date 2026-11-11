@@ -1,5 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import fs from "node:fs";
 import { prisma } from "./db";
+import { evidencePath } from "./agent-service";
 import { saveTestCaseCore } from "./testcase-service";
 import { executeMcpTool, McpContext } from "./mcp-tools";
 import { AGENT_QA_SCOPES, generateApiKey, verifyApiKey } from "./mcp-auth";
@@ -37,6 +39,8 @@ afterAll(async () => {
   await prisma.testRun.deleteMany({ where: { projectId } });
   await prisma.agentRun.deleteMany({ where: { projectId } });
   await prisma.testCase.deleteMany({ where: { projectId } });
+  await prisma.evidence.deleteMany({ where: { projectId } });
+  fs.rmSync(`uploads/${key}`, { recursive: true, force: true });
   await prisma.auditLog.deleteMany({ where: { projectId } });
   await prisma.notification.deleteMany({ where: { projectId } });
   await prisma.project.deleteMany({ where: { id: projectId } });
@@ -113,5 +117,31 @@ describe("agent QA service (F9)", () => {
     expect((await verifyApiKey(rawKey)).valid).toBe(true);
     await prisma.apiKey.update({ where: { id: keyId }, data: { revokedAt: new Date() } });
     expect((await verifyApiKey(rawKey)).valid).toBe(false);
+  });
+
+  it("AC-AG-05 file evidence: FAIL with file ok, >10MB and bad type rejected, PASS purges files", async () => {
+    const run = await call("create_test_run", { name: "Evidence run" });
+    const items = await prisma.testRunItem.findMany({ where: { testRunId: run.testRunId } });
+    const [i1, i2] = items;
+    const png = Buffer.from("fakepng").toString("base64");
+    expect((await call("upload_evidence", { fileName: "x.exe", dataBase64: png }, ctx2)).error).toMatch(/Tipe file/);
+    const big = Buffer.alloc(10 * 1024 * 1024 + 1).toString("base64");
+    expect((await call("upload_evidence", { fileName: "big.png", dataBase64: big }, ctx2)).error).toMatch(/10 MB/);
+    const up = await call("upload_evidence", { fileName: "shot 1.png", dataBase64: png }, ctx2);
+    expect(up.ok).toBe(true);
+    expect(fs.existsSync(evidencePath(key, `${up.evidenceId}_shot_1.png`))).toBe(true);
+    // file of another key (ctx) cannot be used by ctx... same actor, different key: allowed only for same actor -> use bogus id instead
+    expect((await call("record_result", { itemId: i1.id, result: "FAIL", actualResult: "x", failedStep: 1, evidenceIds: ["nope"] }, ctx2)).error).toMatch(/evidenceIds tidak valid/);
+    const fail = await call("record_result", { itemId: i1.id, result: "FAIL", actualResult: "x", failedStep: 1, evidenceIds: [up.evidenceId] }, ctx2);
+    expect(fail.ok).toBe(true);
+    expect((await prisma.evidence.findUniqueOrThrow({ where: { id: up.evidenceId } })).attemptId).not.toBeNull();
+    expect(fs.existsSync(evidencePath(key, `${up.evidenceId}_shot_1.png`))).toBe(true); // Gagal: kept
+    // retest passes -> file deleted
+    const pass = await call("record_result", { itemId: i1.id, result: "PASS" }, ctx2);
+    expect(pass.evidencePurged).toBe(1);
+    expect(fs.existsSync(evidencePath(key, `${up.evidenceId}_shot_1.png`))).toBe(false);
+    expect((await prisma.evidence.findUniqueOrThrow({ where: { id: up.evidenceId } })).purgedAt).not.toBeNull();
+    // unrelated: FAIL still demands evidence
+    expect((await call("record_result", { itemId: i2.id, result: "FAIL", actualResult: "x", failedStep: 1 }, ctx2)).error).toMatch(/Bukti wajib/);
   });
 });

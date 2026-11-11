@@ -1,10 +1,16 @@
 import { randomUUID } from "node:crypto";
+import fs from "node:fs/promises";
+import path from "node:path";
 import { prisma } from "@/lib/db";
 import { redactSecrets } from "@/lib/redact";
 import { recordAuditLog } from "@/lib/user-service";
 import { logAttempt, linkBugToItem } from "@/lib/testrun-service";
 import { agentReadiness, fillTestData } from "@/lib/agent-readiness";
 import { notifyAgentSessionSummary } from "@/lib/notification-service";
+
+export const MAX_EVIDENCE_BYTES = 10 * 1024 * 1024; // decision: >10 MB via MCP base64 -> agent sends a link instead
+const EVIDENCE_TYPES: Record<string, string> = { png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", webp: "image/webp", gif: "image/gif", webm: "video/webm", mp4: "video/mp4", txt: "text/plain", log: "text/plain" };
+export const evidencePath = (projectKey: string, storedName: string) => path.join(process.cwd(), "uploads", projectKey, "evidence", path.basename(storedName));
 
 // F9: tools for a QA's local agent. Every write is done as the key owner (actor), labelled "via agent".
 export const LEASE_MS = 90_000; // AC-AG-04: no heartbeat for >90s = lease expired ("Terputus")
@@ -111,7 +117,7 @@ export async function heartbeat(ctx: AgentCtx, a: { itemId?: string; step?: numb
 
 type RecordInput = {
   itemId?: string; result?: string; actualResult?: string; failedStep?: number; blockedReason?: string; buildVersion?: string; environment?: string;
-  toolName?: string; links?: string[]; notes?: string; sessionId?: string;
+  toolName?: string; links?: string[]; evidenceIds?: string[]; notes?: string; sessionId?: string;
 };
 
 // AC-AG-05: FAIL needs failedStep + evidence; same rules as a human attempt (logAttempt), recorded as the key owner.
@@ -126,10 +132,15 @@ export async function recordResult(ctx: AgentCtx, a: RecordInput) {
 
   const links = (a.links ?? []).map((l) => String(l).trim()).filter(Boolean);
   if (links.some((l) => !isUrl(l))) return err("Semua link bukti harus diawali http:// atau https://.");
+  const evidenceIds = [...new Set((a.evidenceIds ?? []).map(String))];
+  const files = evidenceIds.length
+    ? await prisma.evidence.findMany({ where: { id: { in: evidenceIds }, projectId: ctx.projectId, uploadedById: ctx.actorId, attemptId: null, purgedAt: null } })
+    : [];
+  if (files.length !== evidenceIds.length) return err("evidenceIds tidak valid: file tidak ada, sudah terpakai, atau bukan milik key ini.");
   const notes: string[] = [];
   if (result === "FAIL") {
     if (!Number.isInteger(a.failedStep) || (a.failedStep as number) < 1) return err("failedStep wajib (nomor langkah yang gagal) untuk hasil Gagal.");
-    if (!links.length) return err("Bukti wajib untuk hasil Gagal: kirim minimal satu link bukti (file > 10 MB: kirim link).");
+    if (!links.length && !files.length) return err("Bukti wajib untuk hasil Gagal: kirim minimal satu file (upload_evidence) atau link bukti.");
     notes.push(`Langkah gagal: ${a.failedStep}`);
   }
   if (result === "BLOCKED") {
@@ -148,11 +159,17 @@ export async function recordResult(ctx: AgentCtx, a: RecordInput) {
     build: a.buildVersion,
     environment: a.environment,
     evidenceUrl: links[0],
+    hasFileEvidence: files.length > 0,
     agent: { name: session?.agentName ?? "agent", toolName: a.toolName ?? session?.toolName ?? undefined, sessionId: session?.id },
   });
   if ("error" in r) return r;
+  if (files.length) {
+    const att = await prisma.testRunAttempt.findFirstOrThrow({ where: { itemId: a.itemId }, orderBy: { seq: "desc" }, select: { id: true } });
+    await prisma.evidence.updateMany({ where: { id: { in: files.map((f) => f.id) } }, data: { attemptId: att.id } });
+  }
+  const purged = result === "PASS" ? await purgeItemEvidence(ctx.projectKey, a.itemId) : 0;
   await recordAuditLog({ projectId: ctx.projectId, actorId: ctx.actorId, actorEmail: ctx.actorEmail, actorType: "agent", action: "testrun.agent_result", entityType: "test_run_item", entityId: a.itemId, changes: { after: { result, sessionId: session?.id ?? null } } });
-  return { ok: true as const, result };
+  return { ok: true as const, result, ...(purged ? { evidencePurged: purged } : {}) };
 }
 
 // AC-AG-06: link an existing bug and leave one evidence comment instead of a duplicate draft.
@@ -198,4 +215,31 @@ export async function listAgentTestCases(ctx: AgentCtx, a: { query?: string; pri
     ok: true as const,
     cases: cases.map((c) => ({ code: c.code, title: c.title, priority: c.priority, agentReady: c.agentReady, ...(a.includeMissing ? { missing: agentReadiness(c).missing } : {}) })),
   };
+}
+
+export async function uploadEvidence(ctx: AgentCtx, a: { fileName?: string; dataBase64?: string; sessionId?: string }) {
+  const ext = String(a.fileName ?? "").split(".").pop()?.toLowerCase() ?? "";
+  const mimeType = EVIDENCE_TYPES[ext];
+  if (!mimeType) return err(`Tipe file tidak didukung. Boleh: ${Object.keys(EVIDENCE_TYPES).join(", ")}.`);
+  if (!a.dataBase64) return err("dataBase64 wajib diisi.");
+  if (a.sessionId && !(await ownSession(ctx, a.sessionId))) return err("Sesi tidak ditemukan atau bukan milik key ini.");
+  const buf = Buffer.from(String(a.dataBase64).replace(/^data:[^;]+;base64,/, ""), "base64");
+  if (!buf.length) return err("File kosong.");
+  if (buf.length > MAX_EVIDENCE_BYTES) return err("Ukuran file melebihi 10 MB. Unggah ke tempat lain dan kirim link lewat 'links'.");
+  const fileName = String(a.fileName).replace(/[^a-zA-Z0-9._-]/g, "_").slice(-80);
+  const id = randomUUID();
+  const storedName = `${id}_${fileName}`;
+  const file = evidencePath(ctx.projectKey, storedName);
+  await fs.mkdir(path.dirname(file), { recursive: true });
+  await fs.writeFile(file, buf);
+  await prisma.evidence.create({ data: { id, projectId: ctx.projectId, uploadedById: ctx.actorId, sessionId: a.sessionId || null, fileName, storedName, mimeType, fileSize: buf.length } });
+  return { ok: true as const, evidenceId: id, fileName, fileSize: buf.length };
+}
+
+// Passing item = proof no longer needed: delete files of every attempt of the item (rows stay, purgedAt set).
+export async function purgeItemEvidence(projectKey: string, itemId: string) {
+  const rows = await prisma.evidence.findMany({ where: { purgedAt: null, attempt: { itemId } } });
+  for (const e of rows) await fs.rm(evidencePath(projectKey, e.storedName), { force: true });
+  if (rows.length) await prisma.evidence.updateMany({ where: { id: { in: rows.map((e) => e.id) } }, data: { purgedAt: new Date() } });
+  return rows.length;
 }

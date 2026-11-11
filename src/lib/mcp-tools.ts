@@ -222,10 +222,15 @@ export const MCP_TOOLS_DEFINITIONS = [
       type: "object",
       properties: {
         itemId: { type: "string" }, result: { type: "string" }, actualResult: { type: "string" }, failedStep: { type: "number" }, blockedReason: { type: "string" },
-        buildVersion: { type: "string" }, environment: { type: "string" }, toolName: { type: "string" }, links: { type: "array", items: { type: "string" } }, notes: { type: "string" }, sessionId: { type: "string" },
+        buildVersion: { type: "string" }, environment: { type: "string" }, toolName: { type: "string" }, links: { type: "array", items: { type: "string" } }, evidenceIds: { type: "array", items: { type: "string" } }, notes: { type: "string" }, sessionId: { type: "string" },
       },
       required: ["itemId", "result"],
     },
+  },
+  {
+    name: "upload_evidence",
+    description: "Unggah file bukti (png/jpg/webp/gif/webm/mp4/txt/log, maks 10 MB, base64). Kirim evidenceId ke record_result. File dihapus otomatis bila item akhirnya Lolos. Lebih besar dari 10 MB: kirim link lewat 'links'.",
+    inputSchema: { type: "object", properties: { fileName: { type: "string" }, dataBase64: { type: "string" }, sessionId: { type: "string" } }, required: ["fileName", "dataBase64"] },
   },
   {
     name: "link_bug_to_item",
@@ -245,7 +250,7 @@ export async function executeMcpTool(
   ctx: McpContext
 ): Promise<{ content: Array<{ type: "text"; text: string }>; isError?: boolean }> {
   try {
-  const qaOnlyTools = ["start_session", "create_test_run", "claim_next_item", "heartbeat", "record_result", "link_bug_to_item", "finish_session", "create_bug_draft", "attach_bug_screenshot", "create_test_cases", "upload_business_doc"];
+  const qaOnlyTools = ["start_session", "upload_evidence", "create_test_run", "claim_next_item", "heartbeat", "record_result", "link_bug_to_item", "finish_session", "create_bug_draft", "attach_bug_screenshot", "create_test_cases", "upload_business_doc"];
   if (qaOnlyTools.includes(toolName) && ctx.role !== "QA" && ctx.role !== "ADMIN") {
     return {
       content: [
@@ -267,6 +272,7 @@ export async function executeMcpTool(
       case "claim_next_item": return out(await agent.claimItem(ctx, a));
       case "heartbeat": return out(await agent.heartbeat(ctx, a));
       case "record_result": return out(await agent.recordResult(ctx, a));
+      case "upload_evidence": return out(await agent.uploadEvidence(ctx, a));
       case "link_bug_to_item": return out(await agent.linkBug(ctx, a));
       case "finish_session": return out(await agent.finishSession(ctx, a));
 

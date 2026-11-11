@@ -141,7 +141,7 @@ export async function logAttempt(
   actor: Actor,
   projectId: string,
   itemId: string,
-  input: { result: string; actualResult?: string; notes?: string; build?: string; evidenceUrl?: string; environment?: string; agent?: { name: string; toolName?: string; sessionId?: string } },
+  input: { result: string; actualResult?: string; notes?: string; build?: string; evidenceUrl?: string; hasFileEvidence?: boolean; environment?: string; agent?: { name: string; toolName?: string; sessionId?: string } },
 ): Promise<Result> {
   const item = await loadItem(projectId, itemId);
   if (!item) return { error: "Item tidak ditemukan." };
@@ -153,7 +153,7 @@ export async function logAttempt(
   const evidenceUrl = input.evidenceUrl?.trim() || null;
   if (result === "SKIPPED" && !notes) return { error: "Alasan wajib diisi untuk item yang dilewati." };
   if (result === "FAIL" && !actualResult) return { error: "Hasil aktual wajib diisi saat gagal." };
-  if (result === "FAIL" && !evidenceUrl) return { error: "Bukti wajib saat gagal: isi link screenshot atau rekaman." };
+  if (result === "FAIL" && !evidenceUrl && !input.hasFileEvidence) return { error: "Bukti wajib saat gagal: isi link screenshot atau rekaman." };
   if (evidenceUrl && !isUrl(evidenceUrl)) return { error: "Link bukti harus diawali http:// atau https://." };
 
   await prisma.$transaction(async (tx) => {

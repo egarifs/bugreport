@@ -115,6 +115,7 @@ model Project {
   testRuns                TestRun[]
   apiKeys                 ApiKey[]
   agentRuns               AgentRun[]
+  evidence                Evidence[]
   chatMessages            ChatMessage[]
   modules                 Module[]
   notificationPreferences NotificationPreference[]
@@ -497,8 +498,29 @@ model TestRunAttempt {
   createdAt         DateTime          @default(now())
 
   bugLinks TestRunItemBug[]
+  evidence Evidence[]
 
   @@unique([itemId, seq])
+}
+
+// F9: file evidence uploaded by an agent. File is deleted from disk when the result is PASS (purgedAt set).
+model Evidence {
+  id           String          @id @default(uuid())
+  projectId    String
+  project      Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  uploadedById String
+  sessionId    String?
+  fileName     String
+  storedName   String
+  mimeType     String
+  fileSize     Int
+  attemptId    String?
+  attempt      TestRunAttempt? @relation(fields: [attemptId], references: [id], onDelete: SetNull)
+  purgedAt     DateTime?
+  createdAt    DateTime        @default(now())
+
+  @@index([attemptId])
+  @@index([projectId, purgedAt, createdAt])
 }
 
 model TestRunItemBug {
