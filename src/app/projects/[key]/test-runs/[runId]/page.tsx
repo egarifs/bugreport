@@ -49,7 +49,7 @@ export default async function TestRunDetailPage({
           testCaseVersion: { select: { version: true } },
           rerunBug: { select: { key: true, number: true } },
           bugLinks: { include: { bug: { select: { key: true, number: true, status: true } } } },
-          attempts: { orderBy: { seq: "asc" }, include: { executedBy: { select: { name: true, email: true } }, testCaseVersion: { select: { version: true } } } },
+          attempts: { orderBy: { seq: "asc" }, include: { executedBy: { select: { name: true, email: true } }, testCaseVersion: { select: { version: true } }, evidence: { orderBy: { createdAt: "asc" } } } },
         },
       },
     },
@@ -213,6 +213,13 @@ export default async function TestRunDetailPage({
                         </p>
                         {a.actualResult && <p className="mt-1 text-slate-700">Aktual: {a.actualResult}</p>}
                         {a.notes && <p className="mt-1 text-slate-700">{a.result === "SKIPPED" ? "Alasan" : "Catatan"}: {a.notes}</p>}
+                        {a.evidence.length > 0 && (
+                          <p className="mt-1 flex flex-wrap gap-x-3">
+                            {a.evidence.map((e) => e.purgedAt
+                              ? <span key={e.id} className="text-slate-500">{e.fileName} (dihapus, item Lolos)</span>
+                              : <a key={e.id} className="underline text-action break-all" href={`/api/projects/${key}/evidence/${e.id}`} target="_blank" rel="noopener noreferrer">{e.fileName}</a>)}
+                          </p>
+                        )}
                         {a.evidenceUrl && <p className="mt-1"><a className="underline text-action break-all" href={a.evidenceUrl} target="_blank" rel="noopener noreferrer">Bukti</a></p>}
                       </li>
                     ))}
