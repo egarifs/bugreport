@@ -17,8 +17,8 @@ sed -i "s/^APP_TAG=.*/APP_TAG=$SHA/" .env
 P="docker compose run --rm --no-deps app node_modules/.bin/prisma"
 HAS=$(echo "select to_regclass('_prisma_migrations')" | docker compose exec -T db sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -tA')
 if [ -z "$HAS" ]; then
-  for m in 20261026075205_init 20261104085000_add_project_is_test 20261108090000_bug_fix_verify_due; do $P migrate resolve --applied $m; done
+  for m in 20261026075205_init 20261104085000_add_project_is_test 20261108090000_bug_fix_verify_due; do $P migrate resolve --applied $m </dev/null; done
 fi
-$P migrate deploy
-docker compose up -d app
+$P migrate deploy </dev/null
+docker compose up -d app </dev/null
 REMOTE
