@@ -72,6 +72,7 @@ export function UserProfileMenu({
         type="button"
         onClick={() => setOpen((prev) => !prev)}
         aria-expanded={open}
+        data-testid="profile-menu-trigger"
         aria-haspopup="menu"
         title={collapsed ? `${displayName} (${user.isAdmin ? "Super Admin" : "Member"})` : undefined}
         className={`w-full flex items-center gap-3 p-1.5 rounded-lg text-left transition-colors duration-150 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-400 ${
