@@ -83,6 +83,7 @@ model User {
   attemptsExecuted        TestRunAttempt[]         @relation("AttemptExecutor")
   testRunsClosed          TestRun[]                @relation("TestRunClosedBy")
   apiKeysCreated          ApiKey[]
+  runningItems            TestRunItem[]            @relation("ItemRunner")
   chatMessages            ChatMessage[]
   notifications           Notification[]
   focusUntil              DateTime?
@@ -192,8 +193,8 @@ model Bug {
 
   // Phase 2B Bridge
   // Deprecated (Step 10): replaced by testRunLinks; column dropped in a later migration.
-  testRunLinks  TestRunItemBug[]
-  rerunItems    TestRunItem[]    @relation("RerunBug")
+  testRunLinks TestRunItemBug[]
+  rerunItems   TestRunItem[]    @relation("RerunBug")
 
   // Phase 3 Agent Run link
   agentRunId String?
@@ -357,6 +358,8 @@ model TestCase {
   steps          String // 1) ... 2) ...
   expectedResult String
   referenceUrl   String? // Figma / doc link
+  agentReady     Boolean          @default(false)
+  testData       Json? // values for {{name}} placeholders in steps; never credentials
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
 
@@ -412,7 +415,8 @@ model TestRun {
   closedById   String?
   closedBy     User?            @relation("TestRunClosedBy", fields: [closedById], references: [id], onDelete: SetNull)
 
-  items TestRunItem[]
+  items         TestRunItem[]
+  agentSessions AgentRun[]
 
   @@index([projectId, status])
 }
@@ -452,8 +456,18 @@ model TestRunItem {
   rerunBugId        String?
   rerunBug          Bug?             @relation("RerunBug", fields: [rerunBugId], references: [id], onDelete: SetNull)
 
-  attempts   TestRunAttempt[]
-  bugLinks   TestRunItemBug[]
+  // Agent lease: running* set by claim, extended by heartbeat, expired when leaseExpiresAt < now
+  runningByUserId  String?
+  runningBy        User?     @relation("ItemRunner", fields: [runningByUserId], references: [id], onDelete: SetNull)
+  runningAgentName String?
+  runningSince     DateTime?
+  heartbeatAt      DateTime?
+  leaseExpiresAt   DateTime?
+  currentStep      Int?
+  totalSteps       Int?
+
+  attempts TestRunAttempt[]
+  bugLinks TestRunItemBug[]
 
   @@unique([testRunId, testCaseId])
   @@index([testRunId, status])
@@ -476,6 +490,10 @@ model TestRunAttempt {
   executedById      String?
   executedBy        User?             @relation("AttemptExecutor", fields: [executedById], references: [id], onDelete: SetNull)
   viaAgent          Boolean           @default(false)
+  agentName         String?
+  toolName          String?
+  agentSessionId    String?
+  agentSession      AgentRun?         @relation(fields: [agentSessionId], references: [id], onDelete: SetNull)
   createdAt         DateTime          @default(now())
 
   bugLinks TestRunItemBug[]
@@ -500,22 +518,29 @@ model TestRunItemBug {
 // Phase 3: MCP & AI Agent Models
 // -------------------------------------------------------------
 
+enum ApiKeyPreset {
+  AGENT_QA
+  READ_ONLY
+  CUSTOM
+}
+
 model ApiKey {
-  id          String      @id @default(uuid())
+  id          String       @id @default(uuid())
   projectId   String
-  project     Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  project     Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
   name        String // e.g. "Claude Code MCP - QA Regression"
-  keyHash     String      @unique // sha256 hash of plaintext key
+  keyHash     String       @unique // sha256 hash of plaintext key
   keyPrefix   String // e.g. "br_live_abc..."
   scopes      String[] // ["bug:read", "bug:create", "bug:comment", "bug:attach"]
-  role        ProjectRole @default(QA)
+  role        ProjectRole  @default(QA)
   expiresAt   DateTime?
   createdById String
-  createdBy   User        @relation(fields: [createdById], references: [id])
+  createdBy   User         @relation(fields: [createdById], references: [id])
+  preset      ApiKeyPreset @default(CUSTOM)
   revokedAt   DateTime?
   lastUsedAt  DateTime?
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
 
   agentRuns AgentRun[]
 
@@ -543,6 +568,16 @@ model AgentRun {
   runId       String // unique identifier passed by the agent run
   createdBugs Bug[]
   createdAt   DateTime @default(now())
+
+  // Agent session (F9)
+  toolName   String?
+  workdir    String?
+  testRunId  String?
+  testRun    TestRun?         @relation(fields: [testRunId], references: [id], onDelete: SetNull)
+  startedAt  DateTime         @default(now())
+  finishedAt DateTime?
+  summary    Json?
+  attempts   TestRunAttempt[]
 
   @@unique([projectId, runId])
   @@index([projectId, createdAt])

@@ -1,6 +1,8 @@
 import crypto from "node:crypto";
 import { prisma } from "./db";
 
+export const AGENT_QA_SCOPES = ["bug:read", "bug:create", "bug:comment", "testcase:read", "testrun:execute", "evidence:upload"];
+
 export function hashApiKey(key: string): string {
   return crypto.createHash("sha256").update(key).digest("hex");
 }
@@ -44,7 +46,8 @@ export async function verifyApiKey(rawKey: string, requiredScope?: string) {
     return { valid: false, error: `Scope '${requiredScope}' tidak diizinkan untuk key ini`, status: 403 };
   }
 
-  // Rate limiter: max 30 calls / minute per key
+  // Rate limiter: max 30 calls / minute per key; 120 for the AGENT_QA preset (heartbeat + results + evidence)
+  const limit = apiKey.preset === "AGENT_QA" ? 120 : 30;
   const now = new Date();
   const windowSlot = new Date(
     now.getFullYear(),
@@ -73,8 +76,8 @@ export async function verifyApiKey(rawKey: string, requiredScope?: string) {
     },
   });
 
-  if (rateLimit.callCount > 30) {
-    return { valid: false, error: "Rate limit terlampaui (maksimal 30 request per menit)", status: 429 };
+  if (rateLimit.callCount > limit) {
+    return { valid: false, error: `Rate limit terlampaui (maksimal ${limit} request per menit)`, status: 429 };
   }
 
   // Record lastUsedAt non-blocking
