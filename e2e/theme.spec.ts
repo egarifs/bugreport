@@ -6,12 +6,18 @@ test("AC-THEME-01 pilihan tema Gelap tersimpan dan dipakai sebelum render", asyn
   await page.getByRole("button", { name: "Login Dev (Auto-create user)" }).click();
   await page.waitForURL(/\/projects/);
   await page.waitForLoadState("networkidle");
-  await page.locator('button[aria-haspopup="menu"]:visible').click();
+  // Click can land before hydration on slow CI: retry until the menu is open.
+  const trigger = page.locator('[data-testid="profile-menu-trigger"]:visible');
+  const openMenu = () => expect(async () => {
+    if ((await trigger.getAttribute("aria-expanded")) !== "true") await trigger.click();
+    await expect(trigger).toHaveAttribute("aria-expanded", "true", { timeout: 1000 });
+  }).toPass({ timeout: 15000 });
+  await openMenu();
   await page.getByRole("button", { name: "Gelap" }).click();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
   await page.reload();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
-  await page.locator('button[aria-haspopup="menu"]:visible').click();
+  await openMenu();
   await page.getByRole("button", { name: "Ikut sistem" }).click();
   await expect(page.locator("html")).not.toHaveAttribute("data-theme", /.+/);
 });
