@@ -148,18 +148,8 @@ PORT=3001 npx next start -p 3001
 - Secret: `/opt/secrets/bugreport.env` (600), di-symlink jadi `.env`. `APP_TAG` = git sha image.
 - Backup: `/opt/backups/backup-bugreport.sh` via `/etc/cron.d/bugreport-backup` 02:30, output `/opt/backups/bugreport` (retensi 7 hari, restore test OK).
 
-Deploy rilis baru (dari laptop, tanpa registry):
+Deploy rilis baru (dari laptop, tanpa registry): `./deploy/deploy.sh`. Skrip: build image, kirim ke server, backup, `prisma migrate deploy`, `up -d app`. Skema produksi awalnya dibuat dengan `db push` (tanpa `_prisma_migrations`); eksekusi pertama otomatis menandai 3 migrasi lama sebagai sudah diterapkan (`migrate resolve --applied`). Teruji pada salinan dump produksi 2026-11-10 (5 bug, 65 test case: hasil sama dengan skema, tanpa kehilangan data).
 
-```bash
-SHA=$(git rev-parse --short HEAD)
-docker build --network host -t bugreport-app:$SHA .
-docker save bugreport-app:$SHA | gzip -1 | ssh root@100.110.252.41 'gunzip | docker load'
-ssh root@100.110.252.41 "/opt/backups/backup-bugreport.sh && cd /opt/stacks/bugreport \
-  && sed -i 's/^APP_TAG=.*/APP_TAG=$SHA/' .env \
-  && docker compose run --rm --no-deps app node_modules/.bin/prisma db push --skip-generate \
-  && docker compose up -d app"
-```
-
-Skema baru dengan backfill data (mis. `deploy/backfill-modules.sql`, idempotent): `scp` ke server, lalu jalankan `docker exec -i bugreport-db-1 psql -U <user> -d <db> < file.sql` setelah `db push`.
+Skema baru dengan backfill data (mis. `deploy/backfill-modules.sql`, idempotent): `scp` ke server, lalu jalankan `docker exec -i bugreport-db-1 psql -U <user> -d <db> < file.sql` setelah `migrate deploy`.
 
 Rollback: set `APP_TAG` ke sha sebelumnya, lalu `docker compose up -d app`. Jika skema berubah, restore dump `db-*.sql.gz` terakhir.
