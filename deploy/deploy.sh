@@ -10,7 +10,7 @@ docker build --network host -t bugreport-app:$SHA .
 docker save bugreport-app:$SHA | gzip -1 | ssh $HOST 'gunzip | docker load'
 ssh $HOST "SHA=$SHA bash -s" <<'REMOTE'
 set -euo pipefail
-/opt/backups/backup-bugreport.sh
+/opt/backups/backup-bugreport.sh </dev/null
 cd /opt/stacks/bugreport
 PREV=$(grep ^APP_TAG= .env | cut -d= -f2); echo "prev tag: $PREV"
 sed -i "s/^APP_TAG=.*/APP_TAG=$SHA/" .env
