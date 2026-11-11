@@ -4,7 +4,7 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --legacy-peer-deps --ignore-scripts
 COPY . .
-RUN npx prisma generate && npm run build && npm prune --omit=dev --legacy-peer-deps
+RUN NODE_OPTIONS=--dns-result-order=ipv4first npx prisma generate && NODE_OPTIONS=--dns-result-order=ipv4first npm run build && npm prune --omit=dev --legacy-peer-deps
 
 FROM node:22-alpine
 RUN apk add --no-cache openssl
