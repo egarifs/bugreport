@@ -28,7 +28,7 @@ Mockup: `90`–`95`. Instruksi agent: `../agent/bugboard-qa-runner.md`.
 
 **AC-AG-05 · Hasil langsung atas nama QA**
 - Ketika: `record_result` Gagal untuk TC-018 dengan `failedStep=3` dan dua bukti.
-- Maka: percobaan baru tercatat dengan pelaksana Ega, label "via agent pi", dan `sessionId`. Hasil Gagal tanpa bukti ditolak dengan pesan jelas. File > 20 MB ditolak dengan saran mengirim link.
+- Maka: percobaan baru tercatat dengan pelaksana Ega, label "via agent pi", dan `sessionId`. Hasil Gagal tanpa bukti ditolak dengan pesan jelas. File > 10 MB ditolak dengan saran mengirim link.
 
 **AC-AG-06 · Bug selalu Draft dan dedupe**
 - Ketika: `search_bugs` menemukan CRM-6 aktif dan agent memanggil `link_bug_to_item`.

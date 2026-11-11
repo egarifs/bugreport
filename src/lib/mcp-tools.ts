@@ -10,6 +10,7 @@ import { readDocText } from "./business-docs";
 import fs from "node:fs/promises";
 import path from "node:path";
 import * as agent from "./agent-service";
+import { listTestResources, reportResourceStatus } from "./resource-service";
 import { agentReadiness, fillTestData } from "./agent-readiness";
 
 export interface McpContext {
@@ -211,6 +212,16 @@ export const MCP_TOOLS_DEFINITIONS = [
     inputSchema: { type: "object", properties: { testRunId: { type: "string" }, itemId: { type: "string" }, agentName: { type: "string" }, sessionId: { type: "string" } } },
   },
   {
+    name: "list_test_resources",
+    description: "Link dokumen akun uji untuk peran key ini (label, url, penanggung jawab). Hanya link, tanpa kredensial.",
+    inputSchema: { type: "object", properties: {} },
+  },
+  {
+    name: "report_resource_status",
+    description: "Lapor hasil membuka link akun uji. status: OK | UNREACHABLE | ROLE_MISSING (sertakan role). Masalah memberi notifikasi ke penanggung jawab (maks 1/jam).",
+    inputSchema: { type: "object", properties: { status: { type: "string" }, role: { type: "string" } }, required: ["status"] },
+  },
+  {
     name: "heartbeat",
     description: "Perpanjang lease item dan perbarui langkah yang sedang berjalan.",
     inputSchema: { type: "object", properties: { itemId: { type: "string" }, step: { type: "number" }, totalSteps: { type: "number" } }, required: ["itemId"] },
@@ -270,6 +281,8 @@ export async function executeMcpTool(
       case "create_test_run": return out(await agent.createTestRun(ctx, a));
       case "get_test_run": return out(await agent.getTestRun(ctx, String(args.testRunId ?? "")));
       case "claim_next_item": return out(await agent.claimItem(ctx, a));
+      case "list_test_resources": return out(await listTestResources(ctx));
+      case "report_resource_status": return out(await reportResourceStatus(ctx, a));
       case "heartbeat": return out(await agent.heartbeat(ctx, a));
       case "record_result": return out(await agent.recordResult(ctx, a));
       case "upload_evidence": return out(await agent.uploadEvidence(ctx, a));

@@ -94,7 +94,7 @@ export async function POST(req: NextRequest) {
     if (toolName === "create_test_cases") requiredScope = "testcase:create";
     if (toolName === "upload_business_doc") requiredScope = "doc:manage";
     if (toolName === "search_test_cases" || toolName === "get_test_case") requiredScope = "testcase:read";
-    if (["start_session", "get_test_run", "claim_next_item", "heartbeat", "record_result", "finish_session"].includes(toolName)) requiredScope = "testrun:execute";
+    if (["start_session", "list_test_resources", "report_resource_status", "get_test_run", "claim_next_item", "heartbeat", "record_result", "finish_session"].includes(toolName)) requiredScope = "testrun:execute";
     if (toolName === "upload_evidence") requiredScope = "evidence:upload";
     if (toolName === "create_test_run") requiredScope = "testrun:create";
     if (toolName === "link_bug_to_item") requiredScope = "bug:comment";
