@@ -141,7 +141,7 @@ export async function logAttempt(
   actor: Actor,
   projectId: string,
   itemId: string,
-  input: { result: string; actualResult?: string; notes?: string; build?: string; evidenceUrl?: string; viaAgent?: boolean },
+  input: { result: string; actualResult?: string; notes?: string; build?: string; evidenceUrl?: string; environment?: string; agent?: { name: string; toolName?: string; sessionId?: string } },
 ): Promise<Result> {
   const item = await loadItem(projectId, itemId);
   if (!item) return { error: "Item tidak ditemukan." };
@@ -167,10 +167,13 @@ export async function logAttempt(
         notes,
         evidenceUrl,
         build: input.build?.trim() || item.testRun.buildVersion,
-        environment: item.testRun.environment,
+        environment: input.environment?.trim() || item.testRun.environment,
         testCaseVersionId: item.testCaseVersionId,
         executedById: actor.id,
-        viaAgent: Boolean(input.viaAgent),
+        viaAgent: Boolean(input.agent),
+        agentName: input.agent?.name ?? null,
+        toolName: input.agent?.toolName ?? null,
+        agentSessionId: input.agent?.sessionId ?? null,
       },
     });
     await tx.testRunItem.update({
@@ -185,6 +188,8 @@ export async function logAttempt(
         needsRerun: false,
         rerunBuild: null,
         rerunBugId: null,
+        // a recorded result ends any agent lease
+        runningByUserId: null, runningAgentName: null, runningSince: null, heartbeatAt: null, leaseExpiresAt: null, currentStep: null, totalSteps: null,
       },
     });
   });

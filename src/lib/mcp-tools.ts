@@ -9,6 +9,8 @@ import { saveTestCaseCore } from "@/lib/testcase-service";
 import { readDocText } from "./business-docs";
 import fs from "node:fs/promises";
 import path from "node:path";
+import * as agent from "./agent-service";
+import { agentReadiness, fillTestData } from "./agent-readiness";
 
 export interface McpContext {
   projectId: string;
@@ -67,6 +69,8 @@ export const MCP_TOOLS_DEFINITIONS = [
         component: { type: "string", description: "Nama modul dari list_modules. Nama tak dikenal dikosongkan; QA isi saat review." },
         agentName: { type: "string", description: "Nama automated agent pelapor, misal: playwright-qa" },
         runId: { type: "string", description: "ID run pipeline pengujian CI/CD" },
+        sessionId: { type: "string", description: "sessionId dari start_session (opsional)" },
+        testRunItemId: { type: "string", description: "Tautkan bug ke item test run (opsional)" },
         force: { type: "boolean", description: "Set true jika ingin tetap membuat bug meski terdeteksi duplikat mirip" },
       },
       required: ["title", "stepsToReproduce", "expectedResult", "actualResult", "environment"],
@@ -181,6 +185,58 @@ export const MCP_TOOLS_DEFINITIONS = [
       required: ["testCases"],
     },
   },
+  {
+    name: "start_session",
+    description: "Mulai sesi agent; semua hasil dan bug yang dikirim dikelompokkan ke sesi ini. Mengembalikan sessionId.",
+    inputSchema: { type: "object", properties: { agentName: { type: "string" }, toolName: { type: "string" }, workdir: { type: "string" }, testRunId: { type: "string" } }, required: ["agentName"] },
+  },
+  {
+    name: "list_agent_test_cases",
+    description: "Daftar test case berstatus Siap yang bertanda 'Siap untuk agent'. includeMissing=true juga menampilkan yang belum lengkap beserta alasannya.",
+    inputSchema: { type: "object", properties: { query: { type: "string" }, priority: { type: "string" }, includeMissing: { type: "boolean" } } },
+  },
+  {
+    name: "create_test_run",
+    description: "Buat test run. Tanpa testCaseCodes: semua test case Siap yang bertanda 'Siap untuk agent'.",
+    inputSchema: { type: "object", properties: { name: { type: "string" }, environment: { type: "string" }, buildVersion: { type: "string" }, testCaseCodes: { type: "array", items: { type: "string" } } }, required: ["name"] },
+  },
+  {
+    name: "get_test_run",
+    description: "Item test run beserta status terakhir dan apakah sedang dijalankan.",
+    inputSchema: { type: "object", properties: { testRunId: { type: "string" } }, required: ["testRunId"] },
+  },
+  {
+    name: "claim_next_item",
+    description: "Ambil item berikutnya (atau itemId tertentu) dan kunci selama 90 detik. WAJIB sebelum eksekusi. Panggil heartbeat tiap langkah (<= 30 detik).",
+    inputSchema: { type: "object", properties: { testRunId: { type: "string" }, itemId: { type: "string" }, agentName: { type: "string" }, sessionId: { type: "string" } } },
+  },
+  {
+    name: "heartbeat",
+    description: "Perpanjang lease item dan perbarui langkah yang sedang berjalan.",
+    inputSchema: { type: "object", properties: { itemId: { type: "string" }, step: { type: "number" }, totalSteps: { type: "number" } }, required: ["itemId"] },
+  },
+  {
+    name: "record_result",
+    description: "Catat hasil item sebagai percobaan baru atas nama pemilik key. result: PASS | FAIL | BLOCKED | SKIPPED. FAIL wajib failedStep dan minimal satu link bukti; BLOCKED wajib blockedReason.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        itemId: { type: "string" }, result: { type: "string" }, actualResult: { type: "string" }, failedStep: { type: "number" }, blockedReason: { type: "string" },
+        buildVersion: { type: "string" }, environment: { type: "string" }, toolName: { type: "string" }, links: { type: "array", items: { type: "string" } }, notes: { type: "string" }, sessionId: { type: "string" },
+      },
+      required: ["itemId", "result"],
+    },
+  },
+  {
+    name: "link_bug_to_item",
+    description: "Tautkan bug yang sudah ada ke item dan beri komentar bukti (build, lingkungan, langkah gagal) alih-alih membuat Draft baru.",
+    inputSchema: { type: "object", properties: { itemId: { type: "string" }, bugKey: { type: "string" }, comment: { type: "string" } }, required: ["itemId", "bugKey"] },
+  },
+  {
+    name: "finish_session",
+    description: "Akhiri sesi dan simpan ringkasan (jumlah hasil, bug baru, bug ditautkan).",
+    inputSchema: { type: "object", properties: { sessionId: { type: "string" }, summary: { type: "string" } }, required: ["sessionId"] },
+  },
 ];
 
 export async function executeMcpTool(
@@ -189,7 +245,7 @@ export async function executeMcpTool(
   ctx: McpContext
 ): Promise<{ content: Array<{ type: "text"; text: string }>; isError?: boolean }> {
   try {
-  const qaOnlyTools = ["create_bug_draft", "attach_bug_screenshot", "create_test_cases", "upload_business_doc"];
+  const qaOnlyTools = ["start_session", "create_test_run", "claim_next_item", "heartbeat", "record_result", "link_bug_to_item", "finish_session", "create_bug_draft", "attach_bug_screenshot", "create_test_cases", "upload_business_doc"];
   if (qaOnlyTools.includes(toolName) && ctx.role !== "QA" && ctx.role !== "ADMIN") {
     return {
       content: [
@@ -201,7 +257,19 @@ export async function executeMcpTool(
       isError: true,
     };
   }
+    const out = (r: object) => ({ content: [{ type: "text" as const, text: JSON.stringify(r) }], isError: "error" in r });
+    const a = args as never as Record<string, never>;
     switch (toolName) {
+      case "start_session": return out(await agent.startSession(ctx, a));
+      case "list_agent_test_cases": return out(await agent.listAgentTestCases(ctx, a));
+      case "create_test_run": return out(await agent.createTestRun(ctx, a));
+      case "get_test_run": return out(await agent.getTestRun(ctx, String(args.testRunId ?? "")));
+      case "claim_next_item": return out(await agent.claimItem(ctx, a));
+      case "heartbeat": return out(await agent.heartbeat(ctx, a));
+      case "record_result": return out(await agent.recordResult(ctx, a));
+      case "link_bug_to_item": return out(await agent.linkBug(ctx, a));
+      case "finish_session": return out(await agent.finishSession(ctx, a));
+
       case "list_modules": {
         const mods = await activeModules(ctx.projectId);
         return { content: [{ type: "text", text: JSON.stringify(mods.map((m) => m.name)) }] };
@@ -338,7 +406,15 @@ export async function executeMcpTool(
         }
 
         // 2. Track or upsert AgentRun
-        const agentRun = await prisma.agentRun.upsert({
+        const sess = args.sessionId
+          ? await prisma.agentRun.findFirst({ where: { id: String(args.sessionId), projectId: ctx.projectId, apiKeyId: ctx.apiKeyId } })
+          : null;
+        if (args.sessionId && !sess) return { content: [{ type: "text", text: "Sesi tidak ditemukan atau bukan milik key ini." }], isError: true };
+        const itemId = args.testRunItemId ? String(args.testRunItemId) : null;
+        if (itemId && !(await prisma.testRunItem.findFirst({ where: { id: itemId, testRun: { projectId: ctx.projectId } }, select: { id: true } }))) {
+          return { content: [{ type: "text", text: "testRunItemId tidak ditemukan di project ini." }], isError: true };
+        }
+        const agentRun = sess ?? await prisma.agentRun.upsert({
           where: {
             projectId_runId: {
               projectId: ctx.projectId,
@@ -390,6 +466,10 @@ export async function executeMcpTool(
           });
         });
 
+        if (itemId) {
+          const last = await prisma.testRunAttempt.findFirst({ where: { itemId }, orderBy: { seq: "desc" }, select: { id: true } });
+          await prisma.testRunItemBug.create({ data: { itemId, bugId: createdBug.id, attemptId: last?.id ?? null } });
+        }
         await recordAuditLog({
           projectId: ctx.projectId,
           actorId: ctx.actorId,
@@ -682,10 +762,13 @@ export async function executeMcpTool(
                 testType: tc.testType,
                 targetRole: tc.targetRole,
                 precondition: tc.precondition,
-                steps: tc.steps,
+                steps: fillTestData(tc.steps, tc.testData),
                 expectedResult: tc.expectedResult,
                 referenceUrl: tc.referenceUrl,
                 module: tc.module?.name || tc.moduleArea,
+                testData: tc.testData,
+                agentReady: tc.agentReady,
+                readiness: agentReadiness(tc),
               }),
             },
           ],
