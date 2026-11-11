@@ -9,7 +9,7 @@ import { hasPermission } from "@/lib/permissions";
 import { dailyTokenQuota, projectTokensToday } from "@/lib/chat-quota";
 import { ProjectRole } from "@prisma/client";
 import { revalidatePath } from "next/cache";
-import { generateApiKey } from "@/lib/mcp-auth";
+import { generateApiKey, AGENT_QA_SCOPES } from "@/lib/mcp-auth";
 
 export default async function ProjectSettingsPage({
   params,
@@ -136,7 +136,11 @@ export default async function ProjectSettingsPage({
 
                     const { rawKey, keyHash, keyPrefix } = generateApiKey();
 
-                    const scopes = role === "QA"
+                    const agentQa = formData.get("preset") === "AGENT_QA";
+                    // Agent QA: read cases, write results/evidence, create Draft bugs. No status change, no settings.
+                    const scopes = agentQa
+                      ? AGENT_QA_SCOPES
+                      : role === "QA"
                       ? ["bug:read", "bug:create", "bug:comment", "bug:attach", "testcase:create", "testcase:read", "doc:read", "doc:manage"]
                       : ["bug:read", "bug:comment", "testcase:read", "doc:read"];
 
@@ -146,7 +150,8 @@ export default async function ProjectSettingsPage({
                         name,
                         keyHash,
                         keyPrefix,
-                        role,
+                        role: agentQa ? "QA" : role,
+                        preset: agentQa ? "AGENT_QA" : "CUSTOM",
                         expiresAt,
                         scopes,
                         createdById: actor.id,
@@ -171,6 +176,15 @@ export default async function ProjectSettingsPage({
                   >
                     <option value="QA">Role: QA (Full CRUD)</option>
                     <option value="DEVELOPER">Role: Non-QA (View & Comment)</option>
+                  </select>
+                  <select
+                    name="preset"
+                    className="text-xs px-2.5 py-1.5 border border-slate-300 rounded bg-surface text-slate-700 outline-none"
+                    title="Preset kunci"
+                    aria-label="Preset kunci"
+                  >
+                    <option value="CUSTOM">Preset: Sesuai role</option>
+                    <option value="AGENT_QA">Preset: Agent QA</option>
                   </select>
                   <select
                     name="expireDays"

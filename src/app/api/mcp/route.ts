@@ -66,6 +66,10 @@ export async function POST(req: NextRequest) {
     });
   }
 
+  // Notifications carry no id and get no body (MCP spec); ping answers an empty result.
+  if (method === "notifications/initialized") return new NextResponse(null, { status: 202 });
+  if (method === "ping") return NextResponse.json({ jsonrpc: "2.0", id, result: {} });
+
   // 2. List available tools
   if (method === "tools/list") {
     return NextResponse.json({
