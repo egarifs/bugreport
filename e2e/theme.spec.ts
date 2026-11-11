@@ -6,12 +6,12 @@ test("AC-THEME-01 pilihan tema Gelap tersimpan dan dipakai sebelum render", asyn
   await page.getByRole("button", { name: "Login Dev (Auto-create user)" }).click();
   await page.waitForURL(/\/projects/);
   await page.waitForLoadState("networkidle");
-  await page.getByRole("button", { name: /step1-qa/ }).click();
+  await page.locator('button[aria-haspopup="menu"]:visible').click();
   await page.getByRole("button", { name: "Gelap" }).click();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
   await page.reload();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
-  await page.getByRole("button", { name: /step1-qa/ }).click();
+  await page.locator('button[aria-haspopup="menu"]:visible').click();
   await page.getByRole("button", { name: "Ikut sistem" }).click();
   await expect(page.locator("html")).not.toHaveAttribute("data-theme", /.+/);
 });

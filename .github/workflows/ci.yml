@@ -83,3 +83,10 @@ jobs:
           AUTH_SECRET: test-secret-at-least-32-chars-long-e2e
           ADMIN_EMAILS: step1-qa@example.test,admin@example.com
         run: npx playwright test
+      - name: Upload Playwright results on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-results
+          path: test-results/
+          retention-days: 7
