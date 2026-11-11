@@ -1,5 +1,6 @@
 import { SubmitButton } from "@/components/ui/action-form";
 import { ModulesSection } from "./modules-section";
+import { ResourceSection } from "./resource-section";
 import { requireProjectPermission } from "@/lib/authz";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
@@ -98,6 +99,7 @@ export default async function ProjectSettingsPage({
           </section>
 
           <ModulesSection projectId={project.id} projectKey={project.key} canManage={canManage} />
+          {["ADMIN", "QA", "DEVELOPER"].includes(role) && <ResourceSection projectId={project.id} projectKey={project.key} canManage={canManage} />}
 
           {/* AI Agent API Keys Section (CRUD vs View Only Mode) */}
           <section className="bg-surface border border-slate-200 rounded-lg p-6 shadow-sm">

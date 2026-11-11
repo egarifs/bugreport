@@ -56,14 +56,15 @@ enum CommentType {
 }
 
 model User {
-  id        String     @id @default(uuid())
-  email     String     @unique
-  name      String?
-  image     String?
-  status    UserStatus @default(PENDING)
-  isAdmin   Boolean    @default(false)
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  id                 String                @id @default(uuid())
+  email              String                @unique
+  name               String?
+  image              String?
+  status             UserStatus            @default(PENDING)
+  isAdmin            Boolean               @default(false)
+  createdAt          DateTime              @default(now())
+  updatedAt          DateTime              @updatedAt
+  ownedResourceLinks ProjectResourceLink[] @relation("ResourceOwner")
 
   reviewedById  String?
   reviewedBy    User?     @relation("UserReviewer", fields: [reviewedById], references: [id])
@@ -116,6 +117,7 @@ model Project {
   apiKeys                 ApiKey[]
   agentRuns               AgentRun[]
   evidence                Evidence[]
+  resourceLinks           ProjectResourceLink[]
   chatMessages            ChatMessage[]
   modules                 Module[]
   notificationPreferences NotificationPreference[]
@@ -688,4 +690,46 @@ model NotificationPreference {
 
   @@unique([userId, projectId, type])
   @@index([userId])
+}
+
+// F9: link to the test-accounts document. Only a link is stored (never credentials). Max one per (project, kind, audience).
+enum ResourceKind {
+  TEST_ACCOUNTS
+}
+
+enum ResourceAudience {
+  PRIMARY
+  VENDOR
+}
+
+enum ResourceVisibility {
+  INTERNAL
+  INTERNAL_AND_VENDOR
+}
+
+enum ResourceProblem {
+  UNREACHABLE
+  ROLE_MISSING
+}
+
+model ProjectResourceLink {
+  id              String             @id @default(uuid())
+  projectId       String
+  project         Project            @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  kind            ResourceKind       @default(TEST_ACCOUNTS)
+  audience        ResourceAudience
+  label           String
+  url             String
+  visibility      ResourceVisibility @default(INTERNAL)
+  ownerUserId     String?
+  owner           User?              @relation("ResourceOwner", fields: [ownerUserId], references: [id], onDelete: SetNull)
+  lastOkAt        DateTime?
+  lastOkByUserId  String?
+  lastProblem     ResourceProblem?
+  lastProblemRole String?
+  lastProblemAt   DateTime?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  @@unique([projectId, kind, audience])
 }

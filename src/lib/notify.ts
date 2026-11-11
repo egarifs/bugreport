@@ -13,6 +13,7 @@ export type NotifyType =
   | "agent_session"
   | "doc_approval"
   | "mention"
+  | "resource_problem"
   | "user_pending";
 
 const RETENTION_DAYS = 90;
@@ -36,6 +37,7 @@ const DEFAULT_MODES: Record<string, NotificationDeliveryMode> = {
   agent_session: NotificationDeliveryMode.IMMEDIATE,
   doc_approval: NotificationDeliveryMode.IMMEDIATE,
   mention: NotificationDeliveryMode.IMMEDIATE,
+  resource_problem: NotificationDeliveryMode.IMMEDIATE,
   user_pending: NotificationDeliveryMode.IMMEDIATE,
 };
 
@@ -235,6 +237,32 @@ export async function notifyRerunRequired(params: {
     });
   } catch (e) {
     console.error("notify rerun failed:", e instanceof Error ? e.message : "unknown");
+    return 0;
+  }
+}
+
+export async function notifyResourceProblem(params: {
+  projectId: string;
+  projectKey: string;
+  ownerId: string | null;
+  label: string;
+  problem: "UNREACHABLE" | "ROLE_MISSING";
+  role: string | null;
+  actor: Actor;
+}) {
+  try {
+    if (!params.ownerId) return 0;
+    const targets = await allowed(params.projectId, [params.ownerId], "project.read");
+    return save(targets, params.actor, {
+      projectId: params.projectId,
+      type: "resource_problem",
+      title: params.problem === "ROLE_MISSING" ? `Peran "${params.role ?? "?"}" tidak ada di akun uji` : "Link akun uji tidak bisa dibuka",
+      body: clip(params.label),
+      href: `/projects/${params.projectKey}/settings`,
+      involvedIds: targets,
+    });
+  } catch (e) {
+    console.error("notify resource failed:", e instanceof Error ? e.message : "unknown");
     return 0;
   }
 }
