@@ -192,8 +192,6 @@ model Bug {
 
   // Phase 2B Bridge
   // Deprecated (Step 10): replaced by testRunLinks; column dropped in a later migration.
-  testRunItemId String?          @unique
-  testRunItem   TestRunItem?     @relation("TestRunItemBug", fields: [testRunItemId], references: [id])
   testRunLinks  TestRunItemBug[]
   rerunItems    TestRunItem[]    @relation("RerunBug")
 
@@ -454,7 +452,6 @@ model TestRunItem {
   rerunBugId        String?
   rerunBug          Bug?             @relation("RerunBug", fields: [rerunBugId], references: [id], onDelete: SetNull)
 
-  createdBug Bug?             @relation("TestRunItemBug") // deprecated, see Bug.testRunLinks
   attempts   TestRunAttempt[]
   bugLinks   TestRunItemBug[]
 
