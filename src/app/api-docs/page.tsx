@@ -1,5 +1,5 @@
 import { AppShell } from "@/components/layout/app-shell";
-import Script from "next/script";
+import { SwaggerUI } from "@/components/docs/swagger-ui";
 
 export default function SwaggerDocsPage() {
   return (
@@ -24,34 +24,7 @@ export default function SwaggerDocsPage() {
         </header>
 
         <main className="flex-1 p-2">
-          {/* Native Swagger UI bundle via unpkg without extra npm packages */}
-          <link
-            rel="stylesheet"
-            href="https://unpkg.com/swagger-ui-dist@5.18.2/swagger-ui.css"
-          />
-          <div id="swagger-ui" />
-          <Script
-            src="https://unpkg.com/swagger-ui-dist@5.18.2/swagger-ui-bundle.js"
-            strategy="afterInteractive"
-            onLoad={() => {
-              // @ts-expect-error SwaggerUIBundle injected globally
-              if (window.SwaggerUIBundle) {
-                // @ts-expect-error SwaggerUIBundle injected globally
-                window.SwaggerUIBundle({
-                  url: "/api/docs/openapi.json",
-                  dom_id: "#swagger-ui",
-                  deepLinking: true,
-                  presets: [
-                    // @ts-expect-error presets
-                    window.SwaggerUIBundle.presets.apis,
-                    // @ts-expect-error presets
-                    window.SwaggerUIBundle.SwaggerUIStandalonePreset,
-                  ],
-                  layout: "BaseLayout",
-                });
-              }
-            }}
-          />
+          <SwaggerUI />
         </main>
       </div>
     </AppShell>

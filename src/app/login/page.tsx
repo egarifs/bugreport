@@ -18,7 +18,7 @@ export default async function LoginPage({
   }
 
   const { callbackUrl } = await searchParams;
-  const showDevLogin = process.env.NODE_ENV !== "production" || process.env.ENABLE_DEV_LOGIN === "true";
+  const showDevLogin = process.env.ENABLE_DEV_LOGIN === "true";
 
   return (
     <main className="min-h-screen flex items-center justify-center bg-slate-50 p-4">

@@ -6,7 +6,7 @@ import { upsertGoogleUser } from "./user-service";
 import { prisma } from "./db";
 
 // ponytail: Credentials provider enabled for dev/test or when explicitly enabled
-const enableDevLogin = process.env.NODE_ENV !== "production" || process.env.ENABLE_DEV_LOGIN === "true";
+const enableDevLogin = process.env.ENABLE_DEV_LOGIN === "true";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   trustHost: true,
