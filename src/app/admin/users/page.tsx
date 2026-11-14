@@ -8,7 +8,22 @@ import { ProjectRole, UserStatus } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { AppShell } from "@/components/layout/app-shell";
 
-export default async function AdminUsersPage() {
+const TABS = [
+  { key: "pending", label: "Menunggu", status: UserStatus.PENDING },
+  { key: "active", label: "Aktif", status: UserStatus.ACTIVE },
+  { key: "rejected", label: "Ditolak", status: UserStatus.REJECTED },
+  { key: "suspended", label: "Ditangguhkan", status: UserStatus.SUSPENDED },
+] as const;
+
+const isInternal = (email: string) => email.toLowerCase().endsWith("@sismedika.com");
+
+export default async function AdminUsersPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ tab?: string }>;
+}) {
+  const { tab: tabParam } = await searchParams;
+  const tab = TABS.find((t) => t.key === tabParam) ?? TABS[0];
   const session = await auth();
   const user = session?.user as
     | { id?: string; email?: string; isAdmin?: boolean }
@@ -18,13 +33,13 @@ export default async function AdminUsersPage() {
     redirect("/projects");
   }
 
-  const [pendingUsers, activeUsers] = await Promise.all([
+  const [pendingUsers, activeUsers, counts] = await Promise.all([
     prisma.user.findMany({
       where: { status: UserStatus.PENDING },
       orderBy: { createdAt: "desc" },
     }),
     prisma.user.findMany({
-      where: { status: { in: [UserStatus.ACTIVE, UserStatus.SUSPENDED, UserStatus.REJECTED] } },
+      where: { status: tab.status },
       orderBy: { createdAt: "desc" },
       take: 50,
       include: {
@@ -33,7 +48,9 @@ export default async function AdminUsersPage() {
         },
       },
     }),
+    prisma.user.groupBy({ by: ["status"], _count: { _all: true } }),
   ]);
+  const countOf = (st: UserStatus) => counts.find((c) => c.status === st)?._count._all ?? 0;
 
   const projects = await prisma.project.findMany({
     where: { isArchived: false },
@@ -43,23 +60,35 @@ export default async function AdminUsersPage() {
   return (
     <AppShell>
       <div className="min-h-full flex flex-col">
-        <header className="bg-surface border-b border-slate-200 px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span className="font-semibold text-slate-900 text-sm">
-              Admin: User Approval & Management
-            </span>
-            <span className="text-xs bg-slate-100 text-slate-700 font-semibold px-2 py-0.5 rounded">
-              Super Admin Area
-            </span>
-          </div>
+        <header className="px-6 py-4 border-b border-slate-200">
+          <div className="text-xs text-slate-500">Admin situs</div>
+          <h1 className="text-xl font-bold text-slate-900">Persetujuan user</h1>
+          <p className="text-sm text-slate-500">
+            Setujui pendaftar dan beri project awal beserta perannya. Semua keputusan dicatat di audit log.
+          </p>
         </header>
+        <nav aria-label="Status user" className="px-6 flex gap-5 border-b border-slate-200">
+          {TABS.map((t) => (
+            <a
+              key={t.key}
+              href={`/admin/users?tab=${t.key}`}
+              aria-current={t.key === tab.key ? "page" : undefined}
+              className={`min-h-[44px] flex items-center gap-1.5 text-sm font-bold border-b-2 ${
+                t.key === tab.key ? "border-action text-slate-900" : "border-transparent text-slate-500 hover:text-slate-900"
+              }`}
+            >
+              {t.label}
+              <span className="text-xs bg-slate-100 text-slate-700 rounded-full px-1.5">{countOf(t.status)}</span>
+            </a>
+          ))}
+        </nav>
 
         <main className="p-6 space-y-8 flex-1">
-        {/* Pending Section */}
+        {tab.key === "pending" && (
         <section>
           <div className="flex items-center gap-2 mb-3">
             <h2 className="text-base font-bold text-slate-900">
-              Antrean Persetujuan (Pending)
+              Menunggu persetujuan
             </h2>
             <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-warn-bg text-warn">
               {pendingUsers.length}
@@ -78,7 +107,12 @@ export default async function AdminUsersPage() {
                     <div className="font-medium text-sm text-slate-900">
                       {p.name || "(Tanpa nama)"}
                     </div>
-                    <div className="text-xs text-slate-500">{p.email}</div>
+                    <div className="text-xs text-slate-500 flex items-center gap-2">
+                      {p.email}
+                      <span className={`px-1.5 rounded text-xs font-bold ${isInternal(p.email) ? "bg-ok-bg text-ok" : "bg-warn-bg text-warn"}`}>
+                        {isInternal(p.email) ? "Internal" : "Eksternal"}
+                      </span>
+                    </div>
                     <div className="text-xs text-slate-400 mt-1">
                       Mendaftar: {p.createdAt.toLocaleString()}
                     </div>
@@ -201,12 +235,17 @@ export default async function AdminUsersPage() {
               ))}
             </div>
           )}
+          <div className="mt-4 bg-slate-100 border border-slate-200 rounded p-3 text-xs text-slate-600">
+            <b>Peran untuk email eksternal.</b> Domain di luar @sismedika.com disarankan Vendor atau Client. Admin, QA, atau Developer bisa membaca catatan internal.
+          </div>
         </section>
 
-        {/* Existing Users */}
+        )}
+
+        {tab.key !== "pending" && (
         <section>
           <h2 className="text-base font-bold text-slate-900 mb-3">
-            Pengguna Terdaftar
+            Pengguna
           </h2>
           <div className="bg-surface border border-slate-200 rounded divide-y divide-slate-100">
             {activeUsers.map((u) => (
@@ -268,6 +307,7 @@ export default async function AdminUsersPage() {
             ))}
           </div>
         </section>
+        )}
       </main>
     </div>
   </AppShell>

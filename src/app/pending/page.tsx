@@ -15,7 +15,7 @@ export default async function PendingPage() {
   const initials = (user.name || user.email).slice(0, 2).toUpperCase();
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-slate-50 p-4 bg-[radial-gradient(900px_400px_at_20%_0%,rgba(255,214,150,.3),transparent_70%)]">
+    <main className="min-h-screen flex items-center justify-center bg-slate-50 p-4 bg-glow">
       <div className="w-full max-w-[520px] bg-surface rounded-2xl shadow-lg border border-slate-200 p-8 flex flex-col gap-[18px]">
         <div className="flex items-center gap-3">
           <span className="w-7 h-7 rounded-full bg-warn-bg text-warn flex items-center justify-center text-[11px] font-bold">

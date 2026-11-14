@@ -102,3 +102,6 @@ input:not([type="checkbox"]):not([type="radio"]), textarea, select {
 @media (prefers-reduced-motion: reduce) {
   .skeleton-delayed, .skeleton-delayed * { animation-name: skeleton-in !important; }
 }
+
+/* Soft warm glow behind auth pages (token-based, follows theme). */
+.bg-glow { background-image: radial-gradient(900px 400px at 20% 0%, rgb(var(--c-warn-bg) / .6), transparent 70%); }

@@ -21,7 +21,7 @@ export default async function LoginPage({
   const showDevLogin = process.env.ENABLE_DEV_LOGIN === "true";
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-slate-50 p-6 bg-[radial-gradient(900px_400px_at_20%_0%,rgba(255,214,150,.3),transparent_70%)]">
+    <main className="min-h-screen flex items-center justify-center bg-slate-50 p-6 bg-glow">
       <div className="flex flex-col md:flex-row gap-10 md:gap-16 items-center max-w-[1080px] w-full">
         <section className="flex-1">
           <div className="flex items-center gap-2.5 mb-7">
