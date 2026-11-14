@@ -21,28 +21,51 @@ export default async function LoginPage({
   const showDevLogin = process.env.ENABLE_DEV_LOGIN === "true";
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
-      <div className="max-w-md w-full bg-surface rounded-lg shadow-sm border border-slate-200 p-8">
-        <div className="text-center mb-6">
-          <div className="inline-block p-2 bg-ink text-on-ink rounded mb-2 font-mono font-bold text-lg">
-            BR
+    <main className="min-h-screen flex items-center justify-center bg-slate-50 p-6 bg-[radial-gradient(900px_400px_at_20%_0%,rgba(255,214,150,.3),transparent_70%)]">
+      <div className="flex flex-col md:flex-row gap-10 md:gap-16 items-center max-w-[1080px] w-full">
+        <section className="flex-1">
+          <div className="flex items-center gap-2.5 mb-7">
+            <span className="w-10 h-10 rounded-[10px] bg-ink text-on-ink flex items-center justify-center font-mono font-bold text-[13px]">
+              BB
+            </span>
+            <span className="font-bold text-lg">BugBoard Sismedika</span>
           </div>
-          <h1 className="text-2xl font-bold text-slate-900">BugReport</h1>
-          <p className="text-sm text-slate-500 mt-1">
-            Central Bug Tracking for Teams & QA
+          <h1 className="text-[34px] leading-[42px] font-bold max-w-[20ch] mb-3">
+            Satu tempat untuk temuan bug tim internal dan mitra.
+          </h1>
+          <p className="text-base text-slate-600 max-w-[52ch] mb-6">
+            Lapor, triase, uji ulang, dan bagikan status rilis tanpa berpindah aplikasi.
           </p>
-        </div>
+          <ul className="flex flex-col gap-2.5 text-[15px]">
+            {[
+              "Penjaga duplikat saat melapor",
+              "Test run dengan riwayat percobaan",
+              "Laporan rilis siap kirim ke WhatsApp",
+            ].map((t) => (
+              <li key={t} className="flex gap-2.5 items-center">
+                <svg aria-hidden="true" width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M2.5 6.2l2.2 2.2 4.8-4.8" />
+                </svg>
+                {t}
+              </li>
+            ))}
+          </ul>
+        </section>
 
+        <div className="w-full md:w-[400px] bg-surface rounded-2xl shadow-lg border border-slate-200 p-8 flex flex-col gap-4">
+          <h2 className="text-[22px] leading-7 font-bold">Masuk</h2>
+          <p className="text-sm text-slate-600">
+            Gunakan akun Google kantor atau akun Google yang diundang.
+          </p>
         <form
           action={async () => {
             "use server";
             await signIn("google", { redirectTo: callbackUrl || "/projects" });
           }}
-          className="space-y-4"
         >
           <button
             type="submit"
-            className="w-full flex items-center justify-center gap-3 py-2.5 px-4 border border-slate-300 rounded hover:bg-slate-50 text-sm font-medium text-slate-700 transition"
+            className="w-full h-11 flex items-center justify-center gap-3 px-4 border border-slate-400 rounded-lg bg-surface hover:bg-slate-50 text-sm font-bold text-slate-900 transition"
           >
             <svg className="w-4 h-4" viewBox="0 0 24 24">
               <path
@@ -66,8 +89,15 @@ export default async function LoginPage({
           </button>
         </form>
 
+        <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
+          Akun baru perlu disetujui Admin sebelum bisa membuka project. Anda akan melihat status persetujuan setelah masuk.
+        </div>
+        <p className="text-xs text-slate-600">
+          Dengan masuk, aktivitas Anda tercatat di audit log project.
+        </p>
+
         {showDevLogin && (
-          <div className="mt-8 pt-6 border-t border-dashed border-slate-200">
+          <div className="mt-2 pt-4 border-t border-dashed border-slate-200">
             <p className="text-xs font-semibold text-slate-500 mb-3">
               Developer Quick Login
             </p>
@@ -98,6 +128,7 @@ export default async function LoginPage({
             </form>
           </div>
         )}
+        </div>
       </div>
     </main>
   );
