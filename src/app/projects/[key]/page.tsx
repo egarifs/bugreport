@@ -9,7 +9,7 @@ import { activeModules } from "@/lib/modules";
 import { SEVERITY_STYLE, STATUS_LABEL, SeverityBadge, StatusBadge } from "@/components/ui/bug-badges";
 import { StatePanel } from "@/components/ui/state-panel";
 import { SlaBadge } from "@/components/ui/sla-badge";
-import { BugImportModal } from "./bugs/import/bug-import-modal";
+import { BugImportModal, type ImportPreview } from "./bugs/import/bug-import-modal";
 import { parseMarkdownBugs } from "@/lib/markdown-importer";
 import { requireProjectPermission } from "@/lib/authz";
 import { revalidatePath } from "next/cache";
@@ -140,6 +140,37 @@ export default async function ProjectDetailPage({
     return res;
   }
 
+  async function previewMarkdownBugs(_prev: ImportPreview | null, formData: FormData): Promise<ImportPreview> {
+    "use server";
+    const target = await prisma.project.findUnique({ where: { key: String(formData.get("projectKey")) }, select: { id: true } });
+    if (!target) return { error: "Project tidak ditemukan." };
+    const projectId = target.id;
+    await requireProjectPermission(projectId, "bug.create");
+    const file = formData.get("file") as File;
+    if (!file || file.size === 0) return { error: "Pilih file Markdown (.md)." };
+    const parsed = parseMarkdownBugs(await file.text());
+    if (parsed.length === 0) return { error: "Tidak ada bug yang terbaca. Cek format tabel / heading file Markdown." };
+    const [mods, existing] = await Promise.all([
+      activeModules(projectId),
+      prisma.bug.findMany({ where: { projectId }, select: { key: true, title: true } }),
+    ]);
+    const modNames = new Set(mods.map((m) => m.name.toLowerCase()));
+    return {
+      rows: parsed.map((b) => {
+        const area = b.moduleArea?.trim() ?? "";
+        const dup = existing.find((e) => e.title.trim().toLowerCase() === b.title.trim().toLowerCase());
+        const noModule = area && !modNames.has(area.toLowerCase());
+        return {
+          title: b.title,
+          severity: b.severity,
+          module: area || "—",
+          status: dup ? "Mirip" : "Siap",
+          note: dup ? `Mirip ${dup.key}` : noModule ? "Modul tidak ditemukan, masuk tanpa modul" : "",
+        };
+      }),
+    };
+  }
+
   async function handleImportMarkdownBugs(_prev: ActionResult, formData: FormData): Promise<ActionResult> {
     "use server";
     await requireProjectPermission(projectId, "bug.create");
@@ -200,7 +231,7 @@ export default async function ProjectDetailPage({
           </div>
           {canCreate && (
             <div className="flex items-center gap-2">
-              <BugImportModal importAction={handleImportMarkdownBugs} />
+              <BugImportModal importAction={handleImportMarkdownBugs} previewAction={previewMarkdownBugs} projectKey={project.key} />
               <Link
                 href={`/projects/${project.key}/bugs/new`}
                 className="shrink-0 px-3.5 py-2 bg-action hover:bg-action-hover text-on-action text-sm font-bold rounded"
