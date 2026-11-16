@@ -121,6 +121,7 @@ model Project {
   resourceLinks           ProjectResourceLink[]
   chatMessages            ChatMessage[]
   modules                 Module[]
+  sprints                 Sprint[]
   notificationPreferences NotificationPreference[]
 
   @@index([key])
@@ -139,6 +140,27 @@ model ProjectMember {
   @@unique([projectId, userId])
   @@index([userId])
   @@index([projectId, role])
+}
+
+enum SprintStatus {
+  ACTIVE
+  COMPLETED
+}
+
+model Sprint {
+  id        String       @id @default(uuid())
+  projectId String
+  project   Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  name      String
+  startsAt  DateTime
+  endsAt    DateTime
+  status    SprintStatus @default(ACTIVE)
+  closedAt  DateTime?
+  createdAt DateTime     @default(now())
+  bugs      Bug[]
+
+  @@unique([projectId, name])
+  @@index([projectId])
 }
 
 model Bug {
@@ -188,6 +210,8 @@ model Bug {
   fixedInVersion  String?
   fixedInBuild    String?
   dueAt           DateTime?
+  sprintId        String?
+  sprint          Sprint?   @relation(fields: [sprintId], references: [id], onDelete: SetNull)
   verifiedAt      DateTime?
   verifiedInBuild String?
 

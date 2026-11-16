@@ -117,6 +117,18 @@ export function AppSidebar({ user, projects, activeProjectKey }: AppSidebarProps
       badge: null,
     },
     {
+      label: "Sprint",
+      perm: "project.read",
+      icon: (
+        <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M8 7V3m8 4V3M4 11h16M5 5h14a1 1 0 011 1v14a1 1 0 01-1 1H5a1 1 0 01-1-1V6a1 1 0 011-1z" />
+        </svg>
+      ),
+      href: currentKey ? `/projects/${currentKey}/sprints` : "/projects",
+      active: pathname.includes("/sprints"),
+      badge: null,
+    },
+    {
       label: "Test case",
       perm: "testcase.read",
       icon: (
