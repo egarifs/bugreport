@@ -4,10 +4,10 @@ import Script from "next/script";
 export function SwaggerUI() {
   return (
     <>
-      <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5.18.2/swagger-ui.css" />
+      <link rel="stylesheet" href="/swagger/swagger-ui.css" />
       <div id="swagger-ui" />
       <Script
-        src="https://unpkg.com/swagger-ui-dist@5.18.2/swagger-ui-bundle.js"
+        src="/swagger/swagger-ui-bundle.js"
         strategy="afterInteractive"
         onLoad={() => {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any

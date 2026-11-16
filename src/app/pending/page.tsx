@@ -1,5 +1,8 @@
 import { auth, signOut } from "@/lib/auth";
+import { prisma } from "@/lib/db";
 import { redirect } from "next/navigation";
+
+const isRejectedStatus = (s?: string) => s === "REJECTED";
 
 export default async function PendingPage() {
   const session = await auth();
@@ -10,6 +13,9 @@ export default async function PendingPage() {
   if (!user?.email) redirect("/login");
   if (user.status === "ACTIVE") redirect("/projects");
 
+  const row = isRejectedStatus(user.status)
+    ? await prisma.user.findUnique({ where: { email: user.email }, select: { rejectReason: true } })
+    : null;
   const isRejected = user.status === "REJECTED";
   const isSuspended = user.status === "SUSPENDED";
   const initials = (user.name || user.email).slice(0, 2).toUpperCase();
@@ -48,6 +54,11 @@ export default async function PendingPage() {
               ? "Permintaan akses akun Anda tidak disetujui Admin."
               : "Akun Anda sedang ditangguhkan Admin."}{" "}
             Hubungi Admin atau QA lead Anda untuk informasi lebih lanjut.
+            {row?.rejectReason && (
+              <span className="block mt-3 p-3 bg-bad-bg border border-bad-border rounded text-bad">
+                <b>Alasan:</b> {row.rejectReason}
+              </span>
+            )}
           </p>
         ) : (
           <>

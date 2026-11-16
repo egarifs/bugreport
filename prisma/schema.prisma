@@ -70,6 +70,7 @@ model User {
   reviewedBy    User?     @relation("UserReviewer", fields: [reviewedById], references: [id])
   reviewedUsers User[]    @relation("UserReviewer")
   reviewedAt    DateTime?
+  rejectReason  String?
 
   memberships    ProjectMember[]
   reportedBugs   Bug[]           @relation("BugReporter")

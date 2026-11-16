@@ -126,6 +126,8 @@ export default async function AdminUsersPage({
                       const projectId = formData.get("projectId") as string;
                       const role = formData.get("role") as string;
                       if (action !== "approve" && action !== "reject") return { error: "Aksi tidak dikenal." };
+                      const reason = ((formData.get("reason") as string) ?? "").trim().slice(0, 500);
+                      if (action === "reject" && !reason) return { error: "Isi alasan penolakan dulu." };
                       if (action === "approve" && !projectId) return { error: "Pilih project awal sebelum menyetujui." };
                       if (action === "approve" && !(Object.values(ProjectRole) as string[]).includes(role)) return { error: "Role tidak valid." };
                       if (projectId && !(await prisma.project.findUnique({ where: { id: projectId }, select: { id: true } }))) return { error: "Project tidak ditemukan." };
@@ -171,6 +173,7 @@ export default async function AdminUsersPage({
                           where: { id: p.id },
                           data: {
                             status: UserStatus.REJECTED,
+                            rejectReason: reason,
                             reviewedById: reviewer?.id,
                             reviewedAt: new Date(),
                           },
@@ -181,6 +184,7 @@ export default async function AdminUsersPage({
                           action: "user.reject",
                           entityType: "user",
                           entityId: p.id,
+                          changes: { after: { reason } },
                         });
                       }
                       revalidatePath("/admin/users");
@@ -214,6 +218,13 @@ export default async function AdminUsersPage({
                       <option value="ADMIN">Admin Project</option>
                     </select>
 
+                    <input
+                      type="text"
+                      name="reason"
+                      aria-label={`Alasan jika menolak ${p.email}`}
+                      placeholder="Alasan (wajib jika Tolak)"
+                      className="text-xs border border-slate-300 rounded px-2 py-1.5 bg-surface w-48"
+                    />
                     <button
                       type="submit"
                       name="action"
