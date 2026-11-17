@@ -72,6 +72,11 @@ model User {
   reviewedAt    DateTime?
   rejectReason  String?
 
+  // Login kata sandi opsional; ditetapkan Admin. Hash scrypt, tidak pernah dikirim ke klien.
+  passwordHash String?
+  failedLogins Int       @default(0)
+  lockedUntil  DateTime?
+
   memberships    ProjectMember[]
   reportedBugs   Bug[]           @relation("BugReporter")
   assignedBugs   Bug[]           @relation("BugAssignee")

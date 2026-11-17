@@ -1,4 +1,5 @@
 import { auth, signIn } from "@/lib/auth";
+import { AuthError } from "next-auth";
 import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
@@ -6,7 +7,7 @@ export const dynamic = "force-dynamic";
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ callbackUrl?: string }>;
+  searchParams: Promise<{ callbackUrl?: string; error?: string }>;
 }) {
   const session = await auth();
   const user = session?.user as { status?: string } | undefined;
@@ -17,7 +18,7 @@ export default async function LoginPage({
     redirect("/pending");
   }
 
-  const { callbackUrl } = await searchParams;
+  const { callbackUrl, error } = await searchParams;
   const showDevLogin = process.env.ENABLE_DEV_LOGIN === "true";
 
   return (
@@ -87,6 +88,27 @@ export default async function LoginPage({
             </svg>
             Masuk dengan Google
           </button>
+        </form>
+
+        <div className="flex items-center gap-3 text-xs text-slate-500" aria-hidden="true"><span className="flex-1 border-t border-slate-200" />atau<span className="flex-1 border-t border-slate-200" /></div>
+        <form
+          action={async (formData) => {
+            "use server";
+            try {
+              await signIn("password", { email: formData.get("email"), password: formData.get("password"), redirectTo: callbackUrl || "/projects" });
+            } catch (e) {
+              if (e instanceof AuthError) redirect("/login?error=1");
+              throw e;
+            }
+          }}
+          className="flex flex-col gap-3"
+        >
+          {error && <p role="alert" className="text-sm text-bad font-bold">Email atau kata sandi salah, atau akun terkunci sementara.</p>}
+          <label className="text-sm font-bold" htmlFor="pw-email">Email</label>
+          <input id="pw-email" type="email" name="email" required autoComplete="username" className="h-11 px-3 border border-slate-400 rounded-lg text-sm" />
+          <label className="text-sm font-bold" htmlFor="pw-pass">Kata sandi</label>
+          <input id="pw-pass" type="password" name="password" required autoComplete="current-password" className="h-11 px-3 border border-slate-400 rounded-lg text-sm" />
+          <button type="submit" className="h-11 bg-action hover:bg-action-hover text-on-action rounded-lg text-sm font-bold">Masuk</button>
         </form>
 
         <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">

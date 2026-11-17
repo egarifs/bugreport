@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { redirect } from "next/navigation";
 import { recordAuditLog } from "@/lib/user-service";
+import { hashPassword, MIN_PASSWORD } from "@/lib/password";
 import { ProjectRole, UserStatus } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { AppShell } from "@/components/layout/app-shell";
@@ -35,10 +36,12 @@ export default async function AdminUsersPage({
 
   const [pendingUsers, activeUsers, counts] = await Promise.all([
     prisma.user.findMany({
+      omit: { passwordHash: true },
       where: { status: UserStatus.PENDING },
       orderBy: { createdAt: "desc" },
     }),
     prisma.user.findMany({
+      omit: { passwordHash: true },
       where: { status: tab.status },
       orderBy: { createdAt: "desc" },
       take: 50,
@@ -50,6 +53,8 @@ export default async function AdminUsersPage({
     }),
     prisma.user.groupBy({ by: ["status"], _count: { _all: true } }),
   ]);
+  // Hash tidak pernah dimuat; hanya penanda ada/tidaknya.
+  const hasPw = new Set((await prisma.user.findMany({ where: { id: { in: activeUsers.map((u) => u.id) }, passwordHash: { not: null } }, select: { id: true } })).map((u) => u.id));
   const countOf = (st: UserStatus) => counts.find((c) => c.status === st)?._count._all ?? 0;
 
   const projects = await prisma.project.findMany({
@@ -292,6 +297,23 @@ export default async function AdminUsersPage({
                   </div>
                 </div>
 
+                {u.status === "ACTIVE" && (
+                  <ActionForm
+                    action={async (_prev: ActionResult, fd: FormData): Promise<ActionResult> => {
+                      "use server";
+                      const admin = await requireAdmin();
+                      const pw = String(fd.get("password") ?? "");
+                      if (pw.length < MIN_PASSWORD) return { error: `Kata sandi minimal ${MIN_PASSWORD} karakter.` };
+                      await prisma.user.update({ where: { id: u.id }, data: { passwordHash: await hashPassword(pw), failedLogins: 0, lockedUntil: null } });
+                      await recordAuditLog({ actorId: admin.id, actorEmail: admin.email, action: "user.set_password", entityType: "user", entityId: u.id, changes: { after: { email: u.email } } });
+                      return { ok: `Kata sandi ${u.email} ${hasPw.has(u.id) ? "diganti" : "diatur"}.` };
+                    }}
+                    className="flex gap-1 items-start"
+                  >
+                    <input type="password" name="password" required minLength={MIN_PASSWORD} autoComplete="new-password" placeholder={hasPw.has(u.id) ? "Ganti kata sandi" : "Atur kata sandi"} aria-label={`Kata sandi baru untuk ${u.email}`} className="px-2 py-1 text-xs border border-slate-300 rounded" />
+                    <button type="submit" className="px-2.5 py-1 text-xs border border-slate-300 rounded hover:bg-slate-50">Simpan</button>
+                  </ActionForm>
+                )}
                 {!u.isAdmin && (
                   <form
                     action={async () => {

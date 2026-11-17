@@ -4,6 +4,7 @@ import Credentials from "next-auth/providers/credentials";
 import { UserStatus } from "@prisma/client";
 import { upsertGoogleUser } from "./user-service";
 import { prisma } from "./db";
+import { verifyLogin } from "./password";
 
 // ponytail: Credentials provider enabled for dev/test or when explicitly enabled
 const enableDevLogin = process.env.ENABLE_DEV_LOGIN === "true";
@@ -15,6 +16,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     Google({
       clientId: process.env.AUTH_GOOGLE_ID || "",
       clientSecret: process.env.AUTH_GOOGLE_SECRET || "",
+    }),
+    Credentials({
+      id: "password",
+      name: "Email dan kata sandi",
+      credentials: { email: { type: "email" }, password: { type: "password" } },
+      async authorize(c) {
+        if (typeof c?.email !== "string" || typeof c?.password !== "string" || !c.password) return null;
+        const u = await verifyLogin(c.email, c.password);
+        return u ? { id: u.id, email: u.email, name: u.name, image: u.image } : null;
+      },
     }),
     ...(enableDevLogin
       ? [
