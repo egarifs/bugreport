@@ -16,3 +16,12 @@ test("verifyLogin: benar, salah, kunci, status", async () => {
   const nohash = await prisma.user.create({ data: { email: `n_${email}`, status: "ACTIVE" } });
   assert.equal(await verifyLogin(nohash.email, ""), null, "tanpa sandi tidak bisa masuk");
 });
+
+import { allowAttempt, IP_LIMIT, IP_WINDOW_MS } from "./password";
+test("allowAttempt: batas per IP, jendela bergeser", () => {
+  const t0 = 1_000_000;
+  for (let i = 0; i < IP_LIMIT; i++) assert.equal(allowAttempt("1.2.3.4", t0 + i), true);
+  assert.equal(allowAttempt("1.2.3.4", t0 + IP_LIMIT), false);
+  assert.equal(allowAttempt("5.6.7.8", t0), true, "IP lain tidak terpengaruh");
+  assert.equal(allowAttempt("1.2.3.4", t0 + IP_WINDOW_MS + IP_LIMIT), true, "pulih setelah jendela");
+});

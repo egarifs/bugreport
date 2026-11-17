@@ -38,3 +38,17 @@ export async function verifyLogin(email: string, password: string) {
   if (user.failedLogins || user.lockedUntil) await prisma.user.update({ where: { id: user.id }, data: { failedLogins: 0, lockedUntil: null } });
   return user;
 }
+
+// Batas laju per IP (semua percobaan, termasuk email berbeda). ponytail: memori satu proses, reset saat restart;
+// pindah ke tabel DB bila app jalan lebih dari satu instance.
+const hits = new Map<string, number[]>();
+export const IP_LIMIT = 20;
+export const IP_WINDOW_MS = 10 * 60_000;
+export function allowAttempt(ip: string, now = Date.now()) {
+  const recent = (hits.get(ip) ?? []).filter((t) => now - t < IP_WINDOW_MS);
+  if (recent.length >= IP_LIMIT) { hits.set(ip, recent); return false; }
+  recent.push(now);
+  hits.set(ip, recent);
+  if (hits.size > 5000) for (const [k, v] of hits) if (!v.some((t) => now - t < IP_WINDOW_MS)) hits.delete(k);
+  return true;
+}
