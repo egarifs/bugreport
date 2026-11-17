@@ -46,8 +46,8 @@ export default async function ProjectDetailPage({
   const canCreate = hasPermission(role, "bug.create", user.isAdmin);
 
   const sp = await searchParams;
-  // Landing page per role: QA reviews drafts, vendor/dev sees own work, client goes to release report.
-  if (!sp.view && role === "CLIENT" && !user.isAdmin) redirect(`/projects/${project.key}/reports`);
+  // Landing page per role: QA reviews drafts, vendor/dev sees own work, client goes to portal.
+  if (!sp.view && role === "CLIENT" && !user.isAdmin) redirect(`/projects/${project.key}/portal`);
   const view: View =
     sp.view === "review" || sp.view === "mine" || sp.view === "all"
       ? sp.view
