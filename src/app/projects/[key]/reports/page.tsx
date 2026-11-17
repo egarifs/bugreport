@@ -31,6 +31,7 @@ export default async function ReportsPage({
   if (!project) notFound();
   if (!project.members[0] && !user.isAdmin) redirect("/projects");
 
+  if (isTrend && project.members[0]?.role === "CLIENT" && !user.isAdmin) redirect(`/projects/${project.key}/reports`);
   if (isTrend) return <TrendTab project={{ id: project.id, key: project.key }} sprintId={sprintId} />;
   const r = await getProjectReport(project.id, version?.trim() || undefined);
   const maxSev = Math.max(1, ...SEVERITIES.map((s) => r.openBySeverity[s] ?? 0));
@@ -40,7 +41,7 @@ export default async function ReportsPage({
       <div className="p-6 space-y-6">
         <header className="flex flex-wrap items-center justify-between gap-3">
           <h1 className="text-lg font-semibold text-slate-900">Laporan kesiapan rilis</h1>
-          <ReportTabs projectKey={project.key} active="release" />
+          {!(project.members[0]?.role === "CLIENT" && !user.isAdmin) && <ReportTabs projectKey={project.key} active="release" />}
           <a
             href={`/api/projects/${project.key}/export`}
             className="press-snappy px-3.5 py-2 text-sm font-bold rounded bg-surface border border-slate-300 text-slate-800 hover:bg-slate-50 hover:border-slate-400 shadow-xs"

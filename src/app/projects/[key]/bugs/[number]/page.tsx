@@ -92,6 +92,8 @@ export default async function BugDetailPage({
   // Klien hanya boleh melihat bug yang dilaporkan anggota CLIENT (sama dengan daftar di portal).
   const isClientView = userRole === "CLIENT" && !user.isAdmin;
   if (isClientView && !(await prisma.projectMember.findFirst({ where: { projectId: project.id, userId: bug.reporter.id, role: "CLIENT" } }))) notFound();
+  // Klien tidak melihat data internal: assignee, reviewer, duplikat, bug terkait, pelapor lain.
+  if (isClientView) Object.assign(bug, { assignee: null, reviewedBy: null, duplicateOf: null, duplicates: [], related: [], relatedBy: [], coReporters: [] });
   // Relation is stored one-way; show both directions.
   const allRelated = [...bug.related, ...bug.relatedBy].filter((r, i, a) => a.findIndex((x) => x.key === r.key) === i);
 

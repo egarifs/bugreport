@@ -78,7 +78,7 @@ export default async function SprintsPage({ params, searchParams }: { params: Pr
   });
   if (!project) notFound();
   const role = project.members[0]?.role ?? null;
-  if (!hasPermission(role, "project.read", user.isAdmin)) return <ForbiddenState projectKey={project.key} />;
+  if (!hasPermission(role, "project.read", user.isAdmin) || (role === "CLIENT" && !user.isAdmin)) return <ForbiddenState projectKey={project.key} />;
   const canManage = hasPermission(role, "bug.review", user.isAdmin);
 
   const sprint = project.sprints.find((s) => s.id === id) ?? project.sprints.find((s) => s.status === "ACTIVE") ?? project.sprints[0];
