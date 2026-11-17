@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { prisma } from "./db";
-import { notifyBug, notifyAdminsPendingUser } from "./notify";
+import { notifyBug, notifyAdminsPendingUser, notifyDocApproval, notifyDocDecision } from "./notify";
 
 test("notifications: recipients, internal-note privacy, self-skip", async () => {
   const t = Date.now();
@@ -45,4 +45,22 @@ test("notifications: recipients, internal-note privacy, self-skip", async () => 
 
   // never throws
   assert.equal(await notifyBug("missing-id", qa, { kind: "assign" }), 0);
+});
+
+test("notifications: revisi dokumen ke Admin proyek saja, keputusan ke pengunggah", async () => {
+  const t = Date.now();
+  const mk = (n: string) => prisma.user.create({ data: { email: `${n}_d${t}@example.com`, name: n, status: "ACTIVE" } });
+  const [po, qa] = await Promise.all([mk("po"), mk("qa")]);
+  const project = await prisma.project.create({
+    data: { key: `D${String(t).slice(-6)}`, name: "Doc", members: { create: [{ userId: po.id, role: "ADMIN" }, { userId: qa.id, role: "QA" }] } },
+  });
+  const inbox = (u: { id: string }) => prisma.notification.findMany({ where: { userId: u.id } });
+  const base = { projectId: project.id, projectKey: project.key };
+  assert.equal(await notifyDocApproval({ ...base, docId: "x", docTitle: "PRD", targetUserIds: [po.id, qa.id], actor: { id: qa.id } }), 1);
+  assert.equal((await inbox(po)).length, 1);
+  assert.equal((await inbox(qa)).length, 0);
+  assert.equal(await notifyDocDecision({ ...base, docTitle: "PRD", docSlug: "prd", version: 2, uploaderId: qa.id, approved: false, reason: "kurang jelas", actor: { id: po.id } }), 1);
+  const n = (await inbox(qa))[0];
+  assert.match(n.title, /ditolak/);
+  assert.equal(n.body, "kurang jelas");
 });

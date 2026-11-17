@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { checkProjectPermission, requireProjectPermission } from "@/lib/authz";
 import { hasPermission } from "@/lib/permissions";
 import { revalidatePath } from "next/cache";
+import { notifyDocDecision } from "@/lib/notify";
 import { ActionForm, SubmitButton, type ActionResult } from "@/components/ui/action-form";
 import { AppShell } from "@/components/layout/app-shell";
 import { Markdown, headingId } from "@/components/ui/markdown";
@@ -14,7 +15,7 @@ import { diffDocs } from "@/lib/doc-diff";
 async function decide(projectId: string, versionId: string, kind: "approve" | "reject", _prev: ActionResult, formData: FormData): Promise<ActionResult> {
   "use server";
   const actor = await requireProjectPermission(projectId, "doc.approve");
-  const v = await prisma.businessDocVersion.findUnique({ where: { id: versionId }, include: { doc: { select: { projectId: true, slug: true, project: { select: { key: true } } } } } });
+  const v = await prisma.businessDocVersion.findUnique({ where: { id: versionId }, include: { doc: { select: { projectId: true, slug: true, title: true, project: { select: { key: true } } } } } });
   if (!v || v.doc.projectId !== projectId || v.status !== "PENDING") return { error: "Revisi sudah diputuskan atau tidak ditemukan." };
   const reason = String(formData.get("reason") ?? "").trim();
   if (kind === "reject" && !reason) return { error: "Isi alasan penolakan dulu." };
@@ -38,6 +39,7 @@ async function decide(projectId: string, versionId: string, kind: "approve" | "r
       },
     }),
   ]);
+  await notifyDocDecision({ docTitle: v.doc.title, docSlug: v.doc.slug, version: v.versionNum, projectId, projectKey: v.doc.project.key, uploaderId: v.uploadedById, approved: kind === "approve", reason, actor });
   revalidatePath(`/projects/${v.doc.project.key}/docs`);
   revalidatePath(`/projects/${v.doc.project.key}/docs/${v.doc.slug}`);
   return { ok: kind === "approve" ? "Revisi disetujui." : "Revisi ditolak." };

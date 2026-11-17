@@ -267,6 +267,34 @@ export async function notifyResourceProblem(params: {
   }
 }
 
+/** Beri tahu pengunggah bahwa revisinya disetujui/ditolak. */
+export async function notifyDocDecision(params: {
+  docTitle: string;
+  docSlug: string;
+  version: number;
+  projectId: string;
+  projectKey: string;
+  uploaderId: string | null;
+  approved: boolean;
+  reason?: string;
+  actor: Actor;
+}) {
+  try {
+    const targets = await allowed(params.projectId, [params.uploaderId], "doc.read");
+    return save(targets, params.actor, {
+      projectId: params.projectId,
+      type: "doc_approval",
+      title: `Revisi v${params.version} dokumen "${params.docTitle}" ${params.approved ? "disetujui" : "ditolak"}`,
+      body: params.approved ? "Sekarang menjadi versi berlaku." : clip(params.reason ?? ""),
+      href: `/projects/${params.projectKey}/docs/${params.docSlug}?v=${params.version}`,
+      involvedIds: targets,
+    });
+  } catch (e) {
+    console.error("notify doc decision failed:", e instanceof Error ? e.message : "unknown");
+    return 0;
+  }
+}
+
 export async function notifyDocApproval(params: {
   docId: string;
   docTitle: string;
@@ -276,7 +304,7 @@ export async function notifyDocApproval(params: {
   actor: Actor;
 }) {
   try {
-    const targets = await allowed(params.projectId, params.targetUserIds, "doc.manage");
+    const targets = await allowed(params.projectId, params.targetUserIds, "doc.approve");
     const who = actorLabel(params.actor);
     return save(targets, params.actor, {
       projectId: params.projectId,

@@ -7,6 +7,7 @@ import { notFound, redirect } from "next/navigation";
 import { hasPermission } from "@/lib/permissions";
 import { ProjectRole } from "@prisma/client";
 import { revalidatePath } from "next/cache";
+import { notifyDocApproval } from "@/lib/notify";
 import fs from "node:fs/promises";
 import Link from "next/link";
 import path from "node:path";
@@ -146,6 +147,10 @@ export default async function BusinessDocsPage({
                     },
                   });
 
+                  if (nextVersion > 1) {
+                    const approvers = await prisma.projectMember.findMany({ where: { projectId: pid }, select: { userId: true } });
+                    await notifyDocApproval({ docId: doc.id, docTitle: title, projectId: pid, projectKey: pkey, targetUserIds: approvers.map((m) => m.userId), actor });
+                  }
                   revalidatePath(`/projects/${pkey}/docs`);
                   return { ok: nextVersion === 1 ? `${title} tersimpan sebagai v1.` : `${title} v${nextVersion} menunggu persetujuan Admin.` };
                 }}
