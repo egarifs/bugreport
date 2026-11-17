@@ -9,6 +9,7 @@ import { ActionForm, SubmitButton, type ActionResult } from "@/components/ui/act
 import { AppShell } from "@/components/layout/app-shell";
 import { Markdown, headingId } from "@/components/ui/markdown";
 import { isMarkdown, readDocText } from "@/lib/business-docs";
+import { diffDocs } from "@/lib/doc-diff";
 
 async function decide(projectId: string, versionId: string, kind: "approve" | "reject", _prev: ActionResult, formData: FormData): Promise<ActionResult> {
   "use server";
@@ -47,12 +48,12 @@ export default async function DocViewerPage({
   searchParams,
 }: {
   params: Promise<{ key: string; slug: string }>;
-  searchParams: Promise<{ v?: string }>;
+  searchParams: Promise<{ v?: string; diff?: string }>;
 }) {
   const userId = (await auth())?.user?.id;
   if (!userId) redirect("/login");
   const { key, slug } = await params;
-  const { v } = await searchParams;
+  const { v, diff } = await searchParams;
 
   const doc = await prisma.businessDoc.findFirst({
     where: { slug, project: { key: key.toUpperCase() } },
@@ -75,6 +76,10 @@ export default async function DocViewerPage({
   const pkey = doc.project.key;
   const fileUrl = `/api/projects/${pkey}/docs/${ver.id}`;
   const md = isMarkdown(ver.fileName) ? await readDocText(pkey, ver) : null;
+  // Pembanding = versi berlaku (atau versi sebelumnya bila ver sendiri yang berlaku).
+  const base = ver.isCurrent ? doc.versions.find((x) => x.versionNum < ver.versionNum && x.status === "APPROVED") : current;
+  const baseMd = md !== null && base && base.id !== ver.id && isMarkdown(base.fileName) ? await readDocText(pkey, base) : null;
+  const diffs = diff === "1" && md !== null && baseMd !== null ? diffDocs(baseMd, md).filter((s) => s.kind !== "same") : null;
   const toc = md
     ? [...md.matchAll(/^(#{2,3})\s+(.+)$/gm)].map((m) => ({ level: m[1].length, text: m[2].replace(/[*_`]/g, "").trim() }))
     : [];
@@ -140,7 +145,37 @@ export default async function DocViewerPage({
           {doc.description && <> · {doc.description}</>}
         </div>
 
-        {md !== null ? (
+        {baseMd !== null && base && (
+          <div className="px-6 py-2 border-b border-slate-200 bg-surface text-sm flex items-center gap-3">
+            <Link href={diffs ? "?" + new URLSearchParams({ v: String(ver.versionNum) }) : "?" + new URLSearchParams({ v: String(ver.versionNum), diff: "1" })} className="font-bold text-link hover:underline">
+              {diffs ? "Kembali ke isi dokumen" : `Lihat perbedaan dengan v${base.versionNum}`}
+            </Link>
+          </div>
+        )}
+
+        {diffs ? (
+          <section aria-label={`Perbedaan v${base!.versionNum} ke v${ver.versionNum}`} className="p-6 max-w-4xl space-y-4">
+            {diffs.length === 0 && <p className="text-sm text-slate-600">Tidak ada perbedaan isi.</p>}
+            {diffs.map((s) => (
+              <div key={s.heading} className="bg-surface border border-slate-200 rounded-lg overflow-hidden">
+                <div className="px-4 py-2 border-b border-slate-200 flex items-center gap-2">
+                  <b className="text-sm">{s.heading}</b>
+                  <span className={`text-xs font-bold px-2 py-0.5 rounded ${s.kind === "added" ? "bg-ok-bg text-ok" : s.kind === "removed" ? "bg-bad-bg text-bad" : "bg-warn-bg text-warn"}`}>
+                    {s.kind === "added" ? "Ditambah" : s.kind === "removed" ? "Dihapus" : "Diubah"}
+                  </span>
+                </div>
+                <pre className="text-xs font-mono whitespace-pre-wrap p-0 m-0">
+                  {s.lines.filter((l) => l.op !== " " || s.kind === "changed").map((l, i) => (
+                    <div key={i} className={`px-4 py-0.5 ${l.op === "+" ? "bg-ok-bg text-ok" : l.op === "-" ? "bg-bad-bg text-bad" : "text-slate-500"}`}>
+                      <span aria-hidden="true" className="select-none mr-2">{l.op}</span>
+                      <span className="sr-only">{l.op === "+" ? "Ditambah: " : l.op === "-" ? "Dihapus: " : ""}</span>{l.text}
+                    </div>
+                  ))}
+                </pre>
+              </div>
+            ))}
+          </section>
+        ) : md !== null ? (
           <div className="flex-1 flex gap-8 p-6">
             {toc.length > 2 && (
               <nav aria-label="Daftar isi" className="hidden lg:block w-64 shrink-0">
