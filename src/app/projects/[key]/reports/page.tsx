@@ -34,6 +34,7 @@ export default async function ReportsPage({
   if (isTrend && project.members[0]?.role === "CLIENT" && !user.isAdmin) redirect(`/projects/${project.key}/reports`);
   if (isTrend) return <TrendTab project={{ id: project.id, key: project.key }} sprintId={sprintId} />;
   const r = await getProjectReport(project.id, version?.trim() || undefined);
+  const isClient = project.members[0]?.role === "CLIENT" && !user.isAdmin;
   const maxSev = Math.max(1, ...SEVERITIES.map((s) => r.openBySeverity[s] ?? 0));
 
   return (
@@ -41,13 +42,13 @@ export default async function ReportsPage({
       <div className="p-6 space-y-6">
         <header className="flex flex-wrap items-center justify-between gap-3">
           <h1 className="text-lg font-semibold text-slate-900">Laporan kesiapan rilis</h1>
-          {!(project.members[0]?.role === "CLIENT" && !user.isAdmin) && <ReportTabs projectKey={project.key} active="release" />}
-          <a
+          {!isClient && <ReportTabs projectKey={project.key} active="release" />}
+          {!isClient && <a
             href={`/api/projects/${project.key}/export`}
             className="press-snappy px-3.5 py-2 text-sm font-bold rounded bg-surface border border-slate-300 text-slate-800 hover:bg-slate-50 hover:border-slate-400 shadow-xs"
           >
             Export CSV
-          </a>
+          </a>}
         </header>
 
         <section className="bg-surface border border-slate-200 rounded-lg p-4 space-y-3">
@@ -84,7 +85,7 @@ export default async function ReportsPage({
               {r.releaseReady ? "Ready" : "Blocked"}
             </span>
           </div>
-          {r.releaseBlockers.length > 0 && (
+          {!isClient && r.releaseBlockers.length > 0 && (
             <ul className="text-xs space-y-1">
               {r.releaseBlockers.map((b) => (
                 <li key={b.key}>
@@ -154,8 +155,8 @@ export default async function ReportsPage({
             </table>
           </section>
 
-          {/* Card 3: Workload per Assignee */}
-          <section className="bg-surface border border-slate-200 rounded-lg p-5 shadow-xs hover:border-slate-300 transition-colors duration-150">
+          {/* Card 3: Workload per Assignee (internal) */}
+          {!isClient && <section className="bg-surface border border-slate-200 rounded-lg p-5 shadow-xs hover:border-slate-300 transition-colors duration-150">
             <h2 className="text-sm font-bold text-slate-900 mb-4">Workload aktif per assignee</h2>
             {r.workload.length === 0 ? (
               <p className="text-xs text-slate-400">Belum ada bug aktif yang ditugaskan.</p>
@@ -171,10 +172,10 @@ export default async function ReportsPage({
                 </tbody>
               </table>
             )}
-          </section>
+          </section>}
 
-          {/* Card 4: Stale Drafts */}
-          <section className="bg-surface border border-slate-200 rounded-lg p-5 shadow-xs hover:border-slate-300 transition-colors duration-150">
+          {/* Card 4: Stale Drafts (internal) */}
+          {!isClient && <section className="bg-surface border border-slate-200 rounded-lg p-5 shadow-xs hover:border-slate-300 transition-colors duration-150">
             <h2 className="text-sm font-bold text-slate-900 mb-4">Draft &gt; 3 hari belum direview</h2>
             {r.staleDrafts.length === 0 ? (
               <p className="text-xs text-slate-500">Tidak ada.</p>
@@ -190,7 +191,7 @@ export default async function ReportsPage({
                 ))}
               </ul>
             )}
-          </section>
+          </section>}
         </div>
       </div>
     </AppShell>
