@@ -5,6 +5,7 @@ import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { getProjectReport } from "@/lib/report";
 import { SEVERITY_STYLE, STATUS_LABEL, SeverityBadge } from "@/components/ui/bug-badges";
+import { computeTrend } from "@/lib/trend";
 import type { BugSeverity, BugStatus } from "@prisma/client";
 
 const SEVERITIES = ["BLOCKER", "HIGH", "MEDIUM", "LOW"] as const;
@@ -14,14 +15,15 @@ export default async function ReportsPage({
   searchParams,
 }: {
   params: Promise<{ key: string }>;
-  searchParams: Promise<{ version?: string }>;
+  searchParams: Promise<{ version?: string; tab?: string; sprint?: string }>;
 }) {
   const session = await auth();
   const user = session?.user as { id?: string; isAdmin?: boolean } | undefined;
   if (!user?.id) redirect("/login");
 
   const { key } = await params;
-  const { version } = await searchParams;
+  const { version, tab, sprint: sprintId } = await searchParams;
+  const isTrend = tab === "trend";
   const project = await prisma.project.findUnique({
     where: { key: key.toUpperCase() },
     include: { members: { where: { userId: user.id } } },
@@ -29,6 +31,7 @@ export default async function ReportsPage({
   if (!project) notFound();
   if (!project.members[0] && !user.isAdmin) redirect("/projects");
 
+  if (isTrend) return <TrendTab project={{ id: project.id, key: project.key }} sprintId={sprintId} />;
   const r = await getProjectReport(project.id, version?.trim() || undefined);
   const maxSev = Math.max(1, ...SEVERITIES.map((s) => r.openBySeverity[s] ?? 0));
 
@@ -37,6 +40,7 @@ export default async function ReportsPage({
       <div className="p-6 space-y-6">
         <header className="flex flex-wrap items-center justify-between gap-3">
           <h1 className="text-lg font-semibold text-slate-900">Laporan kesiapan rilis</h1>
+          <ReportTabs projectKey={project.key} active="release" />
           <a
             href={`/api/projects/${project.key}/export`}
             className="press-snappy px-3.5 py-2 text-sm font-bold rounded bg-surface border border-slate-300 text-slate-800 hover:bg-slate-50 hover:border-slate-400 shadow-xs"
@@ -184,6 +188,114 @@ export default async function ReportsPage({
                   </li>
                 ))}
               </ul>
+            )}
+          </section>
+        </div>
+      </div>
+    </AppShell>
+  );
+}
+
+function ReportTabs({ projectKey, active }: { projectKey: string; active: "release" | "trend" }) {
+  const cls = (a: boolean) => `px-3 min-h-[44px] flex items-center text-sm font-bold border-b-2 ${a ? "border-ink text-slate-900" : "border-transparent text-slate-500 hover:text-slate-900"}`;
+  return (
+    <nav aria-label="Jenis laporan" className="flex gap-2 w-full order-last border-b border-slate-200">
+      <Link href={`/projects/${projectKey}/reports`} aria-current={active === "release" ? "page" : undefined} className={cls(active === "release")}>Kesiapan rilis</Link>
+      <Link href={`/projects/${projectKey}/reports?tab=trend`} aria-current={active === "trend" ? "page" : undefined} className={cls(active === "trend")}>Tren</Link>
+    </nav>
+  );
+}
+
+async function TrendTab({ project, sprintId }: { project: { id: string; key: string }; sprintId?: string }) {
+  const sprints = await prisma.sprint.findMany({ where: { projectId: project.id }, orderBy: { startsAt: "desc" } });
+  const sprint = sprints.find((x) => x.id === sprintId);
+  const to = sprint ? new Date(+sprint.endsAt + 86_400_000) : new Date();
+  const from = sprint ? sprint.startsAt : new Date(+to - 8 * 7 * 86_400_000);
+  const bugs = await prisma.bug.findMany({
+    where: { projectId: project.id, status: { not: "DRAFT" }, ...(sprint ? { sprintId: sprint.id } : {}) },
+    select: { id: true, createdAt: true, severity: true, status: true, reopenCount: true, dueAt: true, module: { select: { name: true } } },
+  });
+  const closes = await prisma.auditLog.findMany({
+    where: { projectId: project.id, action: "bug.status_change", entityId: { in: bugs.map((b) => b.id) }, changes: { path: ["after", "status"], equals: "CLOSED" } },
+    orderBy: { createdAt: "asc" },
+    select: { entityId: true, createdAt: true },
+  });
+  const firstClose = new Map<string, Date>();
+  for (const c of closes) if (c.entityId && !firstClose.has(c.entityId)) firstClose.set(c.entityId, c.createdAt);
+  const t = computeTrend(bugs.map((b) => ({ ...b, moduleName: b.module?.name ?? null, closedAt: firstClose.get(b.id) ?? null, ended: ["INVALID", "DUPLICATE", "CANNOT_REPRODUCE", "WONT_FIX", "CLOSED"].includes(b.status) })), from, to);
+  const max = Math.max(1, ...t.weeks.flatMap((w) => [w.masuk, w.selesai]));
+  const stat = (v: string, l: string) => (
+    <div className="bg-surface border border-slate-200 rounded p-4"><div className="text-2xl font-bold text-slate-900">{v}</div><div className="text-xs text-slate-500">{l}</div></div>
+  );
+  const dm = new Intl.DateTimeFormat("id-ID", { day: "numeric", month: "short", timeZone: "Asia/Jakarta" });
+
+  return (
+    <AppShell activeProjectKey={project.key}>
+      <div className="p-6 space-y-6">
+        <header className="flex flex-wrap items-center justify-between gap-3">
+          <h1 className="text-lg font-semibold text-slate-900">Laporan</h1>
+          <form className="flex items-center gap-2 text-xs">
+            <input type="hidden" name="tab" value="trend" />
+            <label htmlFor="sprint" className="text-slate-600">Periode</label>
+            <select id="sprint" name="sprint" defaultValue={sprint?.id ?? ""} className="px-2 py-1.5 border border-slate-300 rounded bg-surface min-h-[44px]">
+              <option value="">8 minggu terakhir</option>
+              {sprints.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
+            </select>
+            <button className="px-3 border border-slate-300 rounded hover:bg-slate-50 min-h-[44px] font-bold">Terapkan</button>
+          </form>
+          <ReportTabs projectKey={project.key} active="trend" />
+        </header>
+
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+          {stat(String(t.masuk), "Bug masuk")}
+          {stat(String(t.selesai), "Bug selesai")}
+          {stat(String(t.late), "Lewat tenggat/SLA")}
+          {stat(`${t.reopenRate}%`, "Bug pernah dibuka ulang")}
+          {stat(t.medianDays === null ? "—" : `${t.medianDays.toFixed(1).replace(".", ",")} hari`, "Median sampai Closed")}
+        </div>
+
+        <section className="bg-surface border border-slate-200 rounded-lg p-4">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-bold text-slate-900">Bug masuk vs selesai per minggu</h2>
+            <div className="flex gap-3 text-xs text-slate-600">
+              <span className="flex items-center gap-1"><i className="w-3 h-3 rounded-sm bg-ink" />Masuk</span>
+              <span className="flex items-center gap-1"><i className="w-3 h-3 rounded-sm bg-ok" />Selesai</span>
+            </div>
+          </div>
+          <div className="flex items-end gap-3 h-40" role="img" aria-label={`Grafik batang: ${t.weeks.map((w) => `minggu ${dm.format(w.start)} masuk ${w.masuk}, selesai ${w.selesai}`).join("; ")}`}>
+            {t.weeks.map((w) => (
+              <div key={+w.start} className="flex-1 flex flex-col items-center gap-1 h-full justify-end">
+                <div className="flex items-end gap-1 w-full h-full justify-center">
+                  <div className="w-1/3 bg-ink rounded-t" style={{ height: `${(w.masuk / max) * 100}%` }} title={`Masuk ${w.masuk}`} />
+                  <div className="w-1/3 bg-ok rounded-t" style={{ height: `${(w.selesai / max) * 100}%` }} title={`Selesai ${w.selesai}`} />
+                </div>
+                <span className="text-[10px] text-slate-500">{dm.format(w.start)}</span>
+              </div>
+            ))}
+          </div>
+          <table className="sr-only"><caption>Data grafik</caption><thead><tr><th>Minggu</th><th>Masuk</th><th>Selesai</th></tr></thead>
+            <tbody>{t.weeks.map((w) => <tr key={+w.start}><td>{dm.format(w.start)}</td><td>{w.masuk}</td><td>{w.selesai}</td></tr>)}</tbody></table>
+        </section>
+
+        <div className="grid md:grid-cols-2 gap-4">
+          <section className="bg-surface border border-slate-200 rounded-lg p-4">
+            <h2 className="text-sm font-bold text-slate-900 mb-3">Lewat tenggat per severity</h2>
+            <table className="w-full text-sm"><tbody>
+              {t.sev.map((x) => (
+                <tr key={x.severity}>
+                  <td className="py-1.5 w-24">{SEVERITY_STYLE[x.severity].label}</td>
+                  <td className="py-1.5"><div className="h-2 bg-slate-100 rounded"><div className="h-2 bg-bad rounded" style={{ width: `${x.total ? (x.late / x.total) * 100 : 0}%` }} /></div></td>
+                  <td className="py-1.5 w-20 text-right"><b>{x.late}</b> / {x.total}</td>
+                </tr>
+              ))}
+            </tbody></table>
+          </section>
+          <section className="bg-surface border border-slate-200 rounded-lg p-4">
+            <h2 className="text-sm font-bold text-slate-900 mb-3">Modul paling banyak bug</h2>
+            {t.modules.length === 0 ? <p className="text-xs text-slate-500">Belum ada data.</p> : (
+              <table className="w-full text-sm"><tbody>
+                {t.modules.map((m) => <tr key={m.name}><td className="py-1.5">{m.name}</td><td className="py-1.5 font-bold">{m.total}</td><td className="py-1.5 text-xs text-slate-500">{m.reopen} reopen</td></tr>)}
+              </tbody></table>
             )}
           </section>
         </div>
