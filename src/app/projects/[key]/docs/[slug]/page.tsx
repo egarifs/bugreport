@@ -2,10 +2,45 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { checkProjectPermission } from "@/lib/authz";
+import { checkProjectPermission, requireProjectPermission } from "@/lib/authz";
+import { hasPermission } from "@/lib/permissions";
+import { revalidatePath } from "next/cache";
+import { ActionForm, SubmitButton, type ActionResult } from "@/components/ui/action-form";
 import { AppShell } from "@/components/layout/app-shell";
 import { Markdown, headingId } from "@/components/ui/markdown";
 import { isMarkdown, readDocText } from "@/lib/business-docs";
+
+async function decide(projectId: string, versionId: string, kind: "approve" | "reject", _prev: ActionResult, formData: FormData): Promise<ActionResult> {
+  "use server";
+  const actor = await requireProjectPermission(projectId, "doc.approve");
+  const v = await prisma.businessDocVersion.findUnique({ where: { id: versionId }, include: { doc: { select: { projectId: true, slug: true, project: { select: { key: true } } } } } });
+  if (!v || v.doc.projectId !== projectId || v.status !== "PENDING") return { error: "Revisi sudah diputuskan atau tidak ditemukan." };
+  const reason = String(formData.get("reason") ?? "").trim();
+  if (kind === "reject" && !reason) return { error: "Isi alasan penolakan dulu." };
+  await prisma.$transaction([
+    ...(kind === "approve" ? [prisma.businessDocVersion.updateMany({ where: { docId: v.docId }, data: { isCurrent: false } })] : []),
+    prisma.businessDocVersion.update({
+      where: { id: v.id },
+      data: kind === "approve"
+        ? { status: "APPROVED", isCurrent: true, decidedById: actor.id, decidedAt: new Date() }
+        : { status: "REJECTED", rejectReason: reason, decidedById: actor.id, decidedAt: new Date() },
+    }),
+    prisma.auditLog.create({
+      data: {
+        projectId,
+        actorId: actor.id,
+        actorEmail: actor.email,
+        action: kind === "approve" ? "doc.approve" : "doc.reject",
+        entityType: "doc_version",
+        entityId: v.id,
+        changes: { after: { docSlug: v.doc.slug, version: v.versionNum, ...(kind === "reject" ? { reason } : {}) } },
+      },
+    }),
+  ]);
+  revalidatePath(`/projects/${v.doc.project.key}/docs`);
+  revalidatePath(`/projects/${v.doc.project.key}/docs/${v.doc.slug}`);
+  return { ok: kind === "approve" ? "Revisi disetujui." : "Revisi ditolak." };
+}
 
 export default async function DocViewerPage({
   params,
@@ -24,11 +59,15 @@ export default async function DocViewerPage({
     include: { project: { select: { key: true, name: true } }, versions: { orderBy: { versionNum: "desc" } } },
   });
   if (!doc) notFound();
+  let actor;
   try {
-    await checkProjectPermission(userId, doc.projectId, "doc.read");
+    actor = await checkProjectPermission(userId, doc.projectId, "doc.read");
   } catch {
     redirect("/projects");
   }
+  const canManage = hasPermission(actor.role, "doc.manage", actor.isAdmin);
+  const canApprove = hasPermission(actor.role, "doc.approve", actor.isAdmin);
+  if (!canManage) doc.versions = doc.versions.filter((x) => x.status === "APPROVED");
 
   const current = doc.versions.find((x) => x.isCurrent) ?? doc.versions[0];
   const ver = doc.versions.find((x) => String(x.versionNum) === v) ?? current;
@@ -69,7 +108,27 @@ export default async function DocViewerPage({
           </div>
         </header>
 
-        {!ver.isCurrent && (
+        {ver.status !== "APPROVED" && (
+          <div role="note" className="px-6 py-3 bg-warn-bg border-b border-warn-border text-sm text-warn space-y-2">
+            <p>
+              <b>v{ver.versionNum} {ver.status === "PENDING" ? "menunggu persetujuan" : "ditolak"}.</b> Belum dipakai sebagai acuan QA maupun AI chat.
+              {ver.changeNote && <> Catatan: {ver.changeNote}</>}
+              {ver.rejectReason && <> Alasan penolakan: {ver.rejectReason}</>}
+            </p>
+            {ver.status === "PENDING" && canApprove && (
+              <div className="flex flex-wrap gap-3 items-start">
+                <ActionForm action={decide.bind(null, doc.projectId, ver.id, "approve")}>
+                  <SubmitButton pendingText="Menyetujui...">Setujui jadi versi berlaku</SubmitButton>
+                </ActionForm>
+                <ActionForm action={decide.bind(null, doc.projectId, ver.id, "reject")} className="flex gap-2">
+                  <input name="reason" required placeholder="Alasan penolakan" aria-label="Alasan penolakan" className="px-2 py-1 border border-slate-300 rounded text-xs bg-surface" />
+                  <SubmitButton pendingText="Menolak...">Tolak</SubmitButton>
+                </ActionForm>
+              </div>
+            )}
+          </div>
+        )}
+        {ver.status === "APPROVED" && !ver.isCurrent && (
           <p role="note" className="px-6 py-2 bg-warn-bg border-b border-warn-border text-sm text-warn">
             Anda melihat v{ver.versionNum} (lama). Versi aktif:{" "}
             <Link href="?" className="font-bold underline">v{current.versionNum}</Link>.

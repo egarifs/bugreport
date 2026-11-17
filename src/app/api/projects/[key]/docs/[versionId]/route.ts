@@ -3,6 +3,7 @@ import fs from "node:fs/promises";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { checkProjectPermission } from "@/lib/authz";
+import { hasPermission } from "@/lib/permissions";
 import { docFilePath, isMarkdown } from "@/lib/business-docs";
 
 // Raw file for PDF iframe / download. ?download=1 forces attachment.
@@ -15,7 +16,8 @@ export async function GET(req: Request, { params }: { params: Promise<{ key: str
   });
   if (!v || v.doc.project.key !== key.toUpperCase()) return NextResponse.json({ error: "Not found" }, { status: 404 });
   try {
-    await checkProjectPermission(userId, v.doc.projectId, "doc.read");
+    const me = await checkProjectPermission(userId, v.doc.projectId, "doc.read");
+    if (v.status !== "APPROVED" && !hasPermission(me.role, "doc.manage", me.isAdmin)) throw new Error("Forbidden");
   } catch {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }

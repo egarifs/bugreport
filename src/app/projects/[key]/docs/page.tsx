@@ -43,6 +43,11 @@ export default async function BusinessDocsPage({
   const pkey = project.key;
 
   const role: ProjectRole = project.members[0]?.role ?? (user.isAdmin ? "ADMIN" : "VIEWER");
+  // Revisi menunggu/ditolak hanya terlihat oleh pengelola dokumen; lainnya hanya yang disetujui.
+  if (!hasPermission(role, "doc.manage", user.isAdmin)) {
+    for (const d of project.businessDocs) d.versions = d.versions.filter((v) => v.status === "APPROVED");
+    project.businessDocs = project.businessDocs.filter((d) => d.versions.length > 0);
+  }
   const canManage = hasPermission(role, "doc.manage", user.isAdmin);
 
   return (
@@ -67,7 +72,7 @@ export default async function BusinessDocsPage({
                 Upload Dokumen Baru / Revisi Versi
               </h2>
               <p className="text-xs text-slate-500 mb-4">
-                Mendukung PDF & Markdown (.md) hingga 20 MB. Upload dengan judul yang sama otomatis menghasilkan versi baru (v1, v2, dst).
+                Mendukung PDF & Markdown (.md) hingga 20 MB. Upload dengan judul yang sama menjadi revisi baru yang menunggu persetujuan Admin; versi lama tetap berlaku.
               </p>
 
               <ActionForm
@@ -78,6 +83,7 @@ export default async function BusinessDocsPage({
                   const description = (formData.get("description") as string)?.trim() || null;
                   const file = formData.get("file") as File;
 
+                  const changeNote = (formData.get("changeNote") as string)?.trim() || null;
                   if (!title || !file || file.size === 0) return { error: "Judul dan file wajib diisi." };
                   if (file.size > 20 * 1024 * 1024) return { error: "File melebihi batas 20 MB." };
                   const ext = path.extname(file.name).toLowerCase();
@@ -106,12 +112,12 @@ export default async function BusinessDocsPage({
 
                   let nextVersion = 1;
                   if (doc) {
+                    if (!changeNote) {
+                      await fs.unlink(storedFilePath).catch(() => {});
+                      return { error: "Catatan perubahan wajib untuk revisi." };
+                    }
                     nextVersion = (doc.versions[0]?.versionNum || 0) + 1;
-                    // Mark old versions as not current
-                    await prisma.businessDocVersion.updateMany({
-                      where: { docId: doc.id },
-                      data: { isCurrent: false },
-                    });
+                    // Versi lama tetap berlaku sampai revisi disetujui.
                   } else {
                     doc = await prisma.businessDoc.create({
                       data: {
@@ -133,13 +139,15 @@ export default async function BusinessDocsPage({
                       storedPath: storedFilePath,
                       fileSize: file.size,
                       mimeType: file.type || "application/octet-stream",
-                      isCurrent: true,
+                      isCurrent: nextVersion === 1,
+                      status: nextVersion === 1 ? "APPROVED" : "PENDING",
+                      changeNote,
                       uploadedById: actor.id,
                     },
                   });
 
                   revalidatePath(`/projects/${pkey}/docs`);
-                  return { ok: `${title} tersimpan sebagai v${nextVersion}.` };
+                  return { ok: nextVersion === 1 ? `${title} tersimpan sebagai v1.` : `${title} v${nextVersion} menunggu persetujuan Admin.` };
                 }}
                 className="grid grid-cols-1 md:grid-cols-3 gap-4"
               >
@@ -176,6 +184,17 @@ export default async function BusinessDocsPage({
                     accept=".pdf,.md"
                     required
                     className="w-full text-xs file:mr-2 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 cursor-pointer"
+                  />
+                </div>
+                <div className="md:col-span-3">
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Catatan perubahan (wajib untuk revisi dokumen yang sudah ada)
+                  </label>
+                  <input
+                    type="text"
+                    name="changeNote"
+                    placeholder="Mis. Batas ekspor CSV dipindah ke Admin, diminta PO"
+                    className="w-full px-3 py-2 border border-slate-300 rounded text-xs outline-none"
                   />
                 </div>
                 <div className="md:col-span-3 flex justify-end">
@@ -215,6 +234,9 @@ export default async function BusinessDocsPage({
                             <span className="text-xs font-mono font-semibold px-2 py-0.5 rounded bg-ok-bg text-ok">
                               v{currentVer?.versionNum ?? 1} (Aktif)
                             </span>
+                            {doc.versions.some((v) => v.status === "PENDING") && (
+                              <span className="text-xs font-semibold px-2 py-0.5 rounded bg-warn-bg text-warn">Revisi menunggu persetujuan</span>
+                            )}
                           </div>
                           {doc.description && (
                             <p className="text-xs text-slate-600 mt-1">

@@ -78,3 +78,12 @@ describe("role menu (PRD-06)", () => {
     assert.equal(hasPermission("VENDOR", "chat.ask", false), true);
   });
 });
+
+describe("doc.approve", () => {
+  it("hanya Admin (dan superadmin) yang menyetujui revisi dokumen", () => {
+    assert.equal(hasPermission("ADMIN", "doc.approve"), true);
+    assert.equal(hasPermission("QA", "doc.approve"), false);
+    assert.equal(hasPermission("CLIENT", "doc.approve"), false);
+    assert.equal(hasPermission(null, "doc.approve", true), true);
+  });
+});

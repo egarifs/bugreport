@@ -909,11 +909,7 @@ export async function executeMcpTool(
 
           let nextVersion = 1;
           if (doc) {
-            nextVersion = (doc.versions[0]?.versionNum || 0) + 1;
-            await tx.businessDocVersion.updateMany({
-              where: { docId: doc.id },
-              data: { isCurrent: false },
-            });
+            nextVersion = (doc.versions[0]?.versionNum || 0) + 1; // revisi: PENDING, versi lama tetap berlaku sampai Admin menyetujui
             await tx.businessDoc.update({
               where: { id: doc.id },
               data: { title, description: description ?? doc.description },
@@ -938,7 +934,9 @@ export async function executeMcpTool(
               storedPath,
               fileSize: Buffer.byteLength(content, "utf8"),
               mimeType: "text/markdown",
-              isCurrent: true,
+              isCurrent: nextVersion === 1,
+              status: nextVersion === 1 ? "APPROVED" : "PENDING",
+              changeNote: nextVersion === 1 ? null : "Diunggah lewat MCP",
               uploadedById: ctx.actorId,
             },
           });

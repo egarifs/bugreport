@@ -12,6 +12,7 @@ export type Permission =
   | "bug.comment"
   | "note.internal.read"
   | "doc.manage"
+  | "doc.approve"
   | "doc.read"
   | "testcase.manage"
   | "testcase.read"
@@ -31,6 +32,7 @@ export const ROLE_PERMISSIONS: Record<ProjectRole, readonly Permission[]> = {
     "bug.comment",
     "note.internal.read",
     "doc.manage",
+    "doc.approve",
     "doc.read",
     "testcase.manage",
     "testcase.read",

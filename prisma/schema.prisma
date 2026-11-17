@@ -326,6 +326,12 @@ model BusinessDoc {
   @@index([projectId])
 }
 
+enum DocVersionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 model BusinessDocVersion {
   id           String      @id @default(uuid())
   docId        String
@@ -338,6 +344,12 @@ model BusinessDocVersion {
   isCurrent    Boolean     @default(true)
   uploadedById String?
   uploadedAt   DateTime    @default(now())
+  // Revisi baru PENDING sampai Admin menyetujui; hanya APPROVED yang bisa isCurrent.
+  status       DocVersionStatus @default(APPROVED)
+  changeNote   String?
+  decidedById  String?
+  decidedAt    DateTime?
+  rejectReason String?
 
   chunks BusinessDocChunk[]
 
