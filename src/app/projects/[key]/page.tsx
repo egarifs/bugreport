@@ -25,7 +25,7 @@ export default async function ProjectDetailPage({
   searchParams,
 }: {
   params: Promise<{ key: string }>;
-  searchParams: Promise<{ done?: string; sel?: string; view?: string; status?: string; severity?: string; module?: string; q?: string }>;
+  searchParams: Promise<{ done?: string; sel?: string; view?: string; status?: string; severity?: string; module?: string; sprint?: string; q?: string }>;
 }) {
   const session = await auth();
   const user = session?.user as { id?: string; email?: string; isAdmin?: boolean } | undefined;
@@ -61,6 +61,7 @@ export default async function ProjectDetailPage({
     view === "review" ? { status: "DRAFT" } : view === "mine" ? { assigneeId: user.id, status: { notIn: DONE } } : {};
 
   const today = startOfTodayWib();
+  const sprints = await prisma.sprint.findMany({ where: { projectId: project.id }, orderBy: { startsAt: "desc" }, select: { id: true, name: true } });
   const [reviewCount, mineCount, modules, members, reviewedToday, closedToday, bugs] = await Promise.all([
     prisma.bug.count({ where: { ...base, status: "DRAFT" } }),
     prisma.bug.count({ where: { ...base, assigneeId: user.id, status: { notIn: DONE } } }),
@@ -79,6 +80,7 @@ export default async function ProjectDetailPage({
         ...(status ? { status } : {}),
         ...(severity ? { severity } : {}),
         ...(sp.module ? { moduleId: sp.module } : {}),
+        ...(sp.sprint ? { sprintId: sp.sprint } : {}),
         ...(q
           ? { OR: [{ title: { contains: q, mode: "insensitive" } }, { key: { contains: q, mode: "insensitive" } }] }
           : {}),
@@ -102,12 +104,12 @@ export default async function ProjectDetailPage({
   const href = (v: View) => `/projects/${project.key}?view=${v}`;
   const selHref = (k: string) => {
     const p = new URLSearchParams();
-    for (const [n, v] of Object.entries({ view: view, status, severity, module: sp.module, q })) if (v) p.set(n, v);
+    for (const [n, v] of Object.entries({ view: view, status, severity, module: sp.module, sprint: sp.sprint, q })) if (v) p.set(n, v);
     p.set("sel", k);
     return `/projects/${project.key}?${p}`;
   };
   const selected = bugs.find((b) => b.key === sp.sel) ?? null;
-  const filtered = Boolean(status || severity || sp.module || q);
+  const filtered = Boolean(status || severity || sp.module || sp.sprint || q);
   const bugHref = (n: number) => `/projects/${project.key}/bugs/${n}`;
   const source = (b: (typeof bugs)[number]) => (b.agentRunId ? "Agent" : b._count.testRunLinks ? "Test run" : null);
 
@@ -293,6 +295,12 @@ export default async function ProjectDetailPage({
               <select name="module" defaultValue={sp.module ?? ""} aria-label="Modul" className="px-2 py-1.5 border border-slate-300 rounded bg-surface">
                 <option value="">Semua modul</option>
                 {modules.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+              </select>
+            )}
+            {sprints.length > 0 && (
+              <select name="sprint" defaultValue={sp.sprint ?? ""} aria-label="Sprint" className="px-2 py-1.5 border border-slate-300 rounded bg-surface">
+                <option value="">Semua sprint</option>
+                {sprints.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
               </select>
             )}
             <button type="submit" className="px-3 py-1.5 border border-slate-300 bg-surface hover:bg-slate-100 rounded font-bold">

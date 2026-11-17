@@ -122,6 +122,7 @@ export default async function BugDetailPage({
   const fixedIn = buildLabel(bug.fixedInVersion, bug.fixedInBuild);
   const canVerify = hasPermission(userRole, "bug.close", user.isAdmin);
   const canEditFields = hasPermission(userRole, "bug.update", user.isAdmin);
+  const projectSprints = await prisma.sprint.findMany({ where: { projectId: project.id }, orderBy: { startsAt: "desc" }, select: { id: true, name: true, status: true } });
   const due = bug.dueAt ? dueLabel(bug.dueAt, bug.status) : null;
   const back = `/projects/${project.key}/bugs/${bug.number}`;
   const projectId = project.id;
@@ -189,7 +190,9 @@ export default async function BugDetailPage({
     const dueRaw = String(formData.get("dueAt") ?? "");
     const dueAt = dueRaw ? new Date(`${dueRaw}T17:00:00+07:00`) : null; // end of working day, WIB
     if (dueAt && Number.isNaN(dueAt.getTime())) return { error: "Tanggal tenggat tidak valid." };
-    const data = { fixedInVersion: clean("fixedInVersion"), fixedInBuild: clean("fixedInBuild"), dueAt };
+    const sprintRaw = String(formData.get("sprintId") ?? "");
+    if (sprintRaw && !(await prisma.sprint.findFirst({ where: { id: sprintRaw, projectId } }))) return { error: "Sprint tidak valid." };
+    const data = { fixedInVersion: clean("fixedInVersion"), fixedInBuild: clean("fixedInBuild"), dueAt, sprintId: sprintRaw || null };
     await prisma.bug.update({ where: { id: bugId }, data });
     await recordAuditLog({
       projectId: projectId, actorId: actor.id, actorEmail: actor.email, action: "bug.fields_update", entityType: "bug", entityId: bugId,
@@ -797,7 +800,7 @@ export default async function BugDetailPage({
 
             {canEditFields && (
               <ActionForm action={handleFields} className="pt-2 space-y-2">
-                <p className="text-slate-400 text-xs font-semibold">Perbaikan &amp; tenggat</p>
+                <p className="text-slate-400 text-xs font-semibold">Perbaikan, tenggat &amp; sprint</p>
                 <div className="grid grid-cols-2 gap-2">
                   <label className="block text-xs text-slate-600">Versi perbaikan
                     <input name="fixedInVersion" defaultValue={bug.fixedInVersion ?? ""} placeholder="1.8.0" className="mt-0.5 w-full px-2 py-1 border border-slate-300 rounded bg-surface" />
@@ -808,6 +811,12 @@ export default async function BugDetailPage({
                 </div>
                 <label className="block text-xs text-slate-600">Tenggat
                   <input type="date" name="dueAt" defaultValue={bug.dueAt ? bug.dueAt.toISOString().slice(0, 10) : ""} className="mt-0.5 w-full px-2 py-1 border border-slate-300 rounded bg-surface" />
+                </label>
+                <label className="block text-xs text-slate-600">Sprint
+                  <select name="sprintId" defaultValue={bug.sprintId ?? ""} className="mt-0.5 w-full px-2 py-1 border border-slate-300 rounded bg-surface">
+                    <option value="">Tanpa sprint</option>
+                    {projectSprints.map((x) => <option key={x.id} value={x.id}>{x.name}{x.status === "COMPLETED" ? " (selesai)" : ""}</option>)}
+                  </select>
                 </label>
                 <SubmitButton pendingText="Menyimpan..." className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded text-xs">Simpan</SubmitButton>
               </ActionForm>
