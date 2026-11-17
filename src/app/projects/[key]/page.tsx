@@ -8,6 +8,7 @@ import { hasPermission } from "@/lib/permissions";
 import { activeModules } from "@/lib/modules";
 import { SEVERITY_STYLE, STATUS_LABEL, SeverityBadge, StatusBadge } from "@/components/ui/bug-badges";
 import { StatePanel } from "@/components/ui/state-panel";
+import { dueLabel } from "@/lib/verify-service";
 import { SlaBadge } from "@/components/ui/sla-badge";
 import { BugImportModal, type ImportPreview } from "./bugs/import/bug-import-modal";
 import { parseMarkdownBugs } from "@/lib/markdown-importer";
@@ -331,6 +332,7 @@ export default async function ProjectDetailPage({
                     <th scope="col" className="py-2 px-3 w-24 font-bold">Severity</th>
                     <th scope="col" className="py-2 px-3 w-40 font-bold">Status</th>
                     <th scope="col" className="py-2 px-3 w-40 font-bold">Assignee</th>
+                    <th scope="col" className="py-2 px-3 w-28 font-bold">Tenggat</th>
                     <th scope="col" className="py-2 px-3 w-28 font-bold text-right" title="Target SLA / Batas waktu penyelesaian">SLA / Sisa</th>
                   </tr>
                 </thead>
@@ -352,6 +354,9 @@ export default async function ProjectDetailPage({
                       <td className="py-2 px-3"><SeverityBadge severity={b.severity} /></td>
                       <td className="py-2 px-3"><StatusBadge status={b.status} /></td>
                       <td className="py-2 px-3 text-slate-600 truncate max-w-[10rem]">{b.assignee?.name || b.assignee?.email || "Belum di-assign"}</td>
+                      <td className="py-2 px-3 whitespace-nowrap">
+                        {b.dueAt ? (() => { const d = dueLabel(b.dueAt, b.status); return <span className={d.overdue ? "text-bad font-bold" : "text-slate-600"}>{d.text}</span>; })() : <span className="text-slate-400">—</span>}
+                      </td>
                       <td className="py-2 px-3 text-right whitespace-nowrap">
                         <SlaBadge severity={b.severity} status={b.status} createdAt={b.createdAt} />
                       </td>
