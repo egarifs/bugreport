@@ -11,11 +11,13 @@ export async function GET(_req: Request, { params }: { params: Promise<{ key: st
   const { key, id } = await params;
   const att = await prisma.bugAttachment.findUnique({
     where: { id },
-    include: { bug: { select: { projectId: true, project: { select: { key: true } } } } },
+    include: { bug: { select: { projectId: true, reporterId: true, project: { select: { key: true } } } } },
   });
   if (!att || att.bug.project.key !== key.toUpperCase()) return NextResponse.json({ error: "Not found" }, { status: 404 });
   try {
-    await checkProjectPermission(userId, att.bug.projectId, "project.read");
+    const me = await checkProjectPermission(userId, att.bug.projectId, "project.read");
+    // Klien hanya boleh membuka lampiran bug yang dilaporkan sesama klien.
+    if (me.role === "CLIENT" && !me.isAdmin && !(await prisma.projectMember.findFirst({ where: { projectId: att.bug.projectId, userId: att.bug.reporterId, role: "CLIENT" } }))) throw new Error("Forbidden");
   } catch {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }

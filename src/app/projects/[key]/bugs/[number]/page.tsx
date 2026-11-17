@@ -89,6 +89,9 @@ export default async function BugDetailPage({
   });
 
   if (!bug) notFound();
+  // Klien hanya boleh melihat bug yang dilaporkan anggota CLIENT (sama dengan daftar di portal).
+  const isClientView = userRole === "CLIENT" && !user.isAdmin;
+  if (isClientView && !(await prisma.projectMember.findFirst({ where: { projectId: project.id, userId: bug.reporter.id, role: "CLIENT" } }))) notFound();
   // Relation is stored one-way; show both directions.
   const allRelated = [...bug.related, ...bug.relatedBy].filter((r, i, a) => a.findIndex((x) => x.key === r.key) === i);
 
@@ -885,7 +888,7 @@ export default async function BugDetailPage({
           </div>
 
           {/* Activity Timeline */}
-          <div className="bg-surface border border-slate-200 rounded-lg p-5 shadow-sm space-y-3">
+          {!isClientView && <div className="bg-surface border border-slate-200 rounded-lg p-5 shadow-sm space-y-3">
             <h3 className="font-bold text-slate-900">Riwayat Aktivitas</h3>
             {timeline.length === 0 ? (
               <p className="text-slate-400 text-xs italic">Belum ada riwayat aktivitas.</p>
@@ -910,7 +913,7 @@ export default async function BugDetailPage({
                 ))}
               </ol>
             )}
-          </div>
+          </div>}
         </div>
       </main>
     </div>

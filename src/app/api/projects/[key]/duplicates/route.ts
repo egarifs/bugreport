@@ -27,6 +27,12 @@ export async function GET(
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
+  // Klien hanya dicocokkan dengan bug yang dilaporkan sesama klien.
+  const clientOnly = !user.isAdmin && project.members[0]?.role === "CLIENT";
+  const clientIds = clientOnly
+    ? (await prisma.projectMember.findMany({ where: { projectId: project.id, role: "CLIENT" }, select: { userId: true } })).map((m) => m.userId)
+    : [];
+
   const { searchParams } = new URL(request.url);
   const q = searchParams.get("q")?.trim();
 
@@ -57,6 +63,7 @@ export async function GET(
       similarity(title, ${q}) as similarity
     FROM "Bug"
     WHERE "projectId" = ${project.id}
+      AND (${!clientOnly} OR "reporterId" = ANY(${clientIds}))
       AND status NOT IN ('CLOSED')
       AND similarity(title, ${q}) > 0.35
     ORDER BY similarity DESC

@@ -47,7 +47,7 @@ export default async function ProjectDetailPage({
 
   const sp = await searchParams;
   // Landing page per role: QA reviews drafts, vendor/dev sees own work, client goes to portal.
-  if (!sp.view && role === "CLIENT" && !user.isAdmin) redirect(`/projects/${project.key}/portal`);
+  if (role === "CLIENT" && !user.isAdmin) redirect(`/projects/${project.key}/portal`);
   const view: View =
     sp.view === "review" || sp.view === "mine" || sp.view === "all"
       ? sp.view

@@ -17,6 +17,10 @@ export async function GET(_req: Request, { params }: { params: Promise<{ key: st
   if (!project.members[0] && !user.isAdmin) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
+  // CSV memuat email reporter/assignee semua bug: bukan untuk klien/viewer.
+  if (!user.isAdmin && ["CLIENT", "VIEWER"].includes(project.members[0].role)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   const csv = await exportBugsCsv(project.id);
   return new NextResponse(csv, {
