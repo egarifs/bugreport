@@ -40,7 +40,6 @@ export default async function BusinessDocsPage({
   if (!project) notFound();
   if (!project.members[0] && !user.isAdmin) redirect("/projects");
   // Bind primitives: server action closures must not capture the narrowed prisma object.
-  const pid = project.id;
   const pkey = project.key;
 
   const role: ProjectRole = project.members[0]?.role ?? (user.isAdmin ? "ADMIN" : "VIEWER");
