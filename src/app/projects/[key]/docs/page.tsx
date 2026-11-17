@@ -79,6 +79,10 @@ export default async function BusinessDocsPage({
               <ActionForm
                 action={async (_prev: ActionResult, formData: FormData): Promise<ActionResult> => {
                   "use server";
+                  // Tanpa closure: build produksi Next 15.2 menghilangkan `pid` dari variabel tertangkap (ReferenceError).
+                  const pkey = String(formData.get("projectKey") ?? "");
+                  const pid = (await prisma.project.findUnique({ where: { key: pkey }, select: { id: true } }))?.id;
+                  if (!pid) return { error: "Project tidak ditemukan." };
                   const actor = await requireProjectPermission(pid, "doc.manage");
                   const title = (formData.get("title") as string)?.trim();
                   const description = (formData.get("description") as string)?.trim() || null;
@@ -156,6 +160,7 @@ export default async function BusinessDocsPage({
                 }}
                 className="grid grid-cols-1 md:grid-cols-3 gap-4"
               >
+                <input type="hidden" name="projectKey" value={pkey} />
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">
                     Judul Dokumen *
