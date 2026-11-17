@@ -31,7 +31,9 @@ test("triageBug: edit, accept gate, reject, vendor denied + audited", async () =
   assert.match((await triageBug(asQa, project.id, b1.id, { accept: true })).error!, /versi\/build/);
   await prisma.bug.update({ where: { id: b1.id }, data: { appVersion: "1.0" } });
   assert.ok("ok" in (await triageBug(asQa, project.id, b1.id, { accept: true })));
-  assert.equal((await prisma.bug.findUniqueOrThrow({ where: { id: b1.id } })).status, "OPEN");
+  const accepted = await prisma.bug.findUniqueOrThrow({ where: { id: b1.id } });
+  assert.equal(accepted.status, "OPEN");
+  assert.ok(Math.abs(accepted.dueAt!.getTime() - Date.now() - 8 * 3_600_000) < 60_000, "dueAt = now + SLA HIGH 8j");
   assert.match((await triageBug(asQa, project.id, b1.id, { severity: "LOW" })).error!, /draft/);
 
   // foreign module and non-member assignee are ignored

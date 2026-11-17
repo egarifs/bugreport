@@ -14,6 +14,11 @@ export const SLA_TARGET_HOURS: Record<BugSeverity, number> = {
   LOW: 72,
 };
 
+/** Tenggat default saat bug diterima: waktu terima + target SLA severity. */
+export function defaultDueAt(severity: BugSeverity, from = new Date()): Date {
+  return new Date(from.getTime() + SLA_TARGET_HOURS[severity] * 3_600_000);
+}
+
 export type SlaStatus = "NOT_APPLICABLE" | "SAFE" | "WARNING" | "BREACHED";
 
 export interface SlaInfo {

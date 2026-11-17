@@ -190,6 +190,8 @@ export default async function BugDetailPage({
     const dueRaw = String(formData.get("dueAt") ?? "");
     const dueAt = dueRaw ? new Date(`${dueRaw}T17:00:00+07:00`) : null; // end of working day, WIB
     if (dueAt && Number.isNaN(dueAt.getTime())) return { error: "Tanggal tenggat tidak valid." };
+    const dueReason = String(formData.get("dueReason") ?? "").trim().slice(0, 300);
+    if ((dueAt?.toISOString() ?? null) !== prevDue && prevDue && !dueReason) return { error: "Isi alasan perubahan tenggat." };
     const sprintRaw = String(formData.get("sprintId") ?? "");
     if (sprintRaw && !(await prisma.sprint.findFirst({ where: { id: sprintRaw, projectId } }))) return { error: "Sprint tidak valid." };
     const data = { fixedInVersion: clean("fixedInVersion"), fixedInBuild: clean("fixedInBuild"), dueAt, sprintId: sprintRaw || null };
@@ -198,7 +200,7 @@ export default async function BugDetailPage({
       projectId: projectId, actorId: actor.id, actorEmail: actor.email, action: "bug.fields_update", entityType: "bug", entityId: bugId,
       changes: {
         before: { fixedInVersion: prevFixedVersion, fixedInBuild: prevFixedBuild, dueAt: prevDue },
-        after: { ...data, dueAt: dueAt?.toISOString() ?? null },
+        after: { ...data, dueAt: dueAt?.toISOString() ?? null, ...(dueReason ? { dueReason } : {}) },
       },
     });
     revalidatePath(back);
@@ -811,6 +813,9 @@ export default async function BugDetailPage({
                 </div>
                 <label className="block text-xs text-slate-600">Tenggat
                   <input type="date" name="dueAt" defaultValue={bug.dueAt ? bug.dueAt.toISOString().slice(0, 10) : ""} className="mt-0.5 w-full px-2 py-1 border border-slate-300 rounded bg-surface" />
+                </label>
+                <label className="block text-xs text-slate-600">Alasan ubah tenggat
+                  <input name="dueReason" placeholder="Wajib jika tenggat diubah" className="mt-0.5 w-full px-2 py-1 border border-slate-300 rounded bg-surface" />
                 </label>
                 <label className="block text-xs text-slate-600">Sprint
                   <select name="sprintId" defaultValue={bug.sprintId ?? ""} className="mt-0.5 w-full px-2 py-1 border border-slate-300 rounded bg-surface">

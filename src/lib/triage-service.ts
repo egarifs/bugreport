@@ -2,6 +2,7 @@ import { BugPriority, BugSeverity, BugStatus } from "@prisma/client";
 import { prisma } from "./db";
 import { guardBugTransition } from "./bug-transition";
 import { ownModuleId } from "./modules";
+import { defaultDueAt } from "./sla";
 import { recordAuditLog } from "./user-service";
 import { notifyBug } from "./notify";
 import type { checkProjectPermission } from "./authz";
@@ -42,7 +43,7 @@ export async function triageBug(actor: Actor, projectId: string, bugId: string, 
     data: {
       severity, priority, moduleId, assigneeId,
       ...(target ? { status: target } : {}),
-      ...(target === BugStatus.OPEN ? { reviewedById: actor.id, reviewedAt: new Date() } : {}),
+      ...(target === BugStatus.OPEN ? { reviewedById: actor.id, reviewedAt: new Date(), ...(bug.dueAt ? {} : { dueAt: defaultDueAt(severity) }) } : {}),
     },
   });
   await recordAuditLog({
