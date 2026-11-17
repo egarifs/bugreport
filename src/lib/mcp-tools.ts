@@ -1,7 +1,7 @@
 import { statusLabel } from "./status-dictionary";
 import { prisma } from "@/lib/db";
 import { redactSecrets } from "@/lib/redact";
-import { notifyBug } from "./notify";
+import { notifyBug, notifyDocApproval } from "./notify";
 import { recordAuditLog } from "@/lib/user-service";
 import { activeModules, resolveModuleId } from "@/lib/modules";
 import { BugPriority, BugSeverity, ProjectRole, TestCasePriority } from "@prisma/client";
@@ -955,12 +955,18 @@ export async function executeMcpTool(
           changes: { after: { slug: rawSlug, version: resultDoc.version.versionNum, title } },
         });
 
+        const pending = resultDoc.version.status === "PENDING";
+        if (pending) {
+          const members = await prisma.projectMember.findMany({ where: { projectId: ctx.projectId }, select: { userId: true } });
+          await notifyDocApproval({ docId: resultDoc.doc.id, docTitle: title, projectId: ctx.projectId, projectKey: ctx.projectKey, targetUserIds: members.map((m) => m.userId), actor: { id: ctx.actorId, name: `Agent (${ctx.actorEmail})` } });
+        }
+
         return {
           content: [
             {
               type: "text",
               text: JSON.stringify({
-                status: "SUCCESS",
+                status: pending ? "PENDING_APPROVAL" : "SUCCESS",
                 docId: resultDoc.doc.id,
                 slug: rawSlug,
                 version: resultDoc.version.versionNum,

@@ -280,6 +280,13 @@ test("PRD-03 MCP Server & AI Agent Integration", async (t) => {
     assert.ok(readData.content.includes("Alur Auth"));
     assert.ok(!readData.content.includes("secret_doc_token_12345"));
     assert.ok(readData.content.includes("[REDACTED]"));
+
+    // Revisi lewat MCP menunggu persetujuan; isi yang dibaca tetap v1.
+    const rev = JSON.parse((await executeMcpTool("upload_business_doc", { title: "Spesifikasi Auth & Login", slug: "spec-auth", contentMarkdown: "# Alur Auth\n\nBARU" }, ctx)).content[0].text);
+    assert.equal(rev.status, "PENDING_APPROVAL");
+    assert.equal(rev.version, 2);
+    const still = JSON.parse((await executeMcpTool("read_business_doc", { slug: "spec-auth" }, ctx)).content[0].text);
+    assert.ok(still.content.includes("Masuk Google") && !still.content.includes("BARU"));
   });
   await t.test("Revoked API key returns 401", async () => {
     await prisma.apiKey.update({
