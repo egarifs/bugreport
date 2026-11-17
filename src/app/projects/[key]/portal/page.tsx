@@ -5,6 +5,7 @@ import { statusLabel } from "@/lib/status-dictionary";
 import { SeverityBadge } from "@/components/ui/bug-badges";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
+import { PortalShell } from "@/components/layout/portal-shell";
 
 const DONE = ["CLOSED", "INVALID", "DUPLICATE", "CANNOT_REPRODUCE", "WONT_FIX"];
 const fmt = (d: Date) => d.toLocaleDateString("id-ID", { day: "numeric", month: "short", timeZone: "Asia/Jakarta" });
@@ -42,22 +43,7 @@ export default async function PortalPage({ params, searchParams }: { params: Pro
   );
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
-      <header className="bg-surface border-b border-slate-200 px-6 flex flex-wrap items-center gap-4">
-        <div className="py-3"><b>{project.key}</b> <span className="text-slate-600">{project.name}</span> <span className="text-xs text-slate-500">· Portal klien</span></div>
-        <nav aria-label="Portal" className="flex gap-1 ml-4">
-          <Link href={base} aria-current="page" className="px-3 min-h-[44px] flex items-center text-sm font-bold border-b-2 border-ink">Bug kami</Link>
-          <Link href={`/projects/${project.key}/reports`} className="px-3 min-h-[44px] flex items-center text-sm text-slate-600 hover:text-slate-900">Status rilis</Link>
-          <Link href={`/projects/${project.key}/docs`} className="px-3 min-h-[44px] flex items-center text-sm text-slate-600 hover:text-slate-900">Dokumen</Link>
-        </nav>
-        {canReport && (
-          <Link href={`/projects/${project.key}/bugs/new`} className="ml-auto px-3.5 min-h-[44px] flex items-center bg-action hover:bg-action-hover text-on-action text-sm font-bold rounded">
-            Laporkan bug
-          </Link>
-        )}
-      </header>
-
-      <main className="max-w-5xl mx-auto p-6 space-y-4">
+    <PortalShell projectKey={project.key} projectName={project.name} active="" canReport={canReport}>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h1 className="text-xl font-bold">Bug yang dilaporkan tim</h1>
           <div role="group" aria-label="Saring bug" className="flex gap-1">
@@ -85,7 +71,6 @@ export default async function PortalPage({ params, searchParams }: { params: Pro
           </table>
         </div>
         <p className="text-xs text-slate-600">Status disederhanakan untuk klien. Komentar internal tim tidak tampil di portal.</p>
-      </main>
-    </div>
+    </PortalShell>
   );
 }
