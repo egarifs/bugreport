@@ -147,4 +147,26 @@ describe("agent QA service (F9)", () => {
     // unrelated: FAIL still demands evidence
     expect((await call("record_result", { itemId: i2.id, result: "FAIL", actualResult: "x", failedStep: 1 }, ctx2)).error).toMatch(/Bukti wajib/);
   });
+  it("finish_session failed:true sets FAILED", async () => {
+    const s = await call("start_session", { agentName: "crash" });
+    await call("finish_session", { sessionId: s.sessionId, failed: true });
+    expect((await prisma.agentRun.findUniqueOrThrow({ where: { id: s.sessionId } })).status).toBe("FAILED");
+  });
+
+  it("import_junit_results: valid, invalid xml, bad url, missing code, closed run, other project/key session", async () => {
+    const run = await call("create_test_run", { name: "JUnit run" }, ctx2);
+    const s = await call("start_session", { agentName: "ci" }, ctx2);
+    const codes = (await prisma.testRunItem.findMany({ where: { testRunId: run.testRunId }, include: { testCase: true }, orderBy: { testCase: { code: "asc" } } })).map((i) => i.testCase.code);
+    const xml = `<testsuite><testcase name="${codes[0]} ok"/><testcase name="${codes[1]} bad"><failure message="boom"/></testcase><testcase name="NOPE-99 x"/></testsuite>`;
+    const args = { testRunId: run.testRunId, sessionId: s.sessionId, xml, sourceUrl: "https://ci.test/job/1" };
+    expect((await call("import_junit_results", { ...args, xml: "<x/>" }, ctx2)).isError).toBe(true);
+    expect((await call("import_junit_results", { ...args, sourceUrl: "ftp://x" }, ctx2)).error).toMatch(/sourceUrl/);
+    expect((await call("import_junit_results", args, ctx)).error).toMatch(/Sesi/); // session of another key
+    const ok = await call("import_junit_results", args, ctx2);
+    expect([ok.imported, ok.missing.length, ok.total]).toEqual([[codes[0], codes[1]], 1, 3]);
+    const failed = await prisma.testRunAttempt.findFirstOrThrow({ where: { agentSessionId: s.sessionId, result: "FAIL" } });
+    expect(failed.failedStep).toBe(1);
+    await prisma.testRun.update({ where: { id: run.testRunId }, data: { status: "COMPLETED" } });
+    expect((await call("import_junit_results", args, ctx2)).error).toMatch(/ditutup/);
+  });
 });

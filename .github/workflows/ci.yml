@@ -16,7 +16,7 @@ jobs:
         image: postgres:16-alpine
         env:
           POSTGRES_USER: bugreport
-          POSTGRES_PASSWORD: bugreport_dev_password
+          POSTGRES_PASSWORD: ci-postgres-password
           POSTGRES_DB: bugreport_test
         ports:
           - 5434:5432
@@ -39,7 +39,7 @@ jobs:
       - name: Setup PostgreSQL extensions
         run: |
           sudo apt-get install -y postgresql-client
-          PGPASSWORD=bugreport_dev_password psql -h 127.0.0.1 -p 5434 -U bugreport -d bugreport_test -f initdb/01-extensions.sql
+          PGPASSWORD=ci-postgres-password psql -h 127.0.0.1 -p 5434 -U bugreport -d bugreport_test -f initdb/01-extensions.sql
 
       - name: Install dependencies
         run: npm ci
@@ -53,34 +53,34 @@ jobs:
       - name: Lint
         run: npm run lint
 
-      - name: Sync Database Schema
+      - name: Apply Migrations
         env:
-          DATABASE_URL: postgresql://bugreport:bugreport_dev_password@127.0.0.1:5434/bugreport_test?schema=public
-        run: npx prisma db push --skip-generate
+          DATABASE_URL: postgresql://bugreport:ci-postgres-password@127.0.0.1:5434/bugreport_test?schema=public
+        run: npx prisma migrate deploy
 
       - name: Generate Prisma Client
         run: npx prisma generate
 
       - name: Seed Test Database
         env:
-          DATABASE_URL: postgresql://bugreport:bugreport_dev_password@127.0.0.1:5434/bugreport_test?schema=public
+          DATABASE_URL: postgresql://bugreport:ci-postgres-password@127.0.0.1:5434/bugreport_test?schema=public
         run: npm run seed:test
 
       - name: Unit & Integration Tests
         env:
-          DATABASE_URL: postgresql://bugreport:bugreport_dev_password@127.0.0.1:5434/bugreport_test?schema=public
+          DATABASE_URL: postgresql://bugreport:ci-postgres-password@127.0.0.1:5434/bugreport_test?schema=public
         run: npm test
 
       - name: Build Next.js
         env:
-          DATABASE_URL: postgresql://bugreport:bugreport_dev_password@127.0.0.1:5434/bugreport_test?schema=public
-          AUTH_SECRET: test-secret-at-least-32-chars-long-e2e
+          DATABASE_URL: postgresql://bugreport:ci-postgres-password@127.0.0.1:5434/bugreport_test?schema=public
+          AUTH_SECRET: ci-auth-secret-at-least-32-characters-long
         run: npm run build
 
       - name: Playwright E2E Tests
         env:
-          DATABASE_URL: postgresql://bugreport:bugreport_dev_password@127.0.0.1:5434/bugreport_test?schema=public
-          AUTH_SECRET: test-secret-at-least-32-chars-long-e2e
+          DATABASE_URL: postgresql://bugreport:ci-postgres-password@127.0.0.1:5434/bugreport_test?schema=public
+          AUTH_SECRET: ci-auth-secret-at-least-32-characters-long
           ADMIN_EMAILS: step1-qa@example.test,admin@example.com
         run: npx playwright test
       - name: Upload Playwright results on failure

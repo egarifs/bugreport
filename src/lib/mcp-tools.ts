@@ -251,7 +251,12 @@ export const MCP_TOOLS_DEFINITIONS = [
   {
     name: "finish_session",
     description: "Akhiri sesi dan simpan ringkasan (jumlah hasil, bug baru, bug ditautkan).",
-    inputSchema: { type: "object", properties: { sessionId: { type: "string" }, summary: { type: "string" } }, required: ["sessionId"] },
+    inputSchema: { type: "object", properties: { sessionId: { type: "string" }, summary: { type: "string" }, failed: { type: "boolean", description: "true bila sesi berhenti karena error fatal (status Gagal)." } }, required: ["sessionId"] },
+  },
+  {
+    name: "import_junit_results",
+    description: "Import hasil JUnit XML ke test run berdasarkan kode test case dalam nama testcase. FAIL wajib sourceUrl sebagai bukti.",
+    inputSchema: { type: "object", properties: { testRunId: { type: "string" }, xml: { type: "string" }, sessionId: { type: "string" }, sourceUrl: { type: "string" } }, required: ["testRunId", "xml", "sessionId"] },
   },
 ];
 
@@ -275,20 +280,24 @@ export async function executeMcpTool(
   }
     const out = (r: object) => ({ content: [{ type: "text" as const, text: JSON.stringify(r) }], isError: "error" in r });
     const a = args as never as Record<string, never>;
+    const agentHandlers: Record<string, () => Promise<object>> = {
+      start_session: () => agent.startSession(ctx, a),
+      list_agent_test_cases: () => agent.listAgentTestCases(ctx, a),
+      create_test_run: () => agent.createTestRun(ctx, a),
+      get_test_run: () => agent.getTestRun(ctx, String(args.testRunId ?? "")),
+      claim_next_item: () => agent.claimItem(ctx, a),
+      heartbeat: () => agent.heartbeat(ctx, a),
+      record_result: () => agent.recordResult(ctx, a),
+      upload_evidence: () => agent.uploadEvidence(ctx, a),
+      link_bug_to_item: () => agent.linkBug(ctx, a),
+      finish_session: () => agent.finishSession(ctx, a),
+      import_junit_results: () => agent.importJUnitResults(ctx, a),
+    };
+    const agentHandler = agentHandlers[toolName];
+    if (agentHandler) return out(await agentHandler());
     switch (toolName) {
-      case "start_session": return out(await agent.startSession(ctx, a));
-      case "list_agent_test_cases": return out(await agent.listAgentTestCases(ctx, a));
-      case "create_test_run": return out(await agent.createTestRun(ctx, a));
-      case "get_test_run": return out(await agent.getTestRun(ctx, String(args.testRunId ?? "")));
-      case "claim_next_item": return out(await agent.claimItem(ctx, a));
       case "list_test_resources": return out(await listTestResources(ctx));
       case "report_resource_status": return out(await reportResourceStatus(ctx, a));
-      case "heartbeat": return out(await agent.heartbeat(ctx, a));
-      case "record_result": return out(await agent.recordResult(ctx, a));
-      case "upload_evidence": return out(await agent.uploadEvidence(ctx, a));
-      case "link_bug_to_item": return out(await agent.linkBug(ctx, a));
-      case "finish_session": return out(await agent.finishSession(ctx, a));
-
       case "list_modules": {
         const mods = await activeModules(ctx.projectId);
         return { content: [{ type: "text", text: JSON.stringify(mods.map((m) => m.name)) }] };

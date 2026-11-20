@@ -99,6 +99,7 @@ export async function POST(req: NextRequest) {
     if (toolName === "create_test_run") requiredScope = "testrun:create";
     if (toolName === "link_bug_to_item") requiredScope = "bug:comment";
     if (toolName === "list_agent_test_cases") requiredScope = "testcase:read";
+    if (toolName === "import_junit_results") requiredScope = "testrun:execute";
     if (toolName === "list_business_docs" || toolName === "read_business_doc") requiredScope = "doc:read";
 
     if (!apiKey.scopes.includes(requiredScope) && !apiKey.scopes.includes("*")) {

@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "tsx --test src/lib/*.test.ts",
+    "test": "tsx --test src/lib/*.test.ts packages/cli/cli.test.mjs",
     "test:unit": "vitest run",
     "test:e2e": "playwright test",
     "seed:test": "tsx prisma/seed-test.ts",
