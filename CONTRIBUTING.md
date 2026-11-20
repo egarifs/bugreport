@@ -10,7 +10,7 @@ docker compose up -d        # PostgreSQL (needs POSTGRES_PASSWORD in your env)
 npm ci
 npx prisma migrate deploy
 npm run seed:test           # optional demo data
-npm run dev
+npm run dev -- -p 3001
 ```
 
 ## Before opening a PR

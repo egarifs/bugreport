@@ -19,7 +19,7 @@ export POSTGRES_PASSWORD=<choose-a-password>
 docker compose up -d
 npm ci
 npx prisma migrate deploy
-npm run dev                   # http://localhost:3001
+npm run dev -- -p 3001        # http://localhost:3001 (matches NEXTAUTH_URL)
 ```
 
 Set `ENABLE_DEV_LOGIN="true"` only locally to sign in without Google OAuth.
