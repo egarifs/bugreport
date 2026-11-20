@@ -1,10 +1,19 @@
 "use client";
 import Script from "next/script";
+import { useEffect } from "react";
 
 export function SwaggerUI() {
+  useEffect(() => {
+    const href = "/swagger/swagger-ui.css";
+    if (document.querySelector(`link[href="${href}"]`)) return;
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = href;
+    document.head.appendChild(link);
+  }, []);
+
   return (
     <>
-      <link rel="stylesheet" href="/swagger/swagger-ui.css" />
       <div id="swagger-ui" />
       <Script
         src="/swagger/swagger-ui-bundle.js"

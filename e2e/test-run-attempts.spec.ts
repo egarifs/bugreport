@@ -38,6 +38,6 @@ test.describe("Step #10: Test run log percobaan", () => {
     await page.getByText("Tutup test run").click();
     await page.getByLabel("Keputusan").selectOption("PASS");
     await page.getByRole("button", { name: "Tutup run" }).click();
-    await expect(page.getByRole("status").filter({ hasText: /alasan/i }).first()).toBeVisible();
+    await expect(page.getByText(/alasan wajib diisi/i).first()).toBeVisible();
   });
 });

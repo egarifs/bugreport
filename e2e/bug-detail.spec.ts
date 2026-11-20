@@ -56,7 +56,7 @@ test("detail bug: QA mengisi versi perbaikan dan tenggat", async ({ page }) => {
   await page.goto(`/projects/CRM/bugs/${n}`);
   await page.getByLabel("Versi perbaikan").fill("2.0.1");
   await page.getByLabel("Build", { exact: true }).fill("b9");
-  await page.getByLabel("Tenggat").fill("2030-01-15");
+  await page.getByLabel("Tenggat", { exact: true }).fill("2030-01-15");
   await page.getByRole("button", { name: "Simpan", exact: true }).click();
   await expect(page.getByText("Tersimpan.")).toBeVisible();
   const after = await prisma.bug.findUniqueOrThrow({ where: { id: bug.id } });

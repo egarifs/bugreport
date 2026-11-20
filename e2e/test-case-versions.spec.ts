@@ -21,10 +21,10 @@ test.describe("Step #9: Test Case Form, Versi & Riwayat (F8)", () => {
 
     // 2. Buka repository test cases di project CRM
     await page.goto("/projects/CRM/test-cases");
-    await expect(page.locator("h2")).toContainText("Repository Test Case");
+    await expect(page.getByRole("tab", { name: /Repository/i })).toBeVisible();
 
     // 3. Klik tombol "+ Test case baru"
-    await page.click('text="+ Test case baru"');
+    await page.getByRole("link", { name: "Test case baru", exact: true }).click();
     await expect(page).toHaveURL(/\/projects\/CRM\/test-cases\/new/);
     await expect(page.locator("h1")).toContainText(/Tambah test case/i);
 
