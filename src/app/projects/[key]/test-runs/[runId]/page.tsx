@@ -12,6 +12,48 @@ import {
 import { AgentLeasePoll } from "./agent-lease-poll";
 
 const GLYPH: Record<string, string> = { NOT_RUN: "○", PASS: "✓", FAIL: "✗", BLOCKED: "◼", SKIPPED: "⊘" };
+
+function StatusIcon({ status, isRunning }: { status: string; isRunning?: boolean }) {
+  if (isRunning) {
+    return (
+      <svg className="w-4 h-4 text-amber-500 animate-spin motion-reduce:animate-none shrink-0" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+        <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="2" strokeDasharray="28" strokeDashoffset="14" strokeLinecap="round" />
+      </svg>
+    );
+  }
+  if (status === "NOT_RUN") {
+    return (
+      <svg className="w-4 h-4 text-slate-400 shrink-0" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+        <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="2" strokeDasharray="3 3" />
+      </svg>
+    );
+  }
+  if (status === "PASS") {
+    return (
+      <svg className="w-4 h-4 text-emerald-600 shrink-0" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+        <circle cx="8" cy="8" r="7" fill="currentColor" fillOpacity="0.15" />
+        <path d="M4.5 8.5L7 11L11.5 5.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    );
+  }
+  if (status === "FAIL") {
+    return (
+      <svg className="w-4 h-4 text-rose-600 shrink-0" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+        <circle cx="8" cy="8" r="7" fill="currentColor" fillOpacity="0.15" />
+        <path d="M5.5 5.5L10.5 10.5M10.5 5.5L5.5 10.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      </svg>
+    );
+  }
+  if (status === "BLOCKED") {
+    return (
+      <svg className="w-4 h-4 text-slate-500 shrink-0" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+        <circle cx="8" cy="8" r="7" fill="currentColor" fillOpacity="0.15" />
+        <circle cx="8" cy="8" r="2.5" fill="currentColor" />
+      </svg>
+    );
+  }
+  return <span aria-hidden="true" className="w-4 text-center">{GLYPH[status] ?? "○"}</span>;
+}
 const LABEL: Record<string, string> = { NOT_RUN: "Belum dijalankan", PASS: "Lolos", FAIL: "Gagal", BLOCKED: "Terblokir", SKIPPED: "Dilewati" };
 const DECISION: Record<string, string> = { PASS: "Lolos", PASS_WITH_NOTES: "Lolos dengan catatan", FAIL: "Gagal" };
 const wib = (d: Date) =>
@@ -131,7 +173,9 @@ export default async function TestRunDetailPage({
               {visible.map((i) => (
                 <Link key={i.id} href={href(`item=${i.id}${sp.filter ? `&filter=${sp.filter}` : ""}`)} aria-current={selected?.id === i.id ? "true" : undefined}
                   className={`flex items-start gap-2 px-3 py-2 min-h-[44px] hover:bg-slate-50 duration-fast ${selected?.id === i.id ? "bg-slate-100" : ""}`}>
-                  <span aria-hidden="true" className="mt-0.5 w-4 text-center">{GLYPH[i.status]}</span>
+                  <span className="mt-0.5 flex items-center justify-center w-4 h-4">
+                    <StatusIcon status={i.status} isRunning={Boolean(i.leaseExpiresAt && i.leaseExpiresAt.getTime() > now)} />
+                  </span>
                   <span className="min-w-0">
                     <span className="font-mono text-xs text-slate-600">{i.testCase.code}</span>
                     <span className="block text-sm text-slate-900 truncate">{i.testCase.title}</span>
