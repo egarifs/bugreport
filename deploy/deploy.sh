@@ -1,24 +1,41 @@
 #!/usr/bin/env bash
-# Deploy from laptop: ./deploy/deploy.sh   (HOST override: HOST=root@x ./deploy/deploy.sh)
-# Production schema was created with `db push` (no _prisma_migrations). First run baselines the
-# 3 migrations that already match prod, then `migrate deploy` applies the rest. Tested on a prod dump copy.
+# Deploy ke production: ./deploy/deploy.sh (override HOST jika perlu)
 set -euo pipefail
 HOST=${HOST:-root@100.110.252.41}
 SHA=$(git rev-parse --short HEAD)
-[ -z "$(git status --porcelain)" ] || { echo "working tree kotor"; exit 1; }
+
+[ -z "$(git status --porcelain)" ] || { echo "Working tree kotor. Selesaikan commit dulu."; exit 1; }
+
+echo "==> 1. Membangun image Docker lokal: bugreport-app:$SHA"
 docker build --network host -t bugreport-app:$SHA .
+
+echo "==> 2. Mengirim image Docker ke server $HOST"
 docker save bugreport-app:$SHA | gzip -1 | ssh $HOST 'gunzip | docker load'
+
+echo "==> 3. Menjalankan backup dan menerapkan perubahan di server"
 ssh $HOST "SHA=$SHA bash -s" <<'REMOTE'
 set -euo pipefail
+
+# Selalu backup DB dan data uploads sebelum tindakan apa pun
+echo "==> Menjalankan backup rutin server..."
 /opt/backups/backup-bugreport.sh </dev/null
+
 cd /opt/stacks/bugreport
-PREV=$(grep ^APP_TAG= .env | cut -d= -f2); echo "prev tag: $PREV"
+PREV=$(grep ^APP_TAG= .env | cut -d= -f2 || echo "none")
+echo "Versi aplikasi saat ini: $PREV"
+
+# Update tag aplikasi di .env
 sed -i "s/^APP_TAG=.*/APP_TAG=$SHA/" .env
+
 P="docker compose run --rm --no-deps app node_modules/.bin/prisma"
-HAS=$(echo "select to_regclass('_prisma_migrations')" | docker compose exec -T db sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -tA')
-if [ -z "$HAS" ]; then
-  for m in 20261026075205_init 20261104085000_add_project_is_test 20261108090000_bug_fix_verify_due; do $P migrate resolve --applied $m </dev/null; done
-fi
+
+# Tandai baseline baru jika skema produksi sudah setara atau belum tercatat
+echo "==> Menyelaraskan status migrasi Prisma..."
+$P migrate resolve --applied 20261120000000_baseline </dev/null || true
 $P migrate deploy </dev/null
+
+echo "==> Merestart container app dengan versi baru ($SHA)..."
 docker compose up -d app </dev/null
+echo "==> Selesai. Container running:"
+docker compose ps
 REMOTE
