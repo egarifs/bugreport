@@ -72,6 +72,7 @@ describe("agent QA service (F9)", () => {
     expect((await prisma.testRunItem.findUniqueOrThrow({ where: { id: item.id } })).currentStep).toBe(2);
     expect((await call("claim_next_item", { itemId: item.id }, ctx2)).isError).toBe(true); // still leased
     await prisma.testRunItem.update({ where: { id: item.id }, data: { leaseExpiresAt: new Date(Date.now() - 1000) } });
+    expect((await call("heartbeat", { itemId: item.id, step: 3 }, ctx)).isError).toBe(true); // expired lease cannot be renewed
     expect((await call("claim_next_item", { itemId: item.id }, ctx2)).itemId).toBe(item.id); // >90s silent -> reclaimable
   });
 
@@ -107,6 +108,8 @@ describe("agent QA service (F9)", () => {
     expect((await prisma.agentRun.findUniqueOrThrow({ where: { id: s.sessionId } })).finishedAt).not.toBeNull();
     expect(await prisma.notification.count({ where: { userId, type: "agent_session", sessionId: s.sessionId } })).toBe(1);
     expect((await call("finish_session", { sessionId: s.sessionId })).isError).toBe(true);
+    expect((await call("claim_next_item", { sessionId: s.sessionId }, ctx)).error).toMatch(/sudah selesai/);
+    expect((await call("record_result", { itemId: item.id, result: "PASS", sessionId: s.sessionId }, ctx)).error).toMatch(/sudah selesai/);
   });
 
   it("session of another key is refused; BLOCKED needs reason; revoked key stops", async () => {
