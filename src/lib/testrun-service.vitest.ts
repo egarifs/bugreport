@@ -83,6 +83,14 @@ describe("test run attempts (F8)", () => {
     const it = await prisma.testRunItem.findUniqueOrThrow({ where: { id: item2Id } });
     expect([it.needsRerun, it.rerunBuild, it.rerunBugId]).toEqual([true, "1.8.0 · b214", bug.id]);
     expect(await prisma.notification.count({ where: { projectId, type: "rerun" } })).toBeGreaterThan(0);
+    // Second call is a no-op: no duplicate flag or notification.
+    const before = await prisma.notification.count({ where: { projectId, type: "rerun" } });
+    expect(await flagRerunForBug(bug.id, { id: dev.id, email: dev.email })).toBe(0);
+    expect(await prisma.notification.count({ where: { projectId, type: "rerun" } })).toBe(before);
+    // Bug not READY_FOR_VERIFICATION flags nothing.
+    const open = await mkBug(92);
+    await linkBugToItem(projectId, itemId, open.key);
+    expect(await flagRerunForBug(open.id, { id: dev.id })).toBe(0);
     // New attempt clears the flag.
     await logAttempt(actor, projectId, item2Id, { result: "PASS" });
     expect((await prisma.testRunItem.findUniqueOrThrow({ where: { id: item2Id } })).needsRerun).toBe(false);

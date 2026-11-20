@@ -141,7 +141,7 @@ export async function logAttempt(
   actor: Actor,
   projectId: string,
   itemId: string,
-  input: { result: string; actualResult?: string; notes?: string; build?: string; evidenceUrl?: string; hasFileEvidence?: boolean; environment?: string; agent?: { name: string; toolName?: string; sessionId?: string } },
+  input: { result: string; actualResult?: string; failedStep?: number; notes?: string; build?: string; evidenceUrl?: string; hasFileEvidence?: boolean; environment?: string; agent?: { name: string; toolName?: string; sessionId?: string } },
 ): Promise<Result> {
   const item = await loadItem(projectId, itemId);
   if (!item) return { error: "Item tidak ditemukan." };
@@ -164,6 +164,7 @@ export async function logAttempt(
         seq: (last?.seq ?? 0) + 1,
         result,
         actualResult,
+        failedStep: input.failedStep ?? null,
         notes,
         evidenceUrl,
         build: input.build?.trim() || item.testRun.buildVersion,
@@ -297,7 +298,10 @@ export async function flagRerunForBug(bugId: string, actor: { id?: string; email
   if (!bug || bug.status !== BugStatus.READY_FOR_VERIFICATION) return 0;
   const build = buildLabel(bug.fixedInVersion, bug.fixedInBuild) || null;
   const items = await prisma.testRunItem.findMany({
-    where: { bugLinks: { some: { bugId } }, status: { in: ["FAIL", "BLOCKED"] }, testRun: { status: "IN_PROGRESS" } },
+    where: {
+      bugLinks: { some: { bugId } }, status: { in: ["FAIL", "BLOCKED"] }, testRun: { status: "IN_PROGRESS", projectId: bug.projectId },
+      NOT: { needsRerun: true, rerunBugId: bug.id, rerunBuild: build }, // idempotent: already flagged for this bug+build
+    },
     include: { testRun: true, testCase: { select: { code: true, title: true } } },
   });
   for (const it of items) {

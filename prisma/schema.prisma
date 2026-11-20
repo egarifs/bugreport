@@ -526,6 +526,7 @@ model TestRunAttempt {
   seq               Int
   result            TestRunItemStatus
   actualResult      String?
+  failedStep        Int?
   notes             String?
   build             String?
   environment       String?
@@ -590,6 +591,12 @@ enum ApiKeyPreset {
   CUSTOM
 }
 
+enum AgentRunStatus {
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
 model ApiKey {
   id          String       @id @default(uuid())
   projectId   String
@@ -632,6 +639,7 @@ model AgentRun {
   agentName   String // e.g. "claude-code", "playwright-reporter"
   modelName   String? // e.g. "claude-3-7-sonnet"
   runId       String // unique identifier passed by the agent run
+  status      AgentRunStatus @default(RUNNING)
   createdBugs Bug[]
   createdAt   DateTime @default(now())
 
