@@ -22,7 +22,7 @@ Hasil yang kamu kirim langsung tercatat atas nama QA pemilik API key, dengan lab
          "url": "https://<host-bugboard>/api/mcp",
          "headers": { "Authorization": "Bearer ${BUGBOARD_KEY}" } } } }
      ```
-   - **CLI** (untuk agent tanpa MCP): `npm i -g @sismedika/bugboard`, lalu pakai perintah `bugboard … --json`.
+   - **CLI** (untuk agent tanpa MCP): `npm i -g @egarifs/bugreport`, lalu pakai perintah `bugboard … --json`.
 3. Tulis di `AGENTS.md` folder ini hal-hal lokal yang BugBoard tidak tahu:
    - Tool eksekusi yang dipakai (mis. Playwright MCP, Chrome DevTools MCP, `npx playwright test`, Cypress).
    - Base URL tiap lingkungan, mis. `STAGING_URL`.
