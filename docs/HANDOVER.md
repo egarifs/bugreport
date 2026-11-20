@@ -21,11 +21,8 @@ Dokumentasi teknis menyeluruh sistem BugReport untuk tim internal QA, Developer,
 ## 2. Port & Lingkungan Server
 
 - **Web Application**: `http://localhost:3001` (Port dialihkan dari 3000 karena digunakan `testflow-api`).
-- **PostgreSQL**: `localhost:5434` (kredensial lihat `DATABASE_URL` di `.env.example`).
-- **Super Admin Accounts**:
-  - `admin@local.test` (Local admin)
-  - `egarifs@gmail.com`
-  - `ega@sismedika.com`
+- **PostgreSQL**: `localhost:5434` (set credentials locally through `.env`; never commit them).
+- **Super Admin Accounts**: configure local admin emails through `ADMIN_EMAILS`. Never commit real personal email addresses.
 
 ---
 
@@ -93,7 +90,7 @@ Untuk tim QA Automation, Frontend, atau integrasi pihak ketiga:
 ### Contoh Payload Autentikasi MCP (JSON-RPC):
 ```bash
 curl -X POST http://localhost:3001/api/mcp \
-  -H "Authorization: Bearer br_live_YOUR_API_KEY_HERE" \
+  -H "Authorization: Bearer $BUGBOARD_KEY" \
   -H "Content-Type: application/json" \
   -d '{
     "jsonrpc": "2.0",

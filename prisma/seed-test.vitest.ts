@@ -7,7 +7,7 @@ const root = resolve(import.meta.dirname, "..");
 describe("test seed inputs and safety", () => {
   it("AC-SEED-01 reads project data from the approved dataset", async () => {
     const data = JSON.parse(await readFile(resolve(root, "docs/revamp/dataset.json"), "utf8"));
-    expect(data.project).toMatchObject({ key: "CRM", name: "CRM Sismedika" });
+    expect(data.project).toMatchObject({ key: "CRM", name: "CRM Contoh" });
     expect(data.bugs).toHaveLength(5);
     expect(data.testCases).toHaveLength(1);
   });
@@ -20,7 +20,7 @@ describe("test seed inputs and safety", () => {
 
   it("AC-SEED-03 uses approved Ega account and marks project as test", async () => {
     const seed = await readFile(resolve(root, "prisma/seed-test.ts"), "utf8");
-    expect(seed).toContain('email: "ega@sismedika.com"');
+    expect(seed).toContain('email: "step1-qa@example.test"');
     expect(seed).toContain("isTest: true");
     expect(seed).toContain("refusing to change account status");
   });

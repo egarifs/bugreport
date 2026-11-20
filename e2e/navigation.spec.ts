@@ -5,7 +5,7 @@ test.describe("mobile navigation drawer", () => {
 
   test("opens, traps focus, closes with Escape, and restores focus", async ({ page }) => {
     await page.goto("/login");
-    await page.getByPlaceholder("test.qa@example.com").fill("ega@sismedika.com");
+    await page.getByPlaceholder("test.qa@example.com").fill("step1-qa@example.test");
     await page.getByRole("button", { name: "Login Dev (Auto-create user)" }).click();
     await expect(page).toHaveURL(/\/projects/);
     await page.goto("/projects/CRM");

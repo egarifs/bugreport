@@ -13,7 +13,7 @@ Paket ini berisi semua layar revamp (v2 sampai v5) sebagai mockup HTML dan scree
 | `ROADMAP.md` | Urutan implementasi: MVP inti QA, fase berikut, dan perubahan skema per langkah. **Mulai dari sini.** |
 | `PROMPTS.md` | Prompt siap pakai untuk agent coding: pembuka sesi dan per langkah ROADMAP. |
 | `acceptance/*.md` | Kriteria terima Diberikan/Ketika/Maka per fitur MVP. |
-| `dataset.md`, `dataset.json` | Satu dataset cerita (CRM Sismedika · Sprint 14) untuk board, seed sandbox, dan e2e. |
+| `dataset.md`, `dataset.json` | Satu dataset cerita (CRM Contoh · Sprint 14) untuk board, seed sandbox, dan e2e. |
 | `agent/bugboard-qa-runner.md` | Instruksi untuk agent QA (pi, Claude Code, dsb.) yang dijalankan di folder lokal QA (F9). |
 
 ## Cara membaca mockup

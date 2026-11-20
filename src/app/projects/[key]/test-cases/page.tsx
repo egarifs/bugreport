@@ -32,10 +32,26 @@ export default async function TestCasesPage({
     where: { key: key.toUpperCase() },
     include: {
       members: { where: { userId: user.id } },
-      testCases: { orderBy: { createdAt: "desc" }, include: { module: { select: { name: true } } } },
+      testCases: {
+        orderBy: { createdAt: "desc" },
+        include: {
+          module: { select: { id: true, name: true } },
+          runItems: {
+            orderBy: { testRun: { createdAt: "desc" } },
+            take: 1,
+            include: {
+              testRun: { select: { id: true, name: true } },
+              bugLinks: {
+                take: 1,
+                include: { bug: { select: { key: true, number: true } } },
+              },
+            },
+          },
+        },
+      },
       testRuns: {
         orderBy: { createdAt: "desc" },
-        take: 5,
+        take: 10,
         include: {
           items: true,
         },
@@ -54,108 +70,136 @@ export default async function TestCasesPage({
   return (
     <AppShell activeProjectKey={project.key}>
       <div className="min-h-full flex flex-col">
-        <header className="bg-surface border-b border-slate-200 px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span className="font-mono font-bold text-xs bg-slate-100 text-slate-700 px-2 py-0.5 rounded">
-              {project.key}
-            </span>
-            <span className="font-semibold text-slate-900 text-sm">
-              Test Cases & Test Runs
-            </span>
+        {/* Header matching Mockup 23 */}
+        <header className="bg-surface border-b border-border-base px-6 py-4 flex flex-wrap items-center justify-between gap-4">
+          <div className="flex flex-wrap items-center gap-4">
+            <h1 className="text-xl font-bold text-text-base">Test case</h1>
+            <div
+              role="tablist"
+              aria-label="Bagian test case"
+              className="inline-flex p-1 rounded-lg bg-surface-sunken gap-1 text-xs font-semibold"
+            >
+              <Link
+                href={`/projects/${project.key}/test-cases`}
+                role="tab"
+                aria-selected={tab === "cases"}
+                className={`px-3 py-1.5 rounded-md transition flex items-center gap-1.5 ${
+                  tab === "cases"
+                    ? "bg-surface-raised text-text-base shadow-xs font-bold"
+                    : "text-text-muted hover:text-text-base"
+                }`}
+              >
+                <span>Repository</span>
+                <span className="font-mono text-[11px] text-text-muted">{project.testCases.length}</span>
+              </Link>
+              <Link
+                href={`/projects/${project.key}/test-cases?tab=runs`}
+                role="tab"
+                aria-selected={tab === "runs"}
+                className={`px-3 py-1.5 rounded-md transition flex items-center gap-1.5 ${
+                  tab === "runs"
+                    ? "bg-surface-raised text-text-base shadow-xs font-bold"
+                    : "text-text-muted hover:text-text-base"
+                }`}
+              >
+                <span>Test run</span>
+                <span className="font-mono text-[11px] text-text-muted">{project.testRuns.length}</span>
+              </Link>
+            </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            {/* Import: secondary utility, tucked into native <details> dropdown */}
+          <div className="flex items-center gap-2.5">
             {canManage && (
               <details className="relative">
-                <summary className="list-none cursor-pointer select-none px-3.5 py-1.5 bg-surface border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-medium rounded transition">
+                <summary className="list-none cursor-pointer select-none px-3.5 py-2 bg-surface-raised border border-border-base hover:bg-surface-sunken text-text-base text-xs font-semibold rounded-lg transition min-h-[38px] flex items-center">
                   Impor ▾
                 </summary>
-                <div className="absolute right-0 mt-1 z-30 w-80 bg-surface border border-slate-200 rounded-lg shadow-lg p-3 space-y-2 text-xs">
-                <p className="text-slate-600 font-medium">Impor massal: XLSX, CSV, atau Markdown (.md). Code yang sama akan di-update.</p>
-                <ActionForm
-                  action={async (_prev: ActionResult, formData: FormData): Promise<ActionResult> => {
-                    "use server";
-                    await requireProjectPermission(project.id, "testcase.manage");
-                    const file = formData.get("file") as File;
-                    if (!file || file.size === 0) return { error: "Pilih file XLSX, CSV, atau Markdown (.md)." };
-                    const fileName = file.name.toLowerCase();
-                    let parsed;
-                    if (fileName.endsWith(".md") || fileName.endsWith(".markdown")) {
-                      const text = await file.text();
-                      parsed = parseMarkdownTestCases(text);
-                    } else {
-                      const buffer = Buffer.from(await file.arrayBuffer());
-                      parsed = parseTestCaseWorkbook(buffer);
-                    }
-                    if (parsed.length === 0) return { error: "Tidak ada baris test case yang terbaca. Cek format tabel/header file." };
+                <div className="absolute right-0 mt-1 z-30 w-80 bg-surface-raised border border-border-base rounded-lg shadow-xl p-3 space-y-2 text-xs">
+                  <p className="text-text-muted font-medium">
+                    Impor massal: XLSX, CSV, atau Markdown (.md). Kode yang sama akan diperbarui.
+                  </p>
+                  <ActionForm
+                    action={async (_prev: ActionResult, formData: FormData): Promise<ActionResult> => {
+                      "use server";
+                      await requireProjectPermission(project.id, "testcase.manage");
+                      const file = formData.get("file") as File;
+                      if (!file || file.size === 0) return { error: "Pilih file XLSX, CSV, atau Markdown (.md)." };
+                      const fileName = file.name.toLowerCase();
+                      let parsed;
+                      if (fileName.endsWith(".md") || fileName.endsWith(".markdown")) {
+                        const text = await file.text();
+                        parsed = parseMarkdownTestCases(text);
+                      } else {
+                        const buffer = Buffer.from(await file.arrayBuffer());
+                        parsed = parseTestCaseWorkbook(buffer);
+                      }
+                      if (parsed.length === 0)
+                        return { error: "Tidak ada baris test case yang terbaca. Cek format tabel/header file." };
 
-                    const mods = await activeModules(project.id);
-                    const byName = new Map(mods.map((m) => [m.name.toLowerCase(), m.id]));
-                    const unknown = new Set<string>();
-                    for (const item of parsed) {
-                      const area = item.moduleArea?.trim();
-                      const moduleId = area ? byName.get(area.toLowerCase()) ?? null : null;
-                      if (area && !moduleId) unknown.add(area);
-                      await saveTestCaseCore(project.id, project.key, {
-                        code: item.code,
-                        moduleId,
-                        title: item.title,
-                        priority: item.priority,
-                        testType: item.testType || null,
-                        targetRole: item.targetRole || null,
-                        precondition: item.precondition || null,
-                        steps: item.steps || "-",
-                        expectedResult: item.expectedResult || "-",
-                        referenceUrl: item.referenceUrl || null,
-                        changelog: "Diimpor dari file",
-                        userId: user.id,
-                      });
-                    }
-                    revalidatePath(`/projects/${project.key}/test-cases`);
-                    const msg = `${parsed.length} test case diimpor.`;
-                    return unknown.size
-                      ? { error: `${msg} Modul tidak dikenal: ${[...unknown].join(", ")}.` }
-                      : { ok: msg };
-                  }}
-                  className="flex flex-col items-start gap-2"
-                >
-                  <input
-                    type="file"
-                    name="file"
-                    accept=".xlsx,.csv,.md,.markdown"
-                    required
-                    className="text-xs file:mr-2 file:py-1 file:px-2.5 file:rounded file:border-0 file:text-xs file:font-medium file:bg-surface file:border-slate-300 file:border file:text-slate-700 hover:file:bg-slate-100 cursor-pointer"
-                  />
-                  <SubmitButton pendingText="Mengimpor..." className="press-snappy px-3 py-1 bg-surface border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-medium rounded">
-                    Upload XLSX/CSV/MD
-                  </SubmitButton>
-                </ActionForm>
+                      const mods = await activeModules(project.id);
+                      const byName = new Map(mods.map((m) => [m.name.toLowerCase(), m.id]));
+                      const unknown = new Set<string>();
+                      for (const item of parsed) {
+                        const area = item.moduleArea?.trim();
+                        const moduleId = area ? byName.get(area.toLowerCase()) ?? null : null;
+                        if (area && !moduleId) unknown.add(area);
+                        await saveTestCaseCore(project.id, project.key, {
+                          code: item.code,
+                          moduleId,
+                          title: item.title,
+                          priority: item.priority,
+                          testType: item.testType || null,
+                          targetRole: item.targetRole || null,
+                          precondition: item.precondition || null,
+                          steps: item.steps || "-",
+                          expectedResult: item.expectedResult || "-",
+                          referenceUrl: item.referenceUrl || null,
+                          changelog: "Diimpor dari file",
+                          userId: user.id,
+                        });
+                      }
+                      revalidatePath(`/projects/${project.key}/test-cases`);
+                      const msg = `${parsed.length} test case diimpor.`;
+                      return unknown.size
+                        ? { error: `${msg} Modul tidak dikenal: ${[...unknown].join(", ")}.` }
+                        : { ok: msg };
+                    }}
+                    className="flex flex-col items-start gap-2"
+                  >
+                    <input
+                      type="file"
+                      name="file"
+                      accept=".xlsx,.csv,.md,.markdown"
+                      required
+                      className="text-xs file:mr-2 file:py-1 file:px-2.5 file:rounded file:border-0 file:text-xs file:font-medium file:bg-surface-sunken file:border-border-base file:border file:text-text-base hover:file:bg-surface-raised cursor-pointer"
+                    />
+                    <SubmitButton
+                      pendingText="Mengimpor..."
+                      className="press-snappy px-3 py-1.5 bg-surface-raised border border-border-base hover:bg-surface-sunken text-text-base text-xs font-semibold rounded"
+                    >
+                      Upload XLSX/CSV/MD
+                    </SubmitButton>
+                  </ActionForm>
                 </div>
               </details>
             )}
 
+            {canManage && (
+              <Link
+                href={`/projects/${project.key}/test-cases/new`}
+                className="px-4 py-2 bg-action hover:bg-action-hover text-on-action text-xs font-bold rounded-lg shadow-sm transition min-h-[38px] flex items-center"
+              >
+                Test case baru
+              </Link>
+            )}
             <Link
               href={`/projects/${project.key}/test-runs/new`}
-              className="px-3.5 py-1.5 bg-surface border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-medium rounded transition"
+              className="px-3.5 py-2 bg-surface-raised border border-border-base hover:bg-surface-sunken text-text-base text-xs font-semibold rounded-lg transition min-h-[38px] flex items-center"
             >
               + Buat Test Run
             </Link>
           </div>
         </header>
-
-        <nav className="bg-surface border-b border-slate-200 px-6 flex gap-5 text-sm" aria-label="Test case tabs">
-          {([["cases", `Repository (${project.testCases.length})`], ["runs", `Test Runs (${project.testRuns.length})`]] as const).map(([t, label]) => (
-            <Link
-              key={t}
-              href={`/projects/${project.key}/test-cases${t === "runs" ? "?tab=runs" : ""}`}
-              aria-current={tab === t ? "page" : undefined}
-              className={`py-2.5 border-b-2 -mb-px ${tab === t ? "border-slate-900 font-semibold text-slate-900" : "border-transparent text-slate-500 hover:text-slate-800"}`}
-            >
-              {label}
-            </Link>
-          ))}
-        </nav>
 
         <main className="p-6 space-y-8 flex-1 min-w-0">
           {tab === "runs" && (
@@ -211,22 +255,41 @@ export default async function TestCasesPage({
               projectKey={project.key}
               canManage={canManage}
               modules={modules.map((m) => ({ id: m.id, name: m.name }))}
-              testCases={project.testCases.map((tc) => ({
-                id: tc.id,
-                code: tc.code,
-                title: tc.title,
-                priority: tc.priority,
-                status: tc.status,
-                moduleId: tc.moduleId,
-                moduleArea: tc.moduleArea,
-                moduleName: tc.module?.name ?? null,
-                testType: tc.testType,
-                targetRole: tc.targetRole,
-                precondition: tc.precondition,
-                steps: tc.steps,
-                expectedResult: tc.expectedResult,
-                referenceUrl: tc.referenceUrl,
-              }))}
+              testCases={project.testCases.map((tc) => {
+                const stepCount = tc.steps ? tc.steps.split(/\n+/).filter((s) => s.trim().length > 0).length : 0;
+                const lastRunItem = tc.runItems[0] ?? null;
+                const linkedBug = lastRunItem?.bugLinks[0]?.bug ?? null;
+                return {
+                  id: tc.id,
+                  code: tc.code,
+                  title: tc.title,
+                  priority: tc.priority,
+                  status: tc.status,
+                  moduleId: tc.moduleId,
+                  moduleArea: tc.moduleArea,
+                  moduleName: tc.module?.name ?? null,
+                  testType: tc.testType,
+                  targetRole: tc.targetRole,
+                  precondition: tc.precondition,
+                  steps: tc.steps,
+                  expectedResult: tc.expectedResult,
+                  referenceUrl: tc.referenceUrl,
+                  stepCount,
+                  lastResult: lastRunItem
+                    ? {
+                        status: lastRunItem.status,
+                        runName: lastRunItem.testRun?.name,
+                        runId: lastRunItem.testRun?.id,
+                      }
+                    : null,
+                  linkedBug: linkedBug
+                    ? {
+                        key: linkedBug.key,
+                        number: linkedBug.number,
+                      }
+                    : null,
+                };
+              })}
             />
           </section>
           )}

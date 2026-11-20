@@ -4,7 +4,7 @@ import { prisma } from "./db";
 import { getProjectReport, exportBugsCsv, csvCell } from "./report";
 
 test("PRD-05 Reporting & Release Readiness", async (t) => {
-  const stamp = Date.now().toString().slice(-5);
+  const stamp = `${Date.now()}${process.pid}${Math.random().toString(36).slice(2, 8)}`.slice(-12);
   const project = await prisma.project.create({ data: { key: `R5${stamp}`, name: "Report fixture" } });
   const qa = await prisma.user.create({ data: { email: `qa_rep_${stamp}@example.com`, status: "ACTIVE" } });
   const dev = await prisma.user.create({ data: { email: `dev_rep_${stamp}@example.com`, name: "Dev", status: "ACTIVE" } });

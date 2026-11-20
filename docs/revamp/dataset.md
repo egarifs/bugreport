@@ -1,4 +1,4 @@
-# Dataset cerita: "CRM Sismedika · Sprint 14"
+# Dataset cerita: "CRM Contoh · Sprint 14"
 
 Satu cerita data untuk tiga keperluan:
 
@@ -10,7 +10,7 @@ Versi yang bisa dibaca mesin ada di `dataset.json`. Bila keduanya berbeda, yang 
 
 ## Project dan orang
 
-- **Project:** CRM Sismedika, kode `CRM`
+- **Project:** CRM Contoh, kode `CRM`
 - **Modul:** Kontak, Leads, Laporan, Integrasi WA
 - **Zona waktu:** WIB
 

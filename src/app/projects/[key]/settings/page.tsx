@@ -6,6 +6,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { AppShell } from "@/components/layout/app-shell";
 import { notFound, redirect } from "next/navigation";
+import Link from "next/link";
 import { hasPermission } from "@/lib/permissions";
 import { dailyTokenQuota, projectTokensToday } from "@/lib/chat-quota";
 import { ProjectRole } from "@prisma/client";
@@ -303,7 +304,7 @@ export default async function ProjectSettingsPage({
                   <div key={r.id} className="py-3 flex items-start justify-between">
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="font-semibold text-slate-900 text-xs">{r.agentName}</span>
+                        <Link href={`/projects/${project.key}/agent-sessions/${r.id}`} className="font-semibold text-slate-900 text-xs hover:text-link hover:underline">{r.agentName}</Link>
                         <span className="font-mono text-xs bg-slate-100 px-2 py-0.5 rounded text-slate-600">
                           run: {r.runId}
                         </span>
@@ -325,7 +326,7 @@ export default async function ProjectSettingsPage({
                       </div>
                     </div>
                     <span className="text-xs text-slate-400">
-                      {r.createdAt.toLocaleString()}
+                      {r.status === "COMPLETED" ? "Selesai · " : r.status === "FAILED" ? "Gagal · " : "Berjalan · "}{r.createdAt.toLocaleString()}
                     </span>
                   </div>
                 ))}

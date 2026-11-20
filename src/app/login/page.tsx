@@ -29,7 +29,7 @@ export default async function LoginPage({
             <span className="w-10 h-10 rounded-[10px] bg-ink text-on-ink flex items-center justify-center font-mono font-bold text-[13px]">
               BB
             </span>
-            <span className="font-bold text-lg">BugBoard Sismedika</span>
+            <span className="font-bold text-lg">Bug Report by egarifs</span>
           </div>
           <h1 className="text-[34px] leading-[42px] font-bold max-w-[20ch] mb-3">
             Satu tempat untuk temuan bug tim internal dan mitra.

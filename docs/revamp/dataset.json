@@ -1,7 +1,7 @@
 {
  "project": {
   "key": "CRM",
-  "name": "CRM Sismedika",
+  "name": "CRM Contoh",
   "timezone": "Asia/Jakarta",
   "modules": [
    "Kontak",

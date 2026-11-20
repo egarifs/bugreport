@@ -151,7 +151,7 @@ export default async function NewProjectPage() {
                       type="email"
                       name={`email${i}`}
                       aria-label={`Email anggota ${i}`}
-                      placeholder="nama@sismedika.com"
+                      placeholder="nama@example.com"
                       className="flex-1 text-sm px-3 py-2 border border-slate-300 rounded focus:outline-none focus:ring-1 focus:ring-slate-900"
                     />
                     <select

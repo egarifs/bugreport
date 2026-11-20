@@ -10,7 +10,7 @@ services:
     environment:
       POSTGRES_DB: bugreport
       POSTGRES_USER: bugreport
-      POSTGRES_PASSWORD: bugreport_dev_password
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
     ports:
       - "127.0.0.1:5434:5432"
     volumes:

@@ -9,10 +9,10 @@ export async function GET() {
       title: "BugReport API & MCP Server",
       version: "1.0.0",
       description:
-        "Dokumentasi API lengkap untuk integrasi AI Agent (MCP JSON-RPC) dan REST endpoints BugReport by egarifs.",
+        "Dokumentasi API untuk integrasi AI Agent (MCP JSON-RPC) dan REST endpoints BugReport.",
       contact: {
         name: "QA Engineering Team",
-        email: "admin@local.test",
+        email: "maintainers@example.test",
       },
     },
     servers: [

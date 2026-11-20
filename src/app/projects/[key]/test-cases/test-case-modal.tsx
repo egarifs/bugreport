@@ -21,6 +21,16 @@ export type TestCaseItem = {
   steps: string;
   expectedResult: string;
   referenceUrl: string | null;
+  stepCount: number;
+  lastResult?: {
+    status: "PASS" | "FAIL" | "BLOCKED" | "SKIPPED" | "NOT_RUN";
+    runName?: string;
+    runId?: string;
+  } | null;
+  linkedBug?: {
+    key: string;
+    number: number;
+  } | null;
 };
 
 export type ModuleOption = { id: string; name: string };
@@ -46,6 +56,7 @@ export function TestCaseManagementSection({
   const [selectedModuleId, setSelectedModuleId] = useState<string | "ALL" | "UNASSIGNED">("ALL");
   const [selectedType, setSelectedType] = useState<string>("ALL");
   const [selectedPriority, setSelectedPriority] = useState<string>("ALL");
+  const [selectedResult, setSelectedResult] = useState<string>("ALL");
   const [moduleSearch, setModuleSearch] = useState<string>("");
   const [tcSearch, setTcSearch] = useState<string>("");
 
@@ -108,6 +119,12 @@ export function TestCaseManagementSection({
         if (tc.priority !== selectedPriority) return false;
       }
 
+      if (selectedResult !== "ALL") {
+        const itemResult = tc.lastResult?.status ?? "NOT_RUN";
+        if (selectedResult === "NOT_RUN" && itemResult !== "NOT_RUN") return false;
+        if (selectedResult !== "NOT_RUN" && itemResult !== selectedResult) return false;
+      }
+
       if (tcSearch.trim()) {
         const q = tcSearch.toLowerCase().trim();
         const codeMatch = tc.code.toLowerCase().includes(q);
@@ -118,7 +135,7 @@ export function TestCaseManagementSection({
 
       return true;
     });
-  }, [testCases, selectedModuleId, selectedType, selectedPriority, tcSearch]);
+  }, [testCases, selectedModuleId, selectedType, selectedPriority, selectedResult, tcSearch]);
 
   // Checkbox helpers
   const allFilteredSelected =
@@ -169,25 +186,6 @@ export function TestCaseManagementSection({
 
   return (
     <div className="space-y-4">
-      {/* Header bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 className="text-base font-bold text-text-base">Repository Test Case</h2>
-          <p className="text-xs text-text-muted">
-            Total {testCases.length} skenario pengujian di project {projectKey}.
-          </p>
-        </div>
-
-        {canManage && (
-          <Link
-            href={`/projects/${projectKey}/test-cases/new`}
-            className="px-4 py-2 bg-action hover:bg-action-hover text-on-action text-xs font-bold rounded-lg shadow-sm transition min-h-[44px] flex items-center"
-          >
-            + Test case baru
-          </Link>
-        )}
-      </div>
-
       {/* Two-Column Layout (Mockup 23) */}
       <div className="flex flex-col lg:flex-row gap-5 items-start">
         {/* LEFT COLUMN: MODULE NAVIGATION */}
@@ -274,8 +272,8 @@ export function TestCaseManagementSection({
           </nav>
 
           {moduleCounts.UNASSIGNED > 0 && (
-            <div className="p-2.5 rounded-lg bg-warn-bg border border-warn-border text-[11px] text-warn leading-relaxed">
-              {moduleCounts.UNASSIGNED} test case belum punya modul.
+            <div className="p-3 rounded-lg bg-warn-bg border border-warn-border text-xs text-warn leading-relaxed">
+              {moduleCounts.UNASSIGNED} test case belum punya modul. Beri modul agar bisa dipilih saat membuat test run per modul.
             </div>
           )}
         </aside>
@@ -315,17 +313,31 @@ export function TestCaseManagementSection({
               <option value="ALL">Semua Prioritas</option>
               <option value="CRITICAL">Critical</option>
               <option value="HIGH">High</option>
-              <option value="MEDIUM">Medium</option>
+              <option value="MEDIUM">Normal</option>
               <option value="LOW">Low</option>
             </select>
 
-            {(selectedModuleId !== "ALL" || selectedType !== "ALL" || selectedPriority !== "ALL" || tcSearch) && (
+            <select
+              value={selectedResult}
+              onChange={(e) => setSelectedResult(e.target.value)}
+              className="px-3 py-2 text-xs border border-border-base rounded-lg bg-surface-raised text-text-base focus:outline-none"
+            >
+              <option value="ALL">Semua Hasil</option>
+              <option value="PASS">Lolos</option>
+              <option value="FAIL">Gagal</option>
+              <option value="BLOCKED">Terblokir</option>
+              <option value="SKIPPED">Dilewati</option>
+              <option value="NOT_RUN">Belum dijalankan</option>
+            </select>
+
+            {(selectedModuleId !== "ALL" || selectedType !== "ALL" || selectedPriority !== "ALL" || selectedResult !== "ALL" || tcSearch) && (
               <button
                 type="button"
                 onClick={() => {
                   setSelectedModuleId("ALL");
                   setSelectedType("ALL");
                   setSelectedPriority("ALL");
+                  setSelectedResult("ALL");
                   setTcSearch("");
                 }}
                 className="text-xs text-link hover:underline font-semibold px-2 py-1"
@@ -358,13 +370,14 @@ export function TestCaseManagementSection({
                     <th className="py-2.5 px-3">Judul Test Case</th>
                     <th className="py-2.5 px-3 w-24">Tipe</th>
                     <th className="py-2.5 px-3 w-24">Prioritas</th>
-                    <th className="py-2.5 px-3 w-20">Status</th>
-                    {canManage && <th className="py-2.5 px-3 w-20 text-right">Aksi</th>}
+                    <th className="py-2.5 px-3 w-40">Hasil terakhir</th>
+                    {canManage && <th className="py-2.5 px-3 w-16 text-right">Aksi</th>}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border-base">
                   {filteredTestCases.map((tc) => {
                     const isChecked = selectedIds.has(tc.id);
+                    const res = tc.lastResult?.status ?? "NOT_RUN";
                     return (
                       <tr
                         key={tc.id}
@@ -396,9 +409,21 @@ export function TestCaseManagementSection({
                           >
                             {tc.title}
                           </Link>
-                          <div className="text-[11px] text-text-muted mt-0.5 flex items-center gap-2">
+                          <div className="text-[11px] text-text-muted mt-0.5 flex flex-wrap items-center gap-1.5">
                             <span>{tc.moduleName || tc.moduleArea || "Tanpa modul"}</span>
-                            {tc.targetRole && <span>• Peran {tc.targetRole}</span>}
+                            {tc.targetRole && <span>· role {tc.targetRole}</span>}
+                            <span>· {tc.stepCount} langkah</span>
+                            {tc.linkedBug && (
+                              <span>
+                                · tertaut{" "}
+                                <Link
+                                  href={`/projects/${projectKey}/bugs/${tc.linkedBug.number}`}
+                                  className="font-mono text-link hover:underline"
+                                >
+                                  {tc.linkedBug.key}
+                                </Link>
+                              </span>
+                            )}
                           </div>
                         </td>
                         <td className="py-3 px-3 whitespace-nowrap">
@@ -407,17 +432,66 @@ export function TestCaseManagementSection({
                           </span>
                         </td>
                         <td className="py-3 px-3 whitespace-nowrap">
-                          <span className="font-semibold text-text-base capitalize">
-                            {tc.priority.toLowerCase()}
-                          </span>
+                          {tc.priority === "HIGH" ? (
+                            <span className="inline-flex items-center gap-1 text-warn font-semibold">
+                              <svg aria-hidden="true" width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M4 10.5 8 6.5l4 4" />
+                              </svg>
+                              High
+                            </span>
+                          ) : tc.priority === "CRITICAL" ? (
+                            <span className="inline-flex items-center gap-1 text-bad font-semibold">
+                              <svg aria-hidden="true" width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M4 10.5 8 6.5l4 4" />
+                              </svg>
+                              Critical
+                            </span>
+                          ) : tc.priority === "LOW" ? (
+                            <span className="text-text-muted">Low</span>
+                          ) : (
+                            <span className="text-text-base">Normal</span>
+                          )}
                         </td>
                         <td className="py-3 px-3 whitespace-nowrap">
-                          {tc.status === "DEPRECATED" ? (
-                            <span className="text-[11px] text-text-muted line-through">Usang</span>
-                          ) : tc.status === "DRAFT" ? (
-                            <span className="text-[11px] text-text-muted">Draf</span>
+                          {res === "PASS" ? (
+                            <span className="inline-flex items-center gap-1.5 text-ok font-semibold">
+                              <svg aria-hidden="true" width="14" height="14" viewBox="0 0 14 14" fill="none">
+                                <circle cx="7" cy="7" r="6.25" className="fill-ok" />
+                                <path d="M4.2 7.2 6.2 9.2 9.8 5.2" stroke="#fff" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+                              </svg>
+                              Lolos{tc.lastResult?.runName ? ` · ${tc.lastResult.runName}` : ""}
+                            </span>
+                          ) : res === "FAIL" ? (
+                            <span className="inline-flex items-center gap-1.5 text-bad font-semibold">
+                              <svg aria-hidden="true" width="14" height="14" viewBox="0 0 14 14" fill="none">
+                                <circle cx="7" cy="7" r="6.25" className="fill-bad" />
+                                <path d="M4.8 4.8l4.4 4.4M9.2 4.8 4.8 9.2" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" />
+                              </svg>
+                              Gagal{tc.lastResult?.runName ? ` · ${tc.lastResult.runName}` : ""}
+                            </span>
+                          ) : res === "BLOCKED" ? (
+                            <span className="inline-flex items-center gap-1.5 text-warn font-semibold">
+                              <svg aria-hidden="true" width="14" height="14" viewBox="0 0 14 14" fill="none">
+                                <circle cx="7" cy="7" r="5.5" stroke="currentColor" strokeWidth="1.5" />
+                                <path d="M3.5 10.5 L10.5 3.5" stroke="currentColor" strokeWidth="1.5" />
+                              </svg>
+                              Terblokir
+                            </span>
+                          ) : res === "SKIPPED" ? (
+                            <span className="inline-flex items-center gap-1.5 text-text-muted font-medium">
+                              <svg aria-hidden="true" width="14" height="14" viewBox="0 0 14 14" fill="none">
+                                <circle cx="7" cy="7" r="5.5" stroke="currentColor" strokeWidth="1.5" />
+                                <path d="M3.5 10.5 L10.5 3.5" stroke="currentColor" strokeWidth="1.5" />
+                              </svg>
+                              Dilewati
+                            </span>
                           ) : (
-                            <span className="text-[11px] text-ok font-semibold">Siap</span>
+                            <span className="inline-flex items-center gap-1.5 text-text-muted">
+                              <svg aria-hidden="true" width="14" height="14" viewBox="0 0 14 14" fill="none">
+                                <circle cx="7" cy="7" r="5.5" stroke="currentColor" strokeWidth="1.5" strokeDasharray="2.5 2.5" />
+                              </svg>
+                              Belum dijalankan
+                            </span>
                           )}
                         </td>
                         {canManage && (
@@ -442,28 +516,28 @@ export function TestCaseManagementSection({
 
       {/* Floating Action Bar when items selected (Mockup 23) */}
       {selectedIds.size > 0 && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 bg-ink text-on-ink px-5 py-3 rounded-xl shadow-2xl flex items-center gap-4 text-xs font-semibold">
-          <span>{selectedIds.size} dipilih</span>
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-ink text-on-ink px-5 py-3 rounded-xl shadow-2xl flex items-center gap-4 text-xs font-semibold whitespace-nowrap">
+          <span className="font-bold">{selectedIds.size} dipilih</span>
           <div className="h-4 w-px bg-on-ink/30" />
           {canManage && (
             <button
               type="button"
               onClick={() => setShowMoveModal(true)}
-              className="opacity-80 hover:opacity-100 transition"
+              className="opacity-90 hover:opacity-100 transition px-2 py-1"
             >
               Pindah modul
             </button>
           )}
           <Link
             href={`/projects/${projectKey}/test-runs/new?cases=${Array.from(selectedIds).join(",")}`}
-            className="bg-action hover:bg-action-hover text-on-action px-3.5 py-1.5 rounded-lg transition"
+            className="bg-action hover:bg-action-hover text-on-action px-3.5 py-1.5 rounded-lg transition font-bold"
           >
             Buat test run dari pilihan
           </Link>
           <button
             type="button"
             onClick={() => setSelectedIds(new Set())}
-            className="opacity-70 hover:opacity-100"
+            className="opacity-70 hover:opacity-100 px-2 py-1"
           >
             Batal
           </button>

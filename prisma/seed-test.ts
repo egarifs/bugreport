@@ -7,9 +7,9 @@ const datasetPath = resolve(process.cwd(), "docs/revamp/dataset.json");
 
 async function main() {
   const data = JSON.parse(await readFile(datasetPath, "utf8"));
-  const existingUser = await prisma.user.findUnique({ where: { email: "ega@sismedika.com" } });
+  const existingUser = await prisma.user.findUnique({ where: { email: "step1-qa@example.test" } });
   if (existingUser && existingUser.status !== UserStatus.ACTIVE) {
-    throw new Error("Seed user ega@sismedika.com exists but is not ACTIVE; refusing to change account status.");
+    throw new Error("Seed user step1-qa@example.test exists but is not ACTIVE; refusing to change account status.");
   }
   const existingProject = await prisma.project.findUnique({ where: { key: data.project.key } });
   if (existingProject) {
@@ -18,7 +18,7 @@ async function main() {
 
   await prisma.$transaction(async (tx) => {
     const user = existingUser ?? await tx.user.create({
-      data: { email: "ega@sismedika.com", name: "Ega", status: UserStatus.ACTIVE },
+      data: { email: "step1-qa@example.test", name: "Step1 QA", status: UserStatus.ACTIVE },
     });
     const project = await tx.project.create({
       data: { key: data.project.key, name: data.project.name, isTest: true },
@@ -160,7 +160,7 @@ async function main() {
 
     await tx.project.update({ where: { id: project.id }, data: { bugSeq: Math.max(...data.bugs.map((bug: { key: string }) => Number(bug.key.split("-").at(-1)))) } });
   });
-  console.log(`Seeded test project ${data.project.key} for ega@sismedika.com`);
+  console.log(`Seeded test project ${data.project.key} for step1-qa@example.test`);
 }
 
 main().catch((error) => {

@@ -9,6 +9,7 @@ import { StatusBadge } from "@/components/ui/bug-badges";
 import {
   closeRunAction, createBugAction, linkBugAction, logAttemptAction, reopenRunAction, updateAllVersionsAction, updateVersionAction,
 } from "../test-run-actions";
+import { AgentLeasePoll } from "./agent-lease-poll";
 
 const GLYPH: Record<string, string> = { NOT_RUN: "○", PASS: "✓", FAIL: "✗", BLOCKED: "◼", SKIPPED: "⊘" };
 const LABEL: Record<string, string> = { NOT_RUN: "Belum dijalankan", PASS: "Lolos", FAIL: "Gagal", BLOCKED: "Terblokir", SKIPPED: "Dilewati" };
@@ -50,6 +51,7 @@ export default async function TestRunDetailPage({
           rerunBug: { select: { key: true, number: true } },
           bugLinks: { include: { bug: { select: { key: true, number: true, status: true } } } },
           attempts: { orderBy: { seq: "asc" }, include: { executedBy: { select: { name: true, email: true } }, testCaseVersion: { select: { version: true } }, evidence: { orderBy: { createdAt: "asc" } } } },
+          runningBy: { select: { name: true, email: true } },
         },
       },
     },
@@ -74,6 +76,8 @@ export default async function TestRunDetailPage({
   const visible = sp.filter === "rerun" ? run.items.filter((i) => i.needsRerun) : run.items;
   const selected = run.items.find((i) => i.id === sp.item) ?? visible[0] ?? null;
   const pending = run.items.filter((i) => i.status === "NOT_RUN");
+  const now = Date.now();
+  const hasActiveLease = run.items.some((i) => i.leaseExpiresAt && i.leaseExpiresAt.getTime() > now);
   const href = (extra: string) => `${base}?${extra}`;
 
   return (
@@ -103,6 +107,7 @@ export default async function TestRunDetailPage({
         </header>
 
         <main className="p-6 space-y-4 flex-1">
+          <AgentLeasePoll active={hasActiveLease} />
           <section aria-label="Ringkasan" className="flex flex-wrap items-center gap-x-5 gap-y-1 text-sm text-slate-700">
             <span className="font-bold text-slate-900">{total} test case</span>
             {["PASS", "FAIL", "BLOCKED", "SKIPPED", "NOT_RUN"].map((s) => (
@@ -131,6 +136,9 @@ export default async function TestRunDetailPage({
                     <span className="font-mono text-xs text-slate-600">{i.testCase.code}</span>
                     <span className="block text-sm text-slate-900 truncate">{i.testCase.title}</span>
                     <span className="text-xs text-slate-500">{LABEL[i.status]}{i.attempts.length > 1 ? ` · ${i.attempts.length} percobaan` : ""}</span>
+                    {i.leaseExpiresAt && i.leaseExpiresAt.getTime() > now && <span className="block text-xs font-bold text-action">Sedang dijalankan · {i.runningAgentName ?? i.runningBy?.name ?? "agent"}{i.currentStep && i.totalSteps ? ` · langkah ${i.currentStep}/${i.totalSteps}` : ""}</span>}
+                    {i.leaseExpiresAt && i.leaseExpiresAt.getTime() <= now && i.runningAgentName && <span className="block text-xs font-bold text-warn">Terputus</span>}
+                    {i.leaseExpiresAt && i.leaseExpiresAt.getTime() > now && <span className="block text-xs text-text-muted">{i.runningBy?.name || i.runningBy?.email || "Pelaksana"}</span>}
                     {i.needsRerun && <span className="block text-xs font-bold text-sev-high">Perlu re-run</span>}
                     {newer(i) && <span className="block text-xs font-bold text-action">Ada versi baru (v{newer(i)})</span>}
                   </span>

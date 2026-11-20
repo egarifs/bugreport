@@ -16,7 +16,9 @@ const TABS = [
   { key: "suspended", label: "Ditangguhkan", status: UserStatus.SUSPENDED },
 ] as const;
 
-const isInternal = (email: string) => email.toLowerCase().endsWith("@sismedika.com");
+// Set INTERNAL_EMAIL_DOMAIN (e.g. "example.com") to mark staff accounts; empty = every account is external.
+const internalDomain = (process.env.INTERNAL_EMAIL_DOMAIN ?? "").trim().toLowerCase().replace(/^@/, "");
+const isInternal = (email: string) => !!internalDomain && email.toLowerCase().endsWith(`@${internalDomain}`);
 
 export default async function AdminUsersPage({
   searchParams,
@@ -252,7 +254,7 @@ export default async function AdminUsersPage({
             </div>
           )}
           <div className="mt-4 bg-slate-100 border border-slate-200 rounded p-3 text-xs text-slate-600">
-            <b>Peran untuk email eksternal.</b> Domain di luar @sismedika.com disarankan Vendor atau Client. Admin, QA, atau Developer bisa membaca catatan internal.
+            <b>Peran untuk email eksternal.</b> Domain di luar domain internal disarankan Vendor atau Client. Admin, QA, atau Developer bisa membaca catatan internal.
           </div>
         </section>
 
