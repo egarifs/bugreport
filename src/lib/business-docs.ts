@@ -8,10 +8,28 @@ export function docFilePath(projectKey: string, storedPath: string) {
 }
 
 export const isMarkdown = (fileName: string) => fileName.toLowerCase().endsWith(".md");
+export const isPdf = (fileName: string) => fileName.toLowerCase().endsWith(".pdf");
 
-export async function readDocText(projectKey: string, v: { storedPath: string; fileName: string }) {
-  if (!isMarkdown(v.fileName)) return null; // ponytail: PDF text not extracted; add pdf parsing when PDFs need chat search.
-  return fs.readFile(docFilePath(projectKey, v.storedPath), "utf8").catch(() => null);
+export async function readDocText(projectKey: string, v: { storedPath: string; fileName: string }): Promise<string | null> {
+  const filePath = docFilePath(projectKey, v.storedPath);
+
+  if (isMarkdown(v.fileName)) {
+    return fs.readFile(filePath, "utf8").catch(() => null);
+  }
+
+  if (isPdf(v.fileName)) {
+    try {
+      const buffer = await fs.readFile(filePath);
+      const { extractText } = await import("unpdf");
+      const { text } = await extractText(new Uint8Array(buffer));
+      const extracted = Array.isArray(text) ? text.join("\n\n") : String(text || "");
+      return extracted.trim() || null;
+    } catch {
+      return null;
+    }
+  }
+
+  return null;
 }
 
 export interface Section {

@@ -184,7 +184,7 @@ export async function executeChatTool(
       return JSON.stringify({
         query: q,
         foundDocs: results.filter((r) => r.relevant).map((r) => ({ ...r, relevant: undefined })),
-        hint: "Pakai read_business_doc untuk isi lengkap. PDF belum bisa dibaca isinya (contentReadable=false).",
+        hint: "Pakai read_business_doc untuk membaca isi dokumen lengkap.",
       });
     }
 
@@ -193,7 +193,7 @@ export async function executeChatTool(
       const d = (await currentDocs(ctx.projectId)).find((x) => x.title.toLowerCase() === title);
       if (!d) return JSON.stringify({ error: "Dokumen tidak ditemukan. Cek judul lewat search_business_docs." });
       const text = await readDocText(d.projectKey, d.version);
-      if (text === null) return JSON.stringify({ title: d.title, error: "Isi file belum bisa dibaca (PDF atau file hilang)." });
+      if (text === null) return JSON.stringify({ title: d.title, error: "Isi file belum bisa dibaca atau file hilang." });
       return JSON.stringify({
         title: d.title,
         version: `v${d.version.versionNum}`,

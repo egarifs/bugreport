@@ -13,3 +13,10 @@ test("business-docs: split, rank, safe path", () => {
   assert.equal(docFilePath("CRM", "/etc/../../passwd"), docFilePath("CRM", "passwd"));
   assert.ok(docFilePath("CRM", "/app/uploads/CRM/docs/a.md").endsWith("/uploads/CRM/docs/a.md"));
 });
+
+test("business-docs: extracts text from PDF buffer", async () => {
+  const { isPdf } = await import("./business-docs");
+  assert.equal(isPdf("spec.pdf"), true);
+  assert.equal(isPdf("spec.PDF"), true);
+  assert.equal(isPdf("spec.md"), false);
+});
