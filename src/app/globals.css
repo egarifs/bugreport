@@ -114,11 +114,35 @@ input:not([type="checkbox"]):not([type="radio"]), textarea, select {
   .shimmer-text { color: rgb(var(--c-slate-900)); background: none; }
 }
 
-/* Skeleton tampil hanya jika memuat > 300 ms (AC-STATE-03); tanpa animasi saat reduced-motion. */
+/* Skeleton tampil halus tanpa flash blank; tanpa animasi saat reduced-motion. */
 @keyframes skeleton-in { to { opacity: 1; } }
-.skeleton-delayed { opacity: 0; animation: skeleton-in 0s linear 300ms forwards; }
+.skeleton-delayed { opacity: 0.4; animation: skeleton-in 180ms cubic-bezier(0.2, 0.0, 0, 1.0) forwards; }
 @media (prefers-reduced-motion: reduce) {
   .skeleton-delayed, .skeleton-delayed * { animation-name: skeleton-in !important; }
+}
+
+/* Android Material 3 Vertical Shared Axis Transition */
+@keyframes android-axis-in {
+  0% {
+    opacity: 0.65;
+    transform: translateY(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.android-shared-axis {
+  animation: android-axis-in 200ms cubic-bezier(0.05, 0.7, 0.1, 1.0) both;
+  will-change: transform, opacity;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .android-shared-axis {
+    animation: none !important;
+    transform: none !important;
+  }
 }
 
 /* Soft warm glow behind auth pages (token-based, follows theme). */

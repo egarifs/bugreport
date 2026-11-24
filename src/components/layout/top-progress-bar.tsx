@@ -9,7 +9,7 @@ export function TopProgressBar() {
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState(0);
 
-  // Trigger loading when clicking navigation links
+  // Trigger loading immediately when clicking navigation links
   useEffect(() => {
     function handleAnchorClick(e: MouseEvent) {
       const target = (e.target as HTMLElement).closest("a");
@@ -21,7 +21,7 @@ export function TopProgressBar() {
 
       if (href && !isExternal && !isAnchor && href !== pathname) {
         setLoading(true);
-        setProgress(30);
+        setProgress(35);
       }
     }
 
@@ -29,12 +29,12 @@ export function TopProgressBar() {
     return () => document.removeEventListener("click", handleAnchorClick);
   }, [pathname]);
 
-  // Animate progress when loading starts
+  // Smooth Android Material linear indicator progression
   useEffect(() => {
     if (!loading) return;
 
-    const timer1 = setTimeout(() => setProgress(65), 100);
-    const timer2 = setTimeout(() => setProgress(85), 350);
+    const timer1 = setTimeout(() => setProgress(70), 80);
+    const timer2 = setTimeout(() => setProgress(90), 250);
 
     return () => {
       clearTimeout(timer1);
@@ -42,13 +42,13 @@ export function TopProgressBar() {
     };
   }, [loading]);
 
-  // Complete loading when pathname or searchParams change
+  // Complete and wipe smoothly on route resolved
   useEffect(() => {
     setProgress(100);
     const timer = setTimeout(() => {
       setLoading(false);
       setProgress(0);
-    }, 200);
+    }, 180);
     return () => clearTimeout(timer);
   }, [pathname, searchParams]);
 
@@ -57,16 +57,16 @@ export function TopProgressBar() {
   return (
     <div
       aria-hidden="true"
-      className="fixed top-0 left-0 right-0 z-[9999] h-[2.5px] bg-transparent pointer-events-none"
+      className="fixed top-0 left-0 right-0 z-[9999] h-[2.5px] bg-slate-200/40 pointer-events-none"
     >
       <div
-        className="h-full transition-all ease-out duration-200"
+        className="h-full transition-all ease-[cubic-bezier(0.05,0.7,0.1,1.0)] duration-200"
         style={{
           width: `${progress}%`,
           backgroundColor: "rgb(var(--c-action))",
-          boxShadow: "0 0 8px rgb(var(--c-action))",
         }}
       />
     </div>
   );
 }
+
