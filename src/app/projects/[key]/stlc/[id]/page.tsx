@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { checkProjectPermission } from "@/lib/authz";
 import { hasPermission } from "@/lib/permissions";
 import { AppShell } from "@/components/layout/app-shell";
+import { PrintButton } from "@/components/layout/print-button";
 import { buildReleaseNotes, exitStatus } from "@/lib/stlc";
 import { exitFacts, releaseBugs, summaryData, type SummaryData } from "@/lib/stlc-service";
 import { STATUS_LABEL_STLC } from "@/lib/stlc-labels";
@@ -86,17 +87,18 @@ export default async function StlcDocPage({ params, searchParams }: { params: Pr
   return (
     <AppShell activeProjectKey={doc.project.key}>
       <div className="p-6 max-w-3xl space-y-5">
-        <nav className="text-xs"><Link className="underline" href={`/projects/${doc.project.key}/stlc`}>← Rencana uji & laporan</Link></nav>
+        <nav className="text-xs print:hidden"><Link className="underline" href={`/projects/${doc.project.key}/stlc`}>← Rencana uji & laporan</Link></nav>
         <header className="flex flex-wrap items-start justify-between gap-3">
           <div><h1 className="text-lg font-semibold text-slate-900">{doc.title}</h1><p className="text-xs text-slate-500">{STATUS_LABEL_STLC[doc.kind][doc.status]}{doc.releaseVersion ? ` · rilis ${doc.releaseVersion}` : ""}{doc.sprint ? ` · ${doc.sprint.name}` : ""}</p></div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 print:hidden">
+            <PrintButton />
             {doc.kind === "TEST_PLAN" && canApprove && doc.status === "DRAFT" && <form action={approveStlcDoc.bind(null, id)}><button className={btn}>Setujui</button></form>}
             {doc.kind !== "TEST_PLAN" && canManage && doc.status !== "FINAL" && <form action={finalizeStlcDoc.bind(null, id)}><button className={btn}>Finalkan</button></form>}
           </div>
         </header>
         <form action={save} className="space-y-5">
           {content}
-          {!locked && <button className={btn}>Simpan</button>}
+          {!locked && <button className={`${btn} print:hidden`}>Simpan</button>}
         </form>
       </div>
     </AppShell>

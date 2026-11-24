@@ -67,10 +67,11 @@ export async function AppShell({ children, activeProjectKey }: AppShellProps) {
   });
 
   return (
-    <div className="flex flex-col md:flex-row h-screen w-screen overflow-hidden bg-slate-50">
+    <div className="flex flex-col md:flex-row h-screen w-screen overflow-hidden bg-slate-50 print:block print:h-auto print:w-auto print:overflow-visible">
       <Suspense fallback={null}>
         <TopProgressBar />
       </Suspense>
+      <div className="contents print:hidden">
       <AppSidebar
         user={{
           name: user.name,
@@ -81,12 +82,14 @@ export async function AppShell({ children, activeProjectKey }: AppShellProps) {
         projects={options}
         activeProjectKey={activeProjectKey}
       />
-      <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-        {sandbox && <SandboxBand />}
+      </div>
+      <div className="flex-1 flex flex-col min-w-0 overflow-y-auto print:overflow-visible">
+        {sandbox && <div className="print:hidden"><SandboxBand /></div>}
         <RouteTransition>
           {children}
         </RouteTransition>
         {tour}
+        <p className="hidden print:block px-6 py-3 text-xs text-slate-500">Dokumen internal · dicetak dari BugBoard</p>
       </div>
     </div>
   );
