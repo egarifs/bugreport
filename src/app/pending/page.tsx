@@ -75,6 +75,11 @@ export default async function PendingPage() {
               <li><b className="text-link">Admin meninjau</b><div className="text-xs text-slate-600">Admin sudah diberi notifikasi. Biasanya kurang dari 1 hari kerja.</div></li>
               <li><b className="text-slate-600">Diberi akses project dan peran</b><div className="text-xs text-slate-600">Setelah disetujui, buka lagi halaman ini untuk masuk ke project.</div></li>
             </ol>
+            <div className="border border-slate-200 rounded-lg p-4 bg-slate-50 space-y-2">
+              <b className="text-sm">Sambil menunggu, belajar dulu</b>
+              <p className="text-xs text-slate-600">Coba BugBoard di Project Latihan dengan data contoh. Tidak memengaruhi project asli.</p>
+              <Link href="/onboarding" className="h-10 px-4 inline-flex items-center border border-slate-300 bg-surface hover:bg-slate-50 text-sm font-bold rounded-lg">Mulai panduan</Link>
+            </div>
             <div className="flex gap-2.5 items-center">
               <Link
                 href="/api/auth/refresh-session"

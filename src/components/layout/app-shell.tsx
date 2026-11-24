@@ -5,6 +5,21 @@ import { TopProgressBar } from "./top-progress-bar";
 import { RouteTransition } from "./route-transition";
 import { Suspense } from "react";
 import { hasPermission, ROLE_PERMISSIONS } from "@/lib/permissions";
+import Link from "next/link";
+import { resetMySandbox } from "@/app/onboarding/actions";
+
+function SandboxBand() {
+  return (
+    <div role="note" className="flex flex-wrap items-center gap-3 px-4 py-2 bg-slate-100 text-slate-900 text-sm border-b border-slate-300">
+      <b>Project Latihan</b>
+      <span>Data contoh. Tidak memengaruhi project asli.</span>
+      <span className="ml-auto flex gap-3">
+        <form action={resetMySandbox}><button className="underline font-bold min-h-[32px]">Reset data</button></form>
+        <Link href="/onboarding" className="underline font-bold min-h-[32px] flex items-center">Kembali ke panduan</Link>
+      </span>
+    </div>
+  );
+}
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -17,15 +32,20 @@ export async function AppShell({ children, activeProjectKey }: AppShellProps) {
     | { id?: string; name?: string | null; email?: string | null; isAdmin?: boolean; status?: string }
     | undefined;
 
-  // If not logged in or pending, render children without sidebar (handled by login / pending pages)
-  if (!user || user.status !== "ACTIVE" || !user.id) {
-    return <>{children}</>;
+  // If not logged in, render children without sidebar (handled by login page)
+  if (!user || !user.id) return <>{children}</>;
+  const sandbox = activeProjectKey
+    ? await prisma.project.findFirst({ where: { key: activeProjectKey.toUpperCase(), isSandbox: true, sandboxOwnerId: user.id }, select: { key: true } })
+    : null;
+  // PENDING: hanya halaman project Latihan miliknya, tanpa sidebar penuh. Status lain: tanpa shell.
+  if (user.status !== "ACTIVE") {
+    return user.status === "PENDING" && sandbox ? <div className="min-h-screen bg-slate-50"><SandboxBand />{children}</div> : <>{children}</>;
   }
 
   // Fetch projects user has access to
   const projects = await prisma.project.findMany({
     where: user.isAdmin
-      ? {}
+      ? { OR: [{ isSandbox: false }, { sandboxOwnerId: user.id }] }
       : {
           members: { some: { userId: user.id } },
         },
@@ -58,6 +78,7 @@ export async function AppShell({ children, activeProjectKey }: AppShellProps) {
         activeProjectKey={activeProjectKey}
       />
       <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
+        {sandbox && <SandboxBand />}
         <RouteTransition>
           {children}
         </RouteTransition>

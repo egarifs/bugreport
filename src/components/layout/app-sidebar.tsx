@@ -385,6 +385,20 @@ export function AppSidebar({ user, projects, activeProjectKey }: AppSidebarProps
               </svg>
               {!collapsed && <span className="flex-1 truncate">API & Swagger Docs</span>}
             </Link>
+            <Link
+              href="/onboarding"
+              title={collapsed ? "Panduan" : undefined}
+              className={`flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition ${
+                pathname === "/onboarding"
+                  ? "bg-slate-100 text-slate-900 font-semibold"
+                  : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+              } ${collapsed ? "justify-center px-1.5" : ""}`}
+            >
+              <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3m.08 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              {!collapsed && <span className="flex-1 truncate">Panduan</span>}
+            </Link>
           </div>
 
           {/* Admin Section (Conditional) */}

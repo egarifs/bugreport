@@ -17,6 +17,7 @@ export default async function ProjectsPage() {
   // Admin sees all projects; regular users only see assigned projects
   const projects = user.isAdmin
     ? await prisma.project.findMany({
+        where: { OR: [{ isSandbox: false }, { sandboxOwnerId: user.id }] }, // Latihan orang lain tidak muncul
         orderBy: { createdAt: "desc" },
         include: {
           _count: { select: { bugs: true, members: true } },

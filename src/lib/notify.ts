@@ -56,6 +56,8 @@ async function save(
 ) {
   const ids = [...new Set(userIds)].filter((id) => id && id !== actor.id);
   if (!ids.length) return 0;
+  // Project Latihan tidak mengirim notifikasi.
+  if (data.projectId && (await prisma.project.findFirst({ where: { id: data.projectId, isSandbox: true }, select: { id: true } }))) return 0;
 
   // Fetch preferences, scope, and focusUntil for target users
   const users = await prisma.user.findMany({

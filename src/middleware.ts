@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
+import { pendingPathAllowed } from "@/lib/sandbox";
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -40,6 +41,8 @@ export async function middleware(request: NextRequest) {
   // If user is PENDING, REJECTED, or SUSPENDED
   if (user.status !== "ACTIVE") {
     if (pathname === "/pending") return NextResponse.next();
+    // PENDING boleh membuka halaman project (Latihan); server menolak project selain milik sendiri.
+    if (user.status === "PENDING" && pendingPathAllowed(pathname)) return NextResponse.next();
     return NextResponse.redirect(new URL("/pending", request.url));
   }
 

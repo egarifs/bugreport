@@ -205,6 +205,7 @@ export async function flushDailyDraftDigest(projectId?: string) {
   const draftBugs = await prisma.bug.findMany({
     where: {
       status: "DRAFT",
+      project: { isSandbox: false },
       ...whereProject,
       createdAt: { gte: new Date(Date.now() - 24 * 3600_000) },
     },

@@ -25,7 +25,7 @@ export default async function ProfileApiKeysPage(props: {
   const userMemberships = await prisma.projectMember.findMany({
     where: { userId: user.id },
     include: {
-      project: { select: { id: true, key: true, name: true, isArchived: true } },
+      project: { select: { id: true, key: true, name: true, isArchived: true, isSandbox: true } },
     },
   });
 
@@ -33,7 +33,7 @@ export default async function ProfileApiKeysPage(props: {
 
   if (user.isAdmin) {
     const allProjects = await prisma.project.findMany({
-      where: { isArchived: false },
+      where: { isArchived: false, isSandbox: false },
       select: { id: true, key: true, name: true },
       orderBy: { name: "asc" },
     });
@@ -48,7 +48,7 @@ export default async function ProfileApiKeysPage(props: {
     });
   } else {
     availableProjects = userMemberships
-      .filter((m) => !m.project.isArchived)
+      .filter((m) => !m.project.isArchived && !m.project.isSandbox)
       .map((m) => ({
         id: m.project.id,
         key: m.project.key,
@@ -140,10 +140,10 @@ export default async function ProfileApiKeysPage(props: {
                   // Verify user membership in project
                   const targetProject = await prisma.project.findUnique({
                     where: { id: projectId },
-                    select: { id: true, isArchived: true },
+                    select: { id: true, isArchived: true, isSandbox: true },
                   });
-                  if (!targetProject || targetProject.isArchived) {
-                    throw new Error("Project tidak valid atau telah diarsipkan");
+                  if (!targetProject || targetProject.isArchived || targetProject.isSandbox) {
+                    throw new Error("Project tidak valid, diarsipkan, atau project Latihan");
                   }
 
                   let effectiveRole: ProjectRole = "VIEWER";

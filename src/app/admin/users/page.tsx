@@ -8,6 +8,7 @@ import { hashPassword, MIN_PASSWORD } from "@/lib/password";
 import { ProjectRole, UserStatus } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { AppShell } from "@/components/layout/app-shell";
+import { isGuideRole, progressOf } from "@/lib/onboarding";
 
 const TABS = [
   { key: "pending", label: "Menunggu", status: UserStatus.PENDING },
@@ -49,8 +50,10 @@ export default async function AdminUsersPage({
       take: 50,
       include: {
         memberships: {
+          where: { project: { isSandbox: false } },
           include: { project: true },
         },
+        onboarding: true,
       },
     }),
     prisma.user.groupBy({ by: ["status"], _count: { _all: true } }),
@@ -60,7 +63,7 @@ export default async function AdminUsersPage({
   const countOf = (st: UserStatus) => counts.find((c) => c.status === st)?._count._all ?? 0;
 
   const projects = await prisma.project.findMany({
-    where: { isArchived: false },
+    where: { isArchived: false, isSandbox: false },
     orderBy: { name: "asc" },
   });
 
@@ -297,6 +300,24 @@ export default async function AdminUsersPage({
                           .map((m) => `${m.project.key} (${m.role})`)
                           .join(", ")}
                   </div>
+                  {u.status === "ACTIVE" && (() => {
+                    const p = progressOf(isGuideRole(u.onboarding?.guideRole) ? u.onboarding!.guideRole as never : null, u.onboarding?.completedSteps ?? []);
+                    return (
+                      <div className="mt-1 flex items-center gap-2 text-slate-600">
+                        <span>Onboarding {p.done}/{p.total}</span>
+                        <span className="w-20 h-1.5 rounded bg-slate-100" aria-hidden="true"><span className="block h-full rounded bg-ink" style={{ width: `${(p.done / p.total) * 100}%` }} /></span>
+                        {p.done < p.total && (
+                          <form action={async () => {
+                            "use server";
+                            const admin = await requireAdmin();
+                            await prisma.notification.create({ data: { userId: u.id, type: "onboarding", title: "Selesaikan panduan BugBoard", body: "Coba langkah pertama di Project Latihan.", href: "/onboarding", actorName: admin.email } });
+                            await recordAuditLog({ actorId: admin.id, actorEmail: admin.email, action: "onboarding.remind", entityType: "user", entityId: u.id, changes: { after: { email: u.email } } });
+                            revalidatePath("/admin/users");
+                          }}><button className="underline font-bold min-h-[32px]">Kirim pengingat</button></form>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
 
                 {u.status === "ACTIVE" && (
