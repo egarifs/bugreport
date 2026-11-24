@@ -7,6 +7,8 @@ import { getProjectReport } from "@/lib/report";
 import { SEVERITY_STYLE, STATUS_LABEL, SeverityBadge } from "@/components/ui/bug-badges";
 import { computeTrend } from "@/lib/trend";
 import type { BugSeverity, BugStatus } from "@prisma/client";
+import { SummaryTab } from "./summary-tab";
+import { PerformanceTab } from "./performance-tab";
 
 const SEVERITIES = ["BLOCKER", "HIGH", "MEDIUM", "LOW"] as const;
 
@@ -15,14 +17,14 @@ export default async function ReportsPage({
   searchParams,
 }: {
   params: Promise<{ key: string }>;
-  searchParams: Promise<{ version?: string; tab?: string; sprint?: string }>;
+  searchParams: Promise<{ version?: string; tab?: string; sprint?: string; module?: string; user?: string; type?: string; period?: string }>;
 }) {
   const session = await auth();
   const user = session?.user as { id?: string; isAdmin?: boolean } | undefined;
   if (!user?.id) redirect("/login");
 
   const { key } = await params;
-  const { version, tab, sprint: sprintId } = await searchParams;
+  const { version, tab, sprint: sprintId, module: moduleId, user: targetUser, type: ptype, period } = await searchParams;
   const isTrend = tab === "trend";
   const project = await prisma.project.findUnique({
     where: { key: key.toUpperCase() },
@@ -32,6 +34,15 @@ export default async function ReportsPage({
   if (!project.members[0] && !user.isAdmin) redirect("/projects");
 
   if (isTrend && project.members[0]?.role === "CLIENT" && !user.isAdmin) redirect(`/projects/${project.key}/reports`);
+  if (tab === "performance") {
+    const role = project.members[0]?.role ?? null;
+    if (role === "CLIENT" || role === "VIEWER") redirect(`/projects/${project.key}/reports`);
+    return <PerformanceTab project={{ id: project.id, key: project.key }} userId={user.id} role={role} isLead={role === "ADMIN" || Boolean(user.isAdmin)} targetId={targetUser} type={ptype === "quarter" ? "quarter" : "month"} pkey={period} nav={<ReportTabs projectKey={project.key} active="performance" />} />;
+  }
+  if (tab === "summary") {
+    if (project.members[0]?.role === "CLIENT" && !user.isAdmin) redirect(`/projects/${project.key}/reports`);
+    return <SummaryTab project={{ id: project.id, key: project.key }} sprintId={sprintId} moduleId={moduleId} isLead={project.members[0]?.role === "ADMIN" || Boolean(user.isAdmin)} nav={<ReportTabs projectKey={project.key} active="summary" />} />;
+  }
   if (isTrend) return <TrendTab project={{ id: project.id, key: project.key }} sprintId={sprintId} />;
   const r = await getProjectReport(project.id, version?.trim() || undefined);
   const isClient = project.members[0]?.role === "CLIENT" && !user.isAdmin;
@@ -198,12 +209,14 @@ export default async function ReportsPage({
   );
 }
 
-function ReportTabs({ projectKey, active }: { projectKey: string; active: "release" | "trend" }) {
+function ReportTabs({ projectKey, active }: { projectKey: string; active: "release" | "trend" | "summary" | "performance" }) {
   const cls = (a: boolean) => `px-3 min-h-[44px] flex items-center text-sm font-bold border-b-2 ${a ? "border-ink text-slate-900" : "border-transparent text-slate-500 hover:text-slate-900"}`;
   return (
     <nav aria-label="Jenis laporan" className="flex gap-2 w-full order-last border-b border-slate-200">
+      <Link href={`/projects/${projectKey}/reports?tab=summary`} aria-current={active === "summary" ? "page" : undefined} className={cls(active === "summary")}>Ringkasan</Link>
       <Link href={`/projects/${projectKey}/reports`} aria-current={active === "release" ? "page" : undefined} className={cls(active === "release")}>Kesiapan rilis</Link>
       <Link href={`/projects/${projectKey}/reports?tab=trend`} aria-current={active === "trend" ? "page" : undefined} className={cls(active === "trend")}>Tren</Link>
+      <Link href={`/projects/${projectKey}/reports?tab=performance`} aria-current={active === "performance" ? "page" : undefined} className={cls(active === "performance")}>Performa</Link>
     </nav>
   );
 }
