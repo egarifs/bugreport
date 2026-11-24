@@ -31,7 +31,6 @@ export async function triageBug(actor: Actor, projectId: string, bugId: string, 
   const target = input.accept ? BugStatus.OPEN : input.reject ? BugStatus.INVALID : null;
   if (target === BugStatus.OPEN) {
     if (!moduleId) return { error: "Pilih modul sebelum menerima bug." };
-    if (!(bug.appVersion || bug.buildNumber)) return { error: "Bug belum punya versi/build; isi di halaman detail." };
   }
   if (target) {
     const g = await guardBugTransition(bug, projectId, target, actor);

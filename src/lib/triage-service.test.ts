@@ -27,9 +27,7 @@ test("triageBug: edit, accept gate, reject, vendor denied + audited", async () =
   const after = await prisma.bug.findUniqueOrThrow({ where: { id: b1.id } });
   assert.deepEqual([after.severity, after.priority, after.moduleId, after.assigneeId, after.status], ["HIGH", "URGENT", mod.id, vendor.id, "DRAFT"]);
 
-  // accept blocked without build/version
-  assert.match((await triageBug(asQa, project.id, b1.id, { accept: true })).error!, /versi\/build/);
-  await prisma.bug.update({ where: { id: b1.id }, data: { appVersion: "1.0" } });
+  // accept allowed even without build/version (now optional)
   assert.ok("ok" in (await triageBug(asQa, project.id, b1.id, { accept: true })));
   const accepted = await prisma.bug.findUniqueOrThrow({ where: { id: b1.id } });
   assert.equal(accepted.status, "OPEN");

@@ -555,14 +555,11 @@ export default async function BugDetailPage({
                     return { error: "Isi alasan reopen sebelum membuka ulang bug." };
                   }
 
-                  // Draft -> Open gate: version/build and a module from the project's master list.
+                  // Draft -> Open gate: module from the project's master list.
                   const opening = targetStatus === BugStatus.OPEN && bug.status === BugStatus.DRAFT;
                   const moduleId = opening
                     ? await ownModuleId(project.id, (formData.get("moduleId") as string) || bug.moduleId)
                     : undefined;
-                  if (opening && !(appVersion || bug.appVersion)) {
-                    return { error: "Isi versi atau build sebelum membuka bug ini." };
-                  }
                   if (opening && !moduleId) {
                     return { error: "Pilih modul sebelum membuka bug ini. Admin project menambah modul di Settings." };
                   }
@@ -654,7 +651,7 @@ export default async function BugDetailPage({
                 {bug.status === BugStatus.DRAFT && (
                   <div>
                     <label className="block text-xs text-slate-500 mb-0.5">
-                      Versi / Build Rilis (wajib untuk Open) *
+                      Versi / Build Rilis (opsional)
                     </label>
                     <input
                       type="text"
