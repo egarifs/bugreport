@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db";
-import { devMetrics, qaMetrics } from "@/lib/performance";
+import { adminMetrics, devMetrics, qaMetrics } from "@/lib/performance";
 
 const OPEN = ["OPEN", "IN_PROGRESS", "DESIGN_REVIEW", "READY_FOR_VERIFICATION", "REOPENED"] as const;
 const toStatus = (s: string) => ({ path: ["after", "status"], equals: s });
@@ -28,7 +28,17 @@ export async function personMetrics(projectId: string, userId: string, from: Dat
   const movedAt = new Map<string, Date>();
   for (const e of movedEv) if (e.entityId && !movedAt.has(e.entityId)) movedAt.set(e.entityId, e.createdAt);
   const now = new Date();
+  const [docsDecided, sprintsClosed, draftsWaiting] = await Promise.all([
+    prisma.businessDocVersion.findMany({ where: { decidedById: userId, decidedAt: range, doc: { projectId } }, select: { uploadedAt: true, decidedAt: true } }),
+    prisma.sprintClosure.findMany({ where: { closedById: userId, createdAt: range, sprint: { projectId } }, select: { createdAt: true, sprint: { select: { endsAt: true } } } }),
+    prisma.bug.count({ where: { projectId, status: "DRAFT", createdAt: { lt: new Date(+now - 2 * 86_400_000) } } }),
+  ]);
   return {
+    admin: adminMetrics({
+      docs: docsDecided.filter((d): d is { uploadedAt: Date; decidedAt: Date } => !!d.decidedAt),
+      sprints: sprintsClosed.map((s) => ({ closedAt: s.createdAt, endsAt: s.sprint.endsAt })),
+      draftsWaiting,
+    }),
     qa: qaMetrics({
       casesCreated: versions.filter((v) => v.version === 1).length, newVersions: versions.filter((v) => v.version > 1).length,
       attempts: attempts, reported, closedBugs,

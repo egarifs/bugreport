@@ -66,6 +66,26 @@ export function devMetrics(i: DevInput) {
   };
 }
 
+export interface AdminInput {
+  docs: { uploadedAt: Date; decidedAt: Date }[]; // revisi dokumen yang diputuskan orang ini
+  sprints: { closedAt: Date; endsAt: Date }[]; // sprint yang ditutup orang ini
+  draftsWaiting: number; // draf menunggu triase > 2 hari (kondisi project saat ini)
+}
+export function adminMetrics(i: AdminInput) {
+  const DAY = 86_400_000;
+  return {
+    docsApproved: i.docs.length,
+    medianApprovalHours: median(i.docs.map((d) => (+d.decidedAt - +d.uploadedAt) / HOUR)),
+    sprintsOnTimePct: i.sprints.length ? Math.round((i.sprints.filter((s) => +s.closedAt <= +s.endsAt + DAY).length / i.sprints.length) * 100) : null,
+    draftsWaiting: i.draftsWaiting,
+  };
+}
+
+/** Median tim per peran untuk satu metrik; null bila tidak ada nilai. */
+export function teamMedian(values: (number | null)[]): number | null {
+  return median(values.filter((v): v is number => typeof v === "number"));
+}
+
 /** Definisi tiap metrik: satu sumber untuk tooltip (i) dan PDF. */
 export const METRIC_DEF: Record<string, string> = {
   casesCreated: "Test case yang versi 1-nya dibuat orang ini di periode.",
@@ -84,4 +104,8 @@ export const METRIC_DEF: Record<string, string> = {
   reopenRatePct: "Bug yang kemudian dibuka ulang dibagi total yang orang ini pindahkan ke Perlu verifikasi.",
   activeLoad: "Bug aktif yang saat ini ditugaskan ke orang ini.",
   overdueLoad: "Dari bug aktif, yang sudah lewat tenggat.",
+  docsApproved: "Revisi dokumen yang disetujui atau ditolak orang ini di periode.",
+  medianApprovalHours: "Median jam dari revisi diunggah sampai diputuskan orang ini.",
+  sprintsOnTimePct: "Persentase sprint yang ditutup orang ini paling lambat sehari setelah tanggal selesai.",
+  draftsWaiting: "Draf yang menunggu triase lebih dari 2 hari (kondisi project saat ini).",
 };

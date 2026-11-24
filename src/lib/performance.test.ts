@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { devMetrics, median, periodRange, previousKey, qaMetrics } from "./performance";
+import { adminMetrics, teamMedian, devMetrics, median, periodRange, previousKey, qaMetrics } from "./performance";
 
 const d = (s: string) => new Date(s);
 
@@ -43,4 +43,16 @@ test("devMetrics: on-time, build, reopen, beban", () => {
   assert.equal(m.medianHoursToVerify, 24);
   assert.equal(m.closedBySeverity.HIGH, 1);
   assert.equal(m.overdueLoad, 1);
+});
+
+test("adminMetrics + teamMedian", () => {
+  const m = adminMetrics({
+    docs: [{ uploadedAt: new Date("2026-11-01T00:00:00Z"), decidedAt: new Date("2026-11-01T10:00:00Z") }],
+    sprints: [{ closedAt: new Date("2026-11-03T00:00:00Z"), endsAt: new Date("2026-11-02T00:00:00Z") }, { closedAt: new Date("2026-11-10T00:00:00Z"), endsAt: new Date("2026-11-02T00:00:00Z") }],
+    draftsWaiting: 3,
+  });
+  assert.equal(m.medianApprovalHours, 10);
+  assert.equal(m.sprintsOnTimePct, 50);
+  assert.equal(teamMedian([1, null, 3, 8]), 3);
+  assert.equal(teamMedian([null]), null);
 });
