@@ -51,6 +51,7 @@ export async function AppShell({ children, activeProjectKey }: AppShellProps) {
           name: user.name,
           email: user.email,
           isAdmin: user.isAdmin,
+          role: options.find((p) => p.key === activeProjectKey)?.role || options[0]?.role,
         }}
         projects={options}
         activeProjectKey={activeProjectKey}

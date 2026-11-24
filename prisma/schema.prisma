@@ -783,3 +783,16 @@ model ProjectResourceLink {
 
   @@unique([projectId, kind, audience])
 }
+
+model RolePermission {
+  id         String      @id @default(uuid())
+  role       ProjectRole
+  permission String
+  enabled    Boolean     @default(true)
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+
+  @@unique([role, permission])
+  @@index([role])
+}
+

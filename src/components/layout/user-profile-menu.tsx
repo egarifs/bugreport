@@ -10,6 +10,7 @@ export type ProfileUser = {
   email?: string | null;
   image?: string | null;
   isAdmin?: boolean;
+  role?: string;
 };
 
 
@@ -105,7 +106,13 @@ export function UserProfileMenu({
                     user.isAdmin ? "bg-indigo-600" : "bg-emerald-500"
                   }`}
                 />
-                {user.isAdmin ? "Super Admin" : "Active Member"}
+                {user.role ? (
+                  <span className="font-semibold text-action">{user.role}</span>
+                ) : user.isAdmin ? (
+                  "Super Admin"
+                ) : (
+                  "Active Member"
+                )}
               </p>
             </div>
           )}
@@ -142,15 +149,22 @@ export function UserProfileMenu({
               {user.email}
             </p>
             <div className="mt-1.5 flex items-center justify-between">
-              <span
-                className={`inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-semibold rounded ${
-                  user.isAdmin
-                    ? "bg-action-soft text-link border border-action/30"
-                    : "bg-slate-100 text-slate-700 border border-slate-200"
-                }`}
-              >
-                {user.isAdmin ? "Super Admin" : "Project Member"}
-              </span>
+              <div className="flex items-center gap-1.5">
+                {user.role && (
+                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-bold rounded bg-action-soft text-action border border-action/20">
+                    Akses: {user.role}
+                  </span>
+                )}
+                <span
+                  className={`inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-semibold rounded ${
+                    user.isAdmin
+                      ? "bg-indigo-50 text-indigo-700 border border-indigo-200"
+                      : "bg-slate-100 text-slate-700 border border-slate-200"
+                  }`}
+                >
+                  {user.isAdmin ? "Super Admin" : "Project Member"}
+                </span>
+              </div>
               <span className="text-[10px] text-slate-400 font-mono">v1.0-prod</span>
             </div>
           </div>

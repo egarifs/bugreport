@@ -90,6 +90,21 @@ export const ROLE_PERMISSIONS: Record<ProjectRole, readonly Permission[]> = {
   ],
 } as const;
 
+// In-memory cache for dynamic DB role permissions
+let dbRolePermissionsCache: Record<string, boolean> | null = null;
+
+export function invalidateRolePermissionCache() {
+  dbRolePermissionsCache = null;
+}
+
+export function syncRolePermissionsCache(records: { role: ProjectRole; permission: string; enabled: boolean }[]) {
+  const map: Record<string, boolean> = {};
+  for (const r of records) {
+    map[`${r.role}:${r.permission}`] = r.enabled;
+  }
+  dbRolePermissionsCache = map;
+}
+
 export function hasPermission(
   role: ProjectRole | null | undefined,
   permission: Permission,
@@ -97,8 +112,39 @@ export function hasPermission(
 ): boolean {
   if (isAdminUser) return true;
   if (!role) return false;
+
+  // Check dynamic DB override if cached
+  if (dbRolePermissionsCache) {
+    const override = dbRolePermissionsCache[`${role}:${permission}`];
+    if (typeof override === "boolean") return override;
+  }
+
   return ROLE_PERMISSIONS[role]?.includes(permission) ?? false;
 }
+
+export async function loadRolePermissions(): Promise<Record<ProjectRole, Permission[]>> {
+  const { prisma } = await import("@/lib/db");
+  const records = await prisma.rolePermission.findMany();
+  syncRolePermissionsCache(records);
+
+  const roles = Object.values(ProjectRole);
+  const result = {} as Record<ProjectRole, Permission[]>;
+
+  for (const r of roles) {
+    const defaults = ROLE_PERMISSIONS[r] || [];
+    const perms: Permission[] = [];
+    for (const p of ROLE_PERMISSIONS.ADMIN) {
+      const key = `${r}:${p}`;
+      const has = dbRolePermissionsCache && typeof dbRolePermissionsCache[key] === "boolean"
+        ? dbRolePermissionsCache[key]
+        : defaults.includes(p);
+      if (has) perms.push(p);
+    }
+    result[r] = perms;
+  }
+  return result;
+}
+
 
 export interface TransitionRule {
   allowedTargets: readonly BugStatus[];

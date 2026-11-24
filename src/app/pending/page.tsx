@@ -1,61 +1,7 @@
 import { auth, signOut } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { redirect } from "next/navigation";
-import { cookies } from "next/headers";
-import { encode, getToken } from "next-auth/jwt";
-
-async function recheckAction() {
-  "use server";
-  const session = await auth();
-  const email = session?.user?.email;
-  if (!email) redirect("/login");
-
-  const dbUser = await prisma.user.findUnique({
-    where: { email },
-    select: { id: true, status: true, isAdmin: true },
-  });
-
-  if (dbUser?.status === "ACTIVE") {
-    // Refresh JWT cookie so middleware lets user enter /projects
-    const cookieStore = await cookies();
-    const secure = (process.env.AUTH_URL ?? process.env.NEXTAUTH_URL ?? "").startsWith("https://");
-    const cookieName = secure ? "__Secure-authjs.session-token" : "authjs.session-token";
-    const existingToken = await getToken({
-      req: {
-        headers: {
-          cookie: cookieStore.toString(),
-        },
-      },
-      secret: process.env.AUTH_SECRET,
-      secureCookie: secure,
-    });
-
-    if (existingToken) {
-      const updatedToken = {
-        ...existingToken,
-        userId: dbUser.id,
-        status: dbUser.status,
-        isAdmin: dbUser.isAdmin,
-      };
-      const newCookieVal = await encode({
-        token: updatedToken,
-        secret: process.env.AUTH_SECRET!,
-        salt: cookieName,
-      });
-
-      cookieStore.set(cookieName, newCookieVal, {
-        httpOnly: true,
-        sameSite: "lax",
-        path: "/",
-        secure,
-      });
-    }
-
-    redirect("/projects");
-  }
-
-  redirect("/pending");
-}
+import Link from "next/link";
 
 export default async function PendingPage() {
   const session = await auth();
@@ -74,8 +20,8 @@ export default async function PendingPage() {
   const currentStatus = dbUser?.status || sessionUser.status;
 
   if (currentStatus === "ACTIVE") {
-    // If active in DB but cookie still says PENDING, run recheck to update cookie & redirect
-    await recheckAction();
+    // Redirect via route handler to safely update JWT cookie with response header
+    redirect("/api/auth/refresh-session");
   }
 
   const isRejected = currentStatus === "REJECTED";
@@ -130,11 +76,13 @@ export default async function PendingPage() {
               <li><b className="text-slate-600">Diberi akses project dan peran</b><div className="text-xs text-slate-600">Setelah disetujui, buka lagi halaman ini untuk masuk ke project.</div></li>
             </ol>
             <div className="flex gap-2.5 items-center">
-              <form action={recheckAction}>
-                <button type="submit" className="h-10 px-4 inline-flex items-center bg-action hover:bg-action-hover text-on-action text-sm font-bold rounded-lg cursor-pointer">
-                  Periksa lagi
-                </button>
-              </form>
+              <Link
+                href="/api/auth/refresh-session"
+                prefetch={false}
+                className="h-10 px-4 inline-flex items-center bg-action hover:bg-action-hover text-on-action text-sm font-bold rounded-lg cursor-pointer"
+              >
+                Periksa lagi
+              </Link>
               <span className="text-xs text-slate-600">Butuh cepat? Hubungi QA lead atau PIC project Anda.</span>
             </div>
           </>
@@ -143,4 +91,5 @@ export default async function PendingPage() {
     </main>
   );
 }
+
 

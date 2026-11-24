@@ -22,6 +22,7 @@ interface AppSidebarProps {
     name?: string | null;
     email?: string | null;
     isAdmin?: boolean;
+    role?: string;
   };
   projects: ProjectOption[];
   activeProjectKey?: string;
@@ -385,7 +386,7 @@ export function AppSidebar({ user, projects, activeProjectKey }: AppSidebarProps
                 href="/admin/users"
                 title={collapsed ? "Approval Queue" : undefined}
                 className={`flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium transition ${
-                  pathname.startsWith("/admin")
+                  pathname === "/admin/users"
                     ? "bg-ink text-on-ink"
                     : "text-slate-700 hover:bg-slate-100"
                 } ${collapsed ? "justify-center px-2" : ""}`}
@@ -394,6 +395,20 @@ export function AppSidebar({ user, projects, activeProjectKey }: AppSidebarProps
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                 </svg>
                 {!collapsed && <span className="flex-1 truncate">User Approvals</span>}
+              </Link>
+              <Link
+                href="/admin/rbac"
+                title={collapsed ? "Kelola RBAC" : undefined}
+                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium transition ${
+                  pathname.startsWith("/admin/rbac")
+                    ? "bg-ink text-on-ink"
+                    : "text-slate-700 hover:bg-slate-100"
+                } ${collapsed ? "justify-center px-2" : ""}`}
+              >
+                <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+                {!collapsed && <span className="flex-1 truncate">Kelola RBAC</span>}
               </Link>
             </div>
           )}
