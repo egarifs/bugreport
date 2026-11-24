@@ -6,7 +6,9 @@ import { requireProjectPermission } from "@/lib/authz";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { hasPermission } from "@/lib/permissions";
-import { BugStatus } from "@prisma/client";
+import { BugStatus, type Prisma } from "@prisma/client";
+import { DOD_KEYS, DOD_LABEL, closeVerdict, dodChecklist } from "@/lib/stlc";
+import { sprintDodFacts } from "@/lib/stlc-service";
 import { revalidatePath } from "next/cache";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
@@ -54,6 +56,11 @@ async function closeSprint(_prev: ActionResult, formData: FormData): Promise<Act
   const project = await managedProject(formData);
   const sprint = await prisma.sprint.findFirst({ where: { id: String(formData.get("sprintId")), projectId: project.id } });
   if (!sprint || sprint.status !== "ACTIVE") return { error: "Sprint tidak aktif." };
+  const cfg = await prisma.project.findUnique({ where: { id: project.id }, select: { dodItems: true } });
+  const checklist = dodChecklist(cfg?.dodItems ?? [], await sprintDodFacts(project.id, sprint));
+  const reason = String(formData.get("exceptionReason") ?? "").trim().slice(0, 1000);
+  const verdict = closeVerdict(checklist, reason);
+  if (!verdict.ok) return { error: verdict.error };
   const moveTo = String(formData.get("moveTo") ?? "");
   let moved = 0;
   if (moveTo) {
@@ -61,9 +68,24 @@ async function closeSprint(_prev: ActionResult, formData: FormData): Promise<Act
     if (!target) return { error: "Sprint tujuan tidak valid." };
     moved = (await prisma.bug.updateMany({ where: { sprintId: sprint.id, status: { notIn: DONE } }, data: { sprintId: target.id } })).count;
   }
-  await prisma.sprint.update({ where: { id: sprint.id }, data: { status: "COMPLETED", closedAt: new Date() } });
+  const actor = await requireProjectPermission(project.id, "bug.review");
+  await prisma.$transaction([
+    prisma.sprint.update({ where: { id: sprint.id }, data: { status: "COMPLETED", closedAt: new Date() } }),
+    prisma.sprintClosure.create({ data: { sprintId: sprint.id, checklist: checklist as unknown as Prisma.InputJsonValue, exceptionReason: verdict.exception ? reason : null, closedById: actor.id } }),
+    prisma.auditLog.create({ data: { projectId: project.id, actorId: actor.id, actorEmail: actor.email, action: verdict.exception ? "sprint.close_exception" : "sprint.close", entityType: "sprint", entityId: sprint.id, changes: { after: { reason: verdict.exception ? reason : null, red: checklist.filter((i) => !i.ok).map((i) => i.key) } } } }),
+  ]);
   revalidatePath(`/projects/${project.key}/sprints`);
-  return { ok: `Sprint ditutup${moved ? `, ${moved} bug dipindah` : ""}.` };
+  return { ok: `Sprint ditutup${verdict.exception ? " dengan pengecualian" : ""}${moved ? `, ${moved} bug dipindah` : ""}.` };
+}
+
+async function saveDod(formData: FormData): Promise<void> {
+  "use server";
+  const project = await prisma.project.findUnique({ where: { key: String(formData.get("projectKey")) }, select: { id: true, key: true } });
+  if (!project) return;
+  await requireProjectPermission(project.id, "project.manage");
+  const items = DOD_KEYS.filter((k) => formData.get(k) === "on");
+  await prisma.project.update({ where: { id: project.id }, data: { dodItems: items } });
+  revalidatePath(`/projects/${project.key}/sprints`);
 }
 
 export default async function SprintsPage({ params, searchParams }: { params: Promise<{ key: string }>; searchParams: Promise<{ id?: string; f?: string }> }) {
@@ -98,6 +120,9 @@ export default async function SprintsPage({ params, searchParams }: { params: Pr
   const shown = bugs.filter((b) => (f === "open" ? !isDone(b) : f === "late" ? overdue(b) : true));
   const others = project.sprints.filter((s) => s.id !== sprint?.id && s.status === "ACTIVE");
   const base = `/projects/${project.key}/sprints?id=${sprint?.id ?? ""}`;
+  const dodCfg = await prisma.project.findUnique({ where: { id: project.id }, select: { dodItems: true } });
+  const dod = sprint && sprint.status === "ACTIVE" && canManage ? dodChecklist(dodCfg?.dodItems ?? [], await sprintDodFacts(project.id, sprint)) : [];
+  const canConfigure = hasPermission(role, "project.manage", user.isAdmin);
   const inp = "text-sm px-3 py-2 border border-slate-300 rounded bg-surface min-h-[44px]";
 
   return (
@@ -192,6 +217,14 @@ export default async function SprintsPage({ params, searchParams }: { params: Pr
                 <ActionForm action={closeSprint} className="bg-slate-100 border border-slate-200 rounded p-4 flex flex-wrap items-center gap-3">
                   <input type="hidden" name="projectKey" value={project.key} />
                   <input type="hidden" name="sprintId" value={sprint.id} />
+                  <fieldset className="w-full">
+                    <legend className="text-sm font-bold text-slate-900 mb-1">Definition of Done</legend>
+                    <ul className="text-sm space-y-0.5">{dod.map((i) => <li key={i.key}><span aria-hidden>{i.ok ? "✓" : "✕"}</span> <span className="sr-only">{i.ok ? "Terpenuhi:" : "Belum:"}</span>{i.label}{i.detail && <span className="text-slate-600"> · {i.detail}</span>}</li>)}</ul>
+                    {dod.some((i) => !i.ok) && (
+                      <label className="block mt-2 text-xs font-bold text-slate-700">Alasan pengecualian <span className="font-normal text-slate-500">(wajib bila ada butir merah · tercatat di audit log)</span>
+                        <textarea name="exceptionReason" rows={2} maxLength={1000} className={`${inp} w-full mt-1`} /></label>
+                    )}
+                  </fieldset>
                   <span className="text-sm font-bold text-slate-900">Tutup sprint</span>
                   <label className="text-xs text-slate-600 flex items-center gap-2">
                     Bug belum selesai
@@ -204,6 +237,19 @@ export default async function SprintsPage({ params, searchParams }: { params: Pr
                 </ActionForm>
               )}
             </>
+          )}
+
+          {canConfigure && (
+            <section className="bg-surface border border-slate-200 rounded p-4">
+              <h2 className="text-base font-bold text-slate-900 mb-3">Definition of Done</h2>
+              <form action={saveDod} className="space-y-2">
+                <input type="hidden" name="projectKey" value={project.key} />
+                {DOD_KEYS.map((k) => (
+                  <label key={k} className="flex items-center gap-2 text-sm min-h-[32px]"><input type="checkbox" name={k} defaultChecked={(dodCfg?.dodItems ?? []).includes(k)} />{DOD_LABEL[k]}</label>
+                ))}
+                <button className="px-3 min-h-[44px] rounded text-sm font-bold border border-slate-300 bg-surface hover:bg-slate-50">Simpan DoD</button>
+              </form>
+            </section>
           )}
 
           {canManage && (

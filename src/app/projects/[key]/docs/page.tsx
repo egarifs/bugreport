@@ -62,6 +62,14 @@ export default async function BusinessDocsPage({
               Business Documents (PRD / BRD)
             </span>
           </div>
+          <div className="flex gap-4">
+            <Link href={`/projects/${project.key}/stlc`} className="text-xs font-bold underline min-h-[44px] flex items-center">
+              Rencana uji & laporan
+            </Link>
+            <Link href={`/projects/${project.key}/rtm`} className="text-xs font-bold underline min-h-[44px] flex items-center">
+              Matriks keterlacakan (RTM)
+            </Link>
+          </div>
         </header>
 
         <main className="p-6 space-y-8 flex-1">
