@@ -10,6 +10,7 @@ import { revalidatePath } from "next/cache";
 import { notifyDocApproval } from "@/lib/notify";
 import fs from "node:fs/promises";
 import Link from "next/link";
+import { SANDBOX_MAX_BYTES } from "@/lib/sandbox";
 import path from "node:path";
 
 export default async function BusinessDocsPage({
@@ -97,7 +98,9 @@ export default async function BusinessDocsPage({
 
                   const changeNote = (formData.get("changeNote") as string)?.trim() || null;
                   if (!title || !file || file.size === 0) return { error: "Judul dan file wajib diisi." };
-                  if (file.size > 20 * 1024 * 1024) return { error: "File melebihi batas 20 MB." };
+                  const box = await prisma.project.findUnique({ where: { id: pid }, select: { isSandbox: true } });
+                  const limit = box?.isSandbox ? SANDBOX_MAX_BYTES : 20 * 1024 * 1024;
+                  if (file.size > limit) return { error: `File melebihi batas ${Math.round(limit / 1048576)} MB.` };
                   const ext = path.extname(file.name).toLowerCase();
                   if (ext !== ".pdf" && ext !== ".md") return { error: "Hanya PDF atau Markdown (.md)." };
                   const head = Buffer.from(await file.slice(0, 5).arrayBuffer()).toString("latin1");

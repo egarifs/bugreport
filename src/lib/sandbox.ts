@@ -1,4 +1,7 @@
 // Tanpa impor Node: dipakai middleware (Edge).
+/** Batas unggahan di project Latihan (lebih kecil dari project asli). */
+export const SANDBOX_MAX_BYTES = 2 * 1024 * 1024;
+
 /** PENDING hanya boleh menyentuh project Latihan miliknya sendiri. Murni: dipakai authz dan tes. */
 export function pendingMayAccess(user: { id: string; status: string }, project: { isSandbox: boolean; sandboxOwnerId: string | null }): boolean {
   return user.status === "PENDING" && project.isSandbox && project.sandboxOwnerId === user.id;

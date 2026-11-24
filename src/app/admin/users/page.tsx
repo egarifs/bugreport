@@ -9,6 +9,7 @@ import { ProjectRole, UserStatus } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { AppShell } from "@/components/layout/app-shell";
 import { isGuideRole, progressOf } from "@/lib/onboarding";
+import { deleteSandbox, pruneStaleSandboxes } from "@/lib/sandbox-service";
 
 const TABS = [
   { key: "pending", label: "Menunggu", status: UserStatus.PENDING },
@@ -37,6 +38,8 @@ export default async function AdminUsersPage({
     redirect("/projects");
   }
 
+  // ponytail: bersihkan Latihan basi saat Admin membuka halaman ini (tanpa cron). Pindah ke cron bila perlu.
+  void pruneStaleSandboxes().catch(() => {});
   const [pendingUsers, activeUsers, counts] = await Promise.all([
     prisma.user.findMany({
       omit: { passwordHash: true },
@@ -196,6 +199,7 @@ export default async function AdminUsersPage({
                           entityId: p.id,
                           changes: { after: { reason } },
                         });
+                        await deleteSandbox(p.id); // Latihan pengguna yang ditolak tidak perlu disimpan
                       }
                       revalidatePath("/admin/users");
                       return { ok: action === "approve" ? `${p.email} disetujui.` : `${p.email} ditolak.` };

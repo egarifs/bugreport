@@ -108,3 +108,19 @@ export async function deleteSandbox(userId: string) {
   await fs.rm(path.resolve(process.cwd(), "uploads", p.key), { recursive: true, force: true });
   return true;
 }
+
+/** Hapus Latihan milik pengguna ditolak/ditangguhkan, atau yang tidak disentuh `days` hari (tanpa aksi di audit log). */
+export async function pruneStaleSandboxes(days = 90, now = new Date()) {
+  const cutoff = new Date(+now - days * 86_400_000);
+  const boxes = await prisma.project.findMany({
+    where: { isSandbox: true, sandboxOwnerId: { not: null } },
+    select: { sandboxOwnerId: true, createdAt: true, id: true, sandboxOwner: { select: { status: true } } },
+  });
+  let removed = 0;
+  for (const b of boxes) {
+    const dead = b.sandboxOwner?.status === "REJECTED" || b.sandboxOwner?.status === "SUSPENDED";
+    const idle = b.createdAt < cutoff && (await prisma.auditLog.count({ where: { projectId: b.id, createdAt: { gte: cutoff } } })) === 0;
+    if ((dead || idle) && b.sandboxOwnerId && (await deleteSandbox(b.sandboxOwnerId))) removed++;
+  }
+  return removed;
+}

@@ -44,12 +44,12 @@ export function sniffImage(buf: Uint8Array): { mime: string; ext: string } | nul
 
 export type Screenshot = { name: string; bytes: Buffer; mime: string; ext: string };
 
-export async function readScreenshots(files: FormDataEntryValue[]): Promise<Screenshot[]> {
+export async function readScreenshots(files: FormDataEntryValue[], maxBytes = SCREENSHOT_MAX_BYTES): Promise<Screenshot[]> {
   const real = files.filter((f): f is File => typeof f !== "string" && f.size > 0);
   if (real.length > SCREENSHOT_MAX_COUNT) throw new Error(`Maksimal ${SCREENSHOT_MAX_COUNT} screenshot.`);
   const out: Screenshot[] = [];
   for (const f of real) {
-    if (f.size > SCREENSHOT_MAX_BYTES) throw new Error(`${f.name} melebihi 5 MB.`);
+    if (f.size > maxBytes) throw new Error(`${f.name} melebihi ${Math.round(maxBytes / 1048576)} MB.`);
     const bytes = Buffer.from(await f.arrayBuffer());
     const kind = sniffImage(bytes);
     if (!kind) throw new Error(`${f.name} bukan gambar PNG, JPG, WEBP, atau GIF.`);

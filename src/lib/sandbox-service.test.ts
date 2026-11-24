@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { prisma } from "./db";
-import { deleteSandbox, resetSandbox, seedSandbox } from "./sandbox-service";
+import { deleteSandbox, pruneStaleSandboxes, resetSandbox, seedSandbox } from "./sandbox-service";
 import { sandboxKeyFor } from "./sandbox-key";
 import { notifyRerunRequired } from "./notify";
 
@@ -44,5 +44,22 @@ test("seedSandbox: isi dari dataset, reset idempoten, terisolasi per pengguna, t
     await prisma.user.deleteMany({ where: { id: { in: [a.id, b.id] } } });
     await fs.rm(path.resolve(process.cwd(), "uploads", sandboxKeyFor(a.id)), { recursive: true, force: true });
     await fs.rm(path.resolve(process.cwd(), "uploads", sandboxKeyFor(b.id)), { recursive: true, force: true });
+  }
+});
+
+test("pruneStaleSandboxes: ditolak dan basi dihapus, aktif dipertahankan", async () => {
+  const tag = `pr${Math.random().toString(36).slice(2, 6)}${Date.now().toString().slice(-4)}`;
+  const mk = (status: "ACTIVE" | "REJECTED", n: string) => prisma.user.create({ data: { email: `${n}-${tag}@t.test`, status } });
+  const [keep, rejected, idle] = await Promise.all([mk("ACTIVE", "k"), mk("REJECTED", "r"), mk("ACTIVE", "i")]);
+  try {
+    for (const u of [keep, rejected, idle]) await seedSandbox(u.id);
+    await prisma.project.update({ where: { sandboxOwnerId: idle.id }, data: { createdAt: new Date(Date.now() - 100 * 86_400_000) } });
+    const n = await pruneStaleSandboxes();
+    assert.ok(n >= 2);
+    assert.equal(await prisma.project.count({ where: { sandboxOwnerId: keep.id } }), 1);
+    assert.equal(await prisma.project.count({ where: { sandboxOwnerId: rejected.id } }), 0);
+    assert.equal(await prisma.project.count({ where: { sandboxOwnerId: idle.id } }), 0);
+  } finally {
+    for (const u of [keep, rejected, idle]) { await deleteSandbox(u.id); await prisma.user.deleteMany({ where: { id: u.id } }); await fs.rm(path.resolve(process.cwd(), "uploads", sandboxKeyFor(u.id)), { recursive: true, force: true }); }
   }
 });

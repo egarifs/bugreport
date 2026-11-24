@@ -14,6 +14,7 @@ import { DuplicateChecker } from "./duplicate-checker";
 import { DraftAutosave } from "./draft-autosave";
 import { AppShell } from "@/components/layout/app-shell";
 import { ScreenshotInput } from "./screenshot-input";
+import { SANDBOX_MAX_BYTES } from "@/lib/sandbox";
 import { parseBugKeys, parseLinks, parseUrl, readScreenshots, type Screenshot } from "@/lib/bug-input";
 import { randomUUID } from "node:crypto";
 import fs from "node:fs/promises";
@@ -275,7 +276,8 @@ async function createBug(projectId: string, _prev: ActionResult, formData: FormD
     taskUrl = parseUrl(formData.get("taskUrl"), "Link task");
     links = parseLinks(formData.get("links"));
     relatedKeys = parseBugKeys(formData.get("relatedKeys"));
-    shots = await readScreenshots(formData.getAll("screenshots"));
+    const box = await prisma.project.findUnique({ where: { id: projectId }, select: { isSandbox: true } });
+    shots = await readScreenshots(formData.getAll("screenshots"), box?.isSandbox ? SANDBOX_MAX_BYTES : undefined);
   } catch (e) {
     return { error: (e as Error).message };
   }
