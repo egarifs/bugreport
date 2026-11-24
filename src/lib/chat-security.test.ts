@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { prisma } from "./db";
 import { executeChatTool, ChatUserContext } from "./chat-tools";
 import { docFilePath } from "./business-docs";
+import { checkProjectPermission } from "./authz";
 
 test("AI Chat Shared Threads & Security Audit", async (t) => {
   const pA = await prisma.project.create({ data: { key: `THRA${Date.now().toString().slice(-4)}`, name: "Project A" } });
@@ -137,5 +138,16 @@ test("AI Chat Shared Threads & Security Audit", async (t) => {
     } else {
       assert.ok(parsed.error);
     }
+  });
+
+  await t.test("SEC-06: Suspended user denied from project actions and chat", async () => {
+    const suspendedUser = await prisma.user.create({
+      data: { email: `suspended_${Date.now()}@test.local`, name: "Suspended", status: "SUSPENDED" },
+    });
+
+    await assert.rejects(
+      async () => checkProjectPermission(suspendedUser.id, pA.id, "chat.ask"),
+      { message: "Unauthorized" }
+    );
   });
 });

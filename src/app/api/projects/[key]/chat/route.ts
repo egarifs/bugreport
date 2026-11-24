@@ -26,6 +26,8 @@ export async function GET(
   });
 
   if (!project) return NextResponse.json({ error: "Project tidak ditemukan" }, { status: 404 });
+  const dbUser = await prisma.user.findUnique({ where: { id: user.id }, select: { status: true } });
+  if (dbUser?.status !== "ACTIVE") return NextResponse.json({ error: "User inactive/suspended" }, { status: 403 });
   if (!project.members[0] && !user.isAdmin) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
@@ -64,6 +66,9 @@ export async function POST(
   if (!project) {
     return NextResponse.json({ error: "Project tidak ditemukan" }, { status: 404 });
   }
+
+  const dbUser = await prisma.user.findUnique({ where: { id: user.id }, select: { status: true } });
+  if (dbUser?.status !== "ACTIVE") return NextResponse.json({ error: "User inactive/suspended" }, { status: 403 });
 
   if (!project.members[0] && !user.isAdmin) {
     return NextResponse.json({ error: "Forbidden: tidak ada akses ke project ini" }, { status: 403 });
