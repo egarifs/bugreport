@@ -6,8 +6,9 @@ import { docFilePath } from "./business-docs";
 import { checkProjectPermission } from "./authz";
 
 test("AI Chat Shared Threads & Security Audit", async (t) => {
-  const pA = await prisma.project.create({ data: { key: `THRA${Date.now().toString().slice(-4)}`, name: "Project A" } });
-  const pB = await prisma.project.create({ data: { key: `THRB${Date.now().toString().slice(-4)}`, name: "Project B" } });
+  const uniq = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`.toUpperCase(); // kunci unik (4 digit waktu bisa bentrok)
+  const pA = await prisma.project.create({ data: { key: `THRA${uniq}`, name: "Project A" } });
+  const pB = await prisma.project.create({ data: { key: `THRB${uniq}`, name: "Project B" } });
 
   const userA = await prisma.user.create({ data: { email: `usera_${Date.now()}@test.local`, name: "User A", status: "ACTIVE" } });
   const userB = await prisma.user.create({ data: { email: `userb_${Date.now()}@test.local`, name: "User B", status: "ACTIVE" } });
