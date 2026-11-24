@@ -31,8 +31,8 @@ echo "Versi aplikasi sebelumnya: $PREV"
 sed -i "s/^APP_TAG=.*/APP_TAG=$SHA/" .env
 
 echo "==> 4. Menyelaraskan status migrasi Prisma baseline..."
-docker run --rm --network host --env-file /opt/stacks/bugreport/.env -e DATABASE_URL="postgresql://bugreport:$(grep '^POSTGRES_PASSWORD=' /opt/stacks/bugreport/.env | cut -d= -f2)@127.0.0.1:5432/bugreport?schema=public" bugreport-app:$SHA node ./node_modules/prisma/build/index.js migrate resolve --applied 20261120000000_baseline </dev/null || true
-docker run --rm --network host --env-file /opt/stacks/bugreport/.env -e DATABASE_URL="postgresql://bugreport:$(grep '^POSTGRES_PASSWORD=' /opt/stacks/bugreport/.env | cut -d= -f2)@127.0.0.1:5432/bugreport?schema=public" bugreport-app:$SHA node ./node_modules/prisma/build/index.js migrate deploy </dev/null
+docker run --rm --network bugreport_default --env-file /opt/stacks/bugreport/.env bugreport-app:$SHA node ./node_modules/prisma/build/index.js migrate resolve --applied 20261120000000_baseline </dev/null || true
+docker run --rm --network bugreport_default --env-file /opt/stacks/bugreport/.env bugreport-app:$SHA node ./node_modules/prisma/build/index.js migrate deploy </dev/null
 
 echo "==> 5. Restart container app dengan versi baru ($SHA) dan tunggu healthy..."
 if docker compose up -d --wait app </dev/null; then
