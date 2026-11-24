@@ -225,91 +225,116 @@ export default async function ProjectDetailPage({
   return (
     <AppShell activeProjectKey={project.key}>
       <div className="min-h-full flex flex-col">
-        <header className="bg-surface border-b border-slate-200 px-4 md:px-6 py-3 md:py-4 flex items-center justify-between gap-3">
-          <div className="min-w-0">
-            <h1 className="font-bold text-slate-900 text-base truncate">{project.name}</h1>
-            <p className="text-xs text-slate-500">
-              Role Anda: {role}
-            </p>
+        <header className="bg-surface border-b border-slate-200/80 px-4 md:px-6 py-2.5 flex items-center justify-between gap-3 sticky top-0 z-10 backdrop-blur-xs">
+          <div className="flex items-center gap-3 min-w-0">
+            <h1 className="font-semibold text-slate-900 text-sm tracking-tight truncate">{project.name}</h1>
+            <span className="text-[11px] font-mono font-medium px-2 py-0.5 bg-slate-100 text-slate-600 rounded">
+              {role}
+            </span>
           </div>
           {canCreate && (
             <div className="flex items-center gap-2">
               <BugImportModal importAction={handleImportMarkdownBugs} previewAction={previewMarkdownBugs} projectKey={project.key} />
               <Link
                 href={`/projects/${project.key}/bugs/new`}
-                className="shrink-0 px-3.5 py-2 bg-action hover:bg-action-hover text-on-action text-sm font-bold rounded"
+                className="shrink-0 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold rounded-md shadow-2xs transition-colors"
               >
-                Laporkan bug
+                + Laporkan bug
               </Link>
             </div>
           )}
         </header>
 
         <main className="p-4 md:p-6 flex-1">
-          {sp.done && <p role="status" className="mb-4 px-4 py-2 bg-green-50 border border-green-200 text-green-800 text-sm rounded">{sp.done.slice(0, 120)}</p>}
+          {sp.done && <p role="status" className="mb-3 px-3 py-2 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs rounded-md">{sp.done.slice(0, 120)}</p>}
           {canReview && (
-            <div aria-label="Ringkasan hari ini" className="flex flex-wrap items-center gap-x-6 gap-y-1 mb-4 px-4 py-2.5 bg-surface border border-slate-200 rounded text-sm">
-              <span className="font-bold text-slate-900">Hari ini</span>
-              <span className="text-slate-700"><b className="font-mono">{reviewedToday}</b> direview</span>
-              <span className="text-slate-700"><b className="font-mono">{closedToday}</b> ditutup</span>
-              <span className="ml-auto text-xs text-slate-500">Reset pukul 00.00 WIB</span>
+            <div aria-label="Ringkasan hari ini" className="flex flex-wrap items-center gap-x-5 gap-y-1 mb-3 px-3.5 py-2 bg-slate-50/80 border border-slate-200/80 rounded-md text-xs">
+              <span className="font-semibold text-slate-900">Hari ini:</span>
+              <span className="text-slate-600"><b className="font-mono text-slate-900">{reviewedToday}</b> direview</span>
+              <span className="text-slate-600"><b className="font-mono text-slate-900">{closedToday}</b> ditutup</span>
+              <span className="ml-auto text-[11px] text-slate-400 font-mono">Reset 00.00 WIB</span>
             </div>
           )}
-          <nav aria-label="Tampilan bug" className="flex gap-1 border-b border-slate-200 mb-4 overflow-x-auto">
-            {tabs.filter((t) => t.show).map((t) => (
-              <Link
-                key={t.id}
-                href={href(t.id)}
-                aria-current={view === t.id ? "page" : undefined}
-                className={`px-3 py-2 text-sm whitespace-nowrap border-b-2 -mb-px ${
-                  view === t.id ? "border-action text-slate-900 font-bold" : "border-transparent text-slate-500 hover:text-slate-900"
-                }`}
-              >
-                {t.label}
-                {t.count !== undefined && <span className="ml-1.5 text-slate-500 font-normal">{t.count}</span>}
-              </Link>
-            ))}
-          </nav>
 
-          <form className="flex flex-wrap items-center gap-2 mb-4 text-sm" role="search">
-            <input type="hidden" name="view" value={view} />
-            <label className="sr-only" htmlFor="q">Cari bug</label>
-            <input
-              id="q"
-              type="search"
-              name="q"
-              defaultValue={q ?? ""}
-              placeholder={`Cari ID (${project.key}-1) atau judul`}
-              className="px-3 py-1.5 border border-slate-300 rounded flex-1 min-w-[200px] bg-surface"
-            />
-            <select name="severity" defaultValue={severity ?? ""} aria-label="Severity" className="px-2 py-1.5 border border-slate-300 rounded bg-surface">
-              <option value="">Semua severity</option>
-              {Object.values(BugSeverity).map((s) => <option key={s} value={s}>{SEVERITY_STYLE[s].label}</option>)}
-            </select>
-            {view === "all" && (
-              <select name="status" defaultValue={status ?? ""} aria-label="Status" className="px-2 py-1.5 border border-slate-300 rounded bg-surface">
-                <option value="">Semua status</option>
-                {Object.values(BugStatus).map((s) => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
+          {/* Unified Tabs + Search & Filters */}
+          <div className="flex flex-col gap-3 mb-4">
+            <nav aria-label="Tampilan bug" className="flex items-center gap-1 border-b border-slate-200 text-xs font-medium overflow-x-auto">
+              {tabs.filter((t) => t.show).map((t) => (
+                <Link
+                  key={t.id}
+                  href={href(t.id)}
+                  aria-current={view === t.id ? "page" : undefined}
+                  className={`px-3 py-2 -mb-px border-b-2 whitespace-nowrap transition-colors ${
+                    view === t.id
+                      ? "border-slate-900 text-slate-900 font-semibold"
+                      : "border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300"
+                  }`}
+                >
+                  {t.label}
+                  {t.count !== undefined && (
+                    <span className={`ml-1.5 px-1.5 py-0.2 rounded-full text-[10px] font-mono ${view === t.id ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-600"}`}>
+                      {t.count}
+                    </span>
+                  )}
+                </Link>
+              ))}
+              <span className="ml-auto text-xs text-slate-400 font-mono pr-1">{bugs.length} bug</span>
+            </nav>
+
+            <form className="flex flex-wrap items-center gap-2 text-xs" role="search">
+              <input type="hidden" name="view" value={view} />
+              <label className="sr-only" htmlFor="q">Cari bug</label>
+              <div className="relative flex-1 min-w-[200px]">
+                <input
+                  id="q"
+                  type="search"
+                  name="q"
+                  defaultValue={q ?? ""}
+                  placeholder={`Cari ID (${project.key}-1) atau judul...`}
+                  className="w-full pl-8 pr-3 py-1.5 border border-slate-200 rounded-md bg-surface text-slate-800 focus:outline-none focus:ring-1 focus:ring-slate-400 placeholder:text-slate-400"
+                />
+                <svg className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+
+              <select name="severity" defaultValue={severity ?? ""} aria-label="Severity" className="px-2.5 py-1.5 border border-slate-200 rounded-md bg-surface text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-1 focus:ring-slate-400 cursor-pointer">
+                <option value="">Semua severity</option>
+                {Object.values(BugSeverity).map((s) => <option key={s} value={s}>{SEVERITY_STYLE[s].label}</option>)}
               </select>
-            )}
-            {modules.length > 0 && (
-              <select name="module" defaultValue={sp.module ?? ""} aria-label="Modul" className="px-2 py-1.5 border border-slate-300 rounded bg-surface">
-                <option value="">Semua modul</option>
-                {modules.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
-              </select>
-            )}
-            {sprints.length > 0 && (
-              <select name="sprint" defaultValue={sp.sprint ?? ""} aria-label="Sprint" className="px-2 py-1.5 border border-slate-300 rounded bg-surface">
-                <option value="">Semua sprint</option>
-                {sprints.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
-              </select>
-            )}
-            <button type="submit" className="px-3 py-1.5 border border-slate-300 bg-surface hover:bg-slate-100 rounded font-bold">
-              Terapkan
-            </button>
-            {filtered && <Link href={href(view)} className="px-2 py-1.5 text-slate-500 hover:text-slate-900 underline">Reset</Link>}
-            <span className="ml-auto text-slate-500">{bugs.length} bug</span>
-          </form>
+
+              {view === "all" && (
+                <select name="status" defaultValue={status ?? ""} aria-label="Status" className="px-2.5 py-1.5 border border-slate-200 rounded-md bg-surface text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-1 focus:ring-slate-400 cursor-pointer">
+                  <option value="">Semua status</option>
+                  {Object.values(BugStatus).map((s) => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
+                </select>
+              )}
+
+              {modules.length > 0 && (
+                <select name="module" defaultValue={sp.module ?? ""} aria-label="Modul" className="px-2.5 py-1.5 border border-slate-200 rounded-md bg-surface text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-1 focus:ring-slate-400 cursor-pointer">
+                  <option value="">Semua modul</option>
+                  {modules.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+                </select>
+              )}
+
+              {sprints.length > 0 && (
+                <select name="sprint" defaultValue={sp.sprint ?? ""} aria-label="Sprint" className="px-2.5 py-1.5 border border-slate-200 rounded-md bg-surface text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-1 focus:ring-slate-400 cursor-pointer">
+                  <option value="">Semua sprint</option>
+                  {sprints.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
+                </select>
+              )}
+
+              <button type="submit" className="px-3 py-1.5 border border-slate-200 bg-slate-50 hover:bg-slate-100 rounded-md font-semibold text-slate-700 transition-colors">
+                Terapkan
+              </button>
+
+              {filtered && (
+                <Link href={href(view)} className="px-2 py-1.5 text-slate-500 hover:text-slate-900 text-xs underline">
+                  Reset
+                </Link>
+              )}
+            </form>
+          </div>
 
           {bugs.length === 0 ? (
             <StatePanel

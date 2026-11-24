@@ -244,49 +244,91 @@ export function AppSidebar({ user, projects, activeProjectKey }: AppSidebarProps
           collapsed ? "w-16" : "w-64"
         } ${mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}`}
       >
-        {/* Header: Project Brand & Project Switcher */}
-        <div className="h-16 border-b border-slate-200 px-3 flex items-center justify-between">
+        {/* Header: Project Brand & Project Switcher (Unified minimal popover feel) */}
+        <div className="border-b border-slate-200/80 px-2.5 py-3">
           {!collapsed ? (
-            <div className="flex items-center gap-2 min-w-0">
-              <div className="w-8 h-8 rounded-lg bg-ink text-on-ink font-mono font-bold text-xs flex items-center justify-center shrink-0">
-                {currentProject ? currentProject.key.slice(0, 3) : "BR"}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between gap-1.5 px-1">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-7 h-7 rounded-md bg-slate-900 text-white font-mono font-bold text-xs flex items-center justify-center shrink-0 shadow-2xs">
+                    {currentProject ? currentProject.key.slice(0, 3) : "BR"}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-semibold text-xs text-slate-900 truncate tracking-tight">
+                      {currentProject ? currentProject.name : "BugReport"}
+                    </p>
+                    <p className="text-[11px] text-slate-400 font-mono truncate">
+                      {currentProject ? currentProject.key : "Central"}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-0.5">
+                  <div className="hidden md:block">
+                    <NotificationBell />
+                  </div>
+                  <button
+                    onClick={toggleCollapsed}
+                    className="hidden md:inline-flex p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+                    title="Collapse sidebar"
+                    aria-label="Collapse sidebar"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                  </button>
+                </div>
               </div>
-              <div className="min-w-0">
-                <p className="font-bold text-xs text-slate-900 truncate">
-                  {currentProject ? currentProject.name : "BugReport"}
-                </p>
-                <p className="text-xs text-slate-400 font-mono truncate">
-                  {currentProject ? `Project: ${currentProject.key}` : "Central Tracker"}
-                </p>
-              </div>
+
+              {projects.length > 1 ? (
+                <div className="relative">
+                  <select
+                    value={currentKey || ""}
+                    onChange={(e) => {
+                      if (e.target.value) {
+                        window.location.href = `/projects/${e.target.value}`;
+                      }
+                    }}
+                    aria-label="Ganti project"
+                    className="w-full text-xs py-1.5 pl-2 pr-6 border border-slate-200 rounded-md bg-slate-50/70 hover:bg-slate-50 text-slate-700 font-medium truncate focus:outline-none focus:ring-1 focus:ring-slate-400 appearance-none transition-colors cursor-pointer"
+                  >
+                    {projects.map((p) => (
+                      <option key={p.id} value={p.key}>
+                        {p.key} — {p.name}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-400">
+                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
+                </div>
+              ) : null}
+
+              <CommandPalette
+                projects={projects.map((p) => ({ key: p.key, name: p.name, role: p.role }))}
+                activeProjectKey={currentKey}
+                isAdmin={user.isAdmin}
+              />
             </div>
           ) : (
-            <div className="w-8 h-8 mx-auto rounded-lg bg-ink text-on-ink font-mono font-bold text-xs flex items-center justify-center">
-              {currentProject ? currentProject.key.slice(0, 3) : "BR"}
+            <div className="flex flex-col items-center gap-2 py-1">
+              <div className="w-7 h-7 rounded-md bg-slate-900 text-white font-mono font-bold text-xs flex items-center justify-center shadow-2xs">
+                {currentProject ? currentProject.key.slice(0, 3) : "BR"}
+              </div>
+              <button
+                onClick={toggleCollapsed}
+                className="hidden md:inline-flex p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+                title="Expand sidebar"
+                aria-label="Expand sidebar"
+              >
+                <svg className="w-3.5 h-3.5 rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
             </div>
           )}
-
-          {!collapsed && (
-            <div className="hidden md:block ml-auto mr-1">
-              <NotificationBell />
-            </div>
-          )}
-
-          {/* Desktop Collapse Button */}
-          <button
-            onClick={toggleCollapsed}
-            className="hidden md:flex p-1 rounded hover:bg-slate-100 text-slate-400 hover:text-slate-700"
-            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          >
-            <svg
-              className={`w-4 h-4 transition-transform ${collapsed ? "rotate-180" : ""}`}
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
         </div>
 
         {collapsed && (
@@ -295,37 +337,8 @@ export function AppSidebar({ user, projects, activeProjectKey }: AppSidebarProps
           </div>
         )}
 
-        {/* Project Switcher Select (when expanded and has multiple projects) */}
-        {!collapsed && projects.length > 0 && (
-          <div className="p-3 border-b border-slate-100">
-            <label className="block text-xs font-semibold text-slate-400 mb-1">
-              Pilih Project
-            </label>
-            <select
-              value={currentKey || ""}
-              onChange={(e) => {
-                if (e.target.value) {
-                  window.location.href = `/projects/${e.target.value}`;
-                }
-              }}
-              className="w-full text-xs px-2 py-1.5 border border-slate-300 rounded bg-surface text-slate-800 font-medium truncate focus:outline-none focus:ring-1 focus:ring-slate-900 mb-2"
-            >
-              {projects.map((p) => (
-                <option key={p.id} value={p.key}>
-                  {p.key} - {p.name}
-                </option>
-              ))}
-            </select>
-            <CommandPalette
-              projects={projects.map((p) => ({ key: p.key, name: p.name, role: p.role }))}
-              activeProjectKey={currentKey}
-              isAdmin={user.isAdmin}
-            />
-          </div>
-        )}
-
         {/* Navigation Menu Items */}
-        <nav className="flex-1 p-2 space-y-1 overflow-y-auto" aria-label="Menu project">
+        <nav className="flex-1 p-2 space-y-0.5 overflow-y-auto" aria-label="Menu project">
           {navItems.map((item) => (
             <Link
               key={item.label}
@@ -333,18 +346,18 @@ export function AppSidebar({ user, projects, activeProjectKey }: AppSidebarProps
               href={item.href}
               aria-current={item.active ? "page" : undefined}
               title={collapsed ? item.label : undefined}
-              className={`flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium transition motion-reduce:transition-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900 ${
+              className={`flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition motion-reduce:transition-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900 ${
                 item.active
-                  ? "bg-ink text-on-ink shadow-xs"
-                  : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-              } ${collapsed ? "justify-center px-2" : ""}`}
+                  ? "bg-slate-100 text-slate-900 font-semibold"
+                  : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+              } ${collapsed ? "justify-center px-1.5" : ""}`}
             >
               {item.icon}
               {!collapsed && (
                 <span className="flex-1 truncate">{item.label}</span>
               )}
               {!collapsed && item.badge && (
-                <span className="text-xs font-mono px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 uppercase">
+                <span className="text-[10px] font-mono px-1 py-0.2 bg-slate-100 text-slate-600 rounded">
                   {item.badge}
                 </span>
               )}
@@ -352,20 +365,20 @@ export function AppSidebar({ user, projects, activeProjectKey }: AppSidebarProps
           ))}
 
           {/* Developer Tools */}
-          <div className="pt-3 mt-3 border-t border-slate-100">
+          <div className="pt-2.5 mt-2.5 border-t border-slate-100">
             {!collapsed && (
-              <p className="px-3 text-xs font-semibold text-slate-400 mb-1">
+              <p className="px-2.5 text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1">
                 Developer & Tools
               </p>
             )}
             <Link
               href="/api-docs"
               title={collapsed ? "API & Swagger Docs" : undefined}
-              className={`flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium transition ${
+              className={`flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition ${
                 pathname === "/api-docs"
-                  ? "bg-ink text-on-ink"
+                  ? "bg-slate-100 text-slate-900 font-semibold"
                   : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-              } ${collapsed ? "justify-center px-2" : ""}`}
+              } ${collapsed ? "justify-center px-1.5" : ""}`}
             >
               <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
@@ -378,18 +391,18 @@ export function AppSidebar({ user, projects, activeProjectKey }: AppSidebarProps
           {user.isAdmin && (
             <div className="pt-2 mt-2">
               {!collapsed && (
-                <p className="px-3 text-xs font-semibold text-slate-400 mb-1">
+                <p className="px-2.5 text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1">
                   Administrator
                 </p>
               )}
               <Link
                 href="/admin/users"
                 title={collapsed ? "Approval Queue" : undefined}
-                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium transition ${
+                className={`flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition ${
                   pathname === "/admin/users"
-                    ? "bg-ink text-on-ink"
-                    : "text-slate-700 hover:bg-slate-100"
-                } ${collapsed ? "justify-center px-2" : ""}`}
+                    ? "bg-slate-100 text-slate-900 font-semibold"
+                    : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                } ${collapsed ? "justify-center px-1.5" : ""}`}
               >
                 <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
@@ -399,11 +412,11 @@ export function AppSidebar({ user, projects, activeProjectKey }: AppSidebarProps
               <Link
                 href="/admin/rbac"
                 title={collapsed ? "Kelola RBAC" : undefined}
-                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium transition ${
+                className={`flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition ${
                   pathname.startsWith("/admin/rbac")
-                    ? "bg-ink text-on-ink"
-                    : "text-slate-700 hover:bg-slate-100"
-                } ${collapsed ? "justify-center px-2" : ""}`}
+                    ? "bg-slate-100 text-slate-900 font-semibold"
+                    : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                } ${collapsed ? "justify-center px-1.5" : ""}`}
               >
                 <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
