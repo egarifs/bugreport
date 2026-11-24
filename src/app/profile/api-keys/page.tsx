@@ -1,7 +1,6 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { AppShell } from "@/components/layout/app-shell";
-import { ForbiddenState } from "@/components/ui/forbidden-state";
 import { SubmitButton } from "@/components/ui/action-form";
 import { generateApiKey, AGENT_QA_SCOPES } from "@/lib/mcp-auth";
 import { ProjectRole } from "@prisma/client";
@@ -16,7 +15,7 @@ export default async function ProfileApiKeysPage(props: {
   const user = session?.user as { id?: string; name?: string | null; email?: string | null; isAdmin?: boolean; status?: string } | undefined;
 
   if (!user || user.status !== "ACTIVE" || !user.id) {
-    return <ForbiddenState message="Silakan login terlebih dahulu untuk mengelola API Key." />;
+    redirect("/login");
   }
 
   const sp = await props.searchParams;
