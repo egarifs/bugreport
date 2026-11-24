@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/db";
 import type { Sprint } from "@prisma/client";
-import type { DodFacts, ExitFacts, NoteBug } from "@/lib/stlc";
+import { buildReleaseNotes, type DodFacts, type ExitFacts, type NoteBug } from "@/lib/stlc";
 
 const OPEN = ["OPEN", "IN_PROGRESS", "DESIGN_REVIEW", "READY_FOR_VERIFICATION", "REOPENED"] as const;
 const DAY = 86_400_000;
@@ -61,4 +61,16 @@ export async function releaseBugs(projectId: string): Promise<NoteBug[]> {
     orderBy: { number: "asc" },
   });
   return bugs.map((b) => ({ ...b, assignee: b.assignee ? (b.assignee.name ?? b.assignee.email) : null }));
+}
+
+/** Release notes eksternal untuk portal klien: hanya yang sudah Final, judul tulis-ulang, tanpa nama/catatan internal/Draft/Invalid. */
+export async function publishedReleaseNotes(projectId: string) {
+  const [docs, bugs] = await Promise.all([
+    prisma.stlcDoc.findMany({ where: { projectId, kind: "RELEASE_NOTES", status: "FINAL" }, orderBy: { finalizedAt: "desc" }, select: { id: true, title: true, releaseVersion: true, body: true } }),
+    releaseBugs(projectId),
+  ]);
+  return docs.filter((d) => d.releaseVersion).map((d) => {
+    const titles = ((d.body as { titles?: Record<string, string> } | null)?.titles ?? {}) as Record<string, string>;
+    return { id: d.id, title: d.title, version: d.releaseVersion as string, ...buildReleaseNotes(bugs, d.releaseVersion as string, titles, true) };
+  });
 }

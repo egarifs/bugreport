@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { PortalShell, portalContext } from "@/components/layout/portal-shell";
+import { publishedReleaseNotes } from "@/lib/stlc-service";
 
 const DONE = ["CLOSED", "INVALID", "DUPLICATE", "CANNOT_REPRODUCE", "WONT_FIX"];
 
@@ -20,6 +21,7 @@ export default async function PortalRilis({ params }: { params: Promise<{ key: s
     if (b.status === "CLOSED") e.verified++;
     byVersion.set(b.fixedInVersion, e);
   }
+  const notes = await publishedReleaseNotes(project.id);
   const rows = [...byVersion.entries()].sort((a, b) => b[0].localeCompare(a[0], undefined, { numeric: true }));
 
   return (
@@ -36,6 +38,14 @@ export default async function PortalRilis({ params }: { params: Promise<{ key: s
           </tbody>
         </table>
       </div>
+      {notes.map((n) => (
+        <section key={n.id} aria-label={n.title} className="bg-surface border border-slate-200 rounded p-4 space-y-2">
+          <h2 className="text-base font-bold">{n.title}</h2>
+          <h3 className="text-sm font-bold">Perbaikan</h3>
+          <ul className="list-disc pl-5 text-sm space-y-1">{n.fixes.map((f) => <li key={f.key}>{f.text}</li>)}{!n.fixes.length && <li className="list-none -ml-5 text-slate-500">Tidak ada.</li>}</ul>
+          {n.known.length > 0 && (<><h3 className="text-sm font-bold">Masalah yang diketahui</h3><ul className="list-disc pl-5 text-sm space-y-1">{n.known.map((f) => <li key={f.key}>{f.text}</li>)}</ul></>)}
+        </section>
+      ))}
     </PortalShell>
   );
 }

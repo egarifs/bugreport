@@ -8,6 +8,8 @@ import { SEVERITY_STYLE, STATUS_LABEL, SeverityBadge } from "@/components/ui/bug
 import { computeTrend } from "@/lib/trend";
 import type { BugSeverity, BugStatus } from "@prisma/client";
 import { SummaryTab } from "./summary-tab";
+import { exitStatus } from "@/lib/stlc";
+import { exitFacts } from "@/lib/stlc-service";
 import { PerformanceTab } from "./performance-tab";
 
 const SEVERITIES = ["BLOCKER", "HIGH", "MEDIUM", "LOW"] as const;
@@ -46,6 +48,9 @@ export default async function ReportsPage({
   if (isTrend) return <TrendTab project={{ id: project.id, key: project.key }} sprintId={sprintId} />;
   const r = await getProjectReport(project.id, version?.trim() || undefined);
   const isClient = project.members[0]?.role === "CLIENT" && !user.isAdmin;
+  // Kriteria keluar dari Test Plan yang disetujui (informatif, tidak memblokir rilis). Disembunyikan dari Klien.
+  const plan = isClient ? null : await prisma.stlcDoc.findFirst({ where: { projectId: project.id, kind: "TEST_PLAN", status: "APPROVED" }, orderBy: { approvedAt: "desc" }, select: { id: true, title: true } });
+  const exit = plan ? exitStatus(await exitFacts(project.id)) : [];
   const maxSev = Math.max(1, ...SEVERITIES.map((s) => r.openBySeverity[s] ?? 0));
 
   return (
@@ -114,6 +119,14 @@ export default async function ReportsPage({
             </ul>
           )}
         </section>
+
+        {plan && (
+          <section aria-label="Kriteria keluar Test Plan" className="bg-surface border border-slate-200 rounded-lg p-4">
+            <h2 className="text-sm font-bold text-slate-900 mb-2">Kriteria keluar · <Link className="underline" href={`/projects/${project.key}/stlc/${plan.id}`}>{plan.title}</Link></h2>
+            <ul className="text-sm space-y-1">{exit.map((e) => <li key={e.text}><span aria-hidden>{e.ok ? "✓" : "✕"}</span> <span className="sr-only">{e.ok ? "Terpenuhi:" : "Belum:"}</span>{e.text}</li>)}</ul>
+            <p className="text-xs text-slate-500 mt-2">Informatif: tidak memblokir rilis.</p>
+          </section>
+        )}
 
         <div className="grid gap-5 md:grid-cols-2">
           {/* Card 1: Severity Progress Bar */}
