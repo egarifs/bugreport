@@ -165,7 +165,7 @@ export async function SummaryTab({ project, nav, sprintId, moduleId, isLead }: {
             rows={sm.status.map((x) => ({ label: x.key === "REJECTED" ? "Ditolak" : STATUS_LABEL[x.key], href: x.key === "REJECTED" ? undefined : q(`status=${x.key}`), parts: [{ value: x.count, color: OPEN, name: "Bug" }] }))} />
           <BarChart title="Bug per severity"
             rows={sm.severity.map((x) => ({ label: SEVERITY_STYLE[x.key].label, href: q(`severity=${x.key}`), parts: [{ value: x.count, color: RAMP[x.key], name: "Bug" }] }))} />
-          <BarChart title="Passed vs Open per modul" note="Passed = Closed. Open = Open, In progress, Design review, Ready for verification, Reopened."
+          <BarChart title="Passed vs Open per modul" note="Passed = Closed. Open = Open, In progress, Design Review, Ready for QA, Reopened."
             legend={[{ name: "Open", color: OPEN }, { name: "Passed", color: PASSED }]}
             rows={sm.modules.map((m) => ({ label: m.name, parts: [{ value: m.open, color: OPEN, name: "Open" }, { value: m.passed, color: PASSED, name: "Passed" }] }))} />
           <BarChart title="Bug terbuka × status" legend={sevLegend}

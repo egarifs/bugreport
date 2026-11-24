@@ -5,9 +5,10 @@ import { coverageOf, dorChecks, nextStatus, parseRequirementSections } from "./r
 test("parseRequirementSections: anchor unik, kriteria, hash berubah", () => {
   const a = "# PRD\n## Impor\nteks\n**Kriteria penerimaan**\n- A\n- B\n## Impor\nlain";
   const s = parseRequirementSections(a);
-  assert.deepEqual(s.map((x) => x.anchor), ["prd", "impor", "impor-2"]);
-  assert.deepEqual(s[1].criteria, ["A", "B"]);
-  assert.notEqual(parseRequirementSections(a.replace("teks", "baru"))[1].hash, s[1].hash);
+  assert.deepEqual(s.map((x) => x.anchor), ["impor", "impor-2"]); // judul # dilewati karena ada sub-judul
+  assert.deepEqual(s[0].criteria, ["A", "B"]);
+  assert.notEqual(parseRequirementSections(a.replace("teks", "baru"))[0].hash, s[0].hash);
+  assert.equal(parseRequirementSections("# Hanya judul\nisi").length, 1);
 });
 
 test("dorChecks + coverageOf + nextStatus", () => {

@@ -7,12 +7,14 @@ const slug = (t: string) => t.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(
 
 /** Pecah markdown per heading; kriteria penerimaan = bullet di bawah heading "Kriteria penerimaan". Anchor unik per dokumen. */
 export function parseRequirementSections(md: string): ParsedSection[] {
-  const out: { title: string; lines: string[] }[] = [];
+  const out: { title: string; level: number; lines: string[] }[] = [];
   for (const line of md.split("\n")) {
-    const h = /^#{1,4}\s+(.*)/.exec(line);
-    if (h) out.push({ title: h[1].trim(), lines: [] });
+    const h = /^(#{1,4})\s+(.*)/.exec(line);
+    if (h) out.push({ title: h[2].trim(), level: h[1].length, lines: [] });
     else if (out.length) out[out.length - 1].lines.push(line);
   }
+  // Judul dokumen (satu-satunya #) bukan bagian requirement bila ada sub-judul.
+  if (out.some((s) => s.level > 1)) for (let i = out.length - 1; i >= 0; i--) if (out[i].level === 1) out.splice(i, 1);
   const seen = new Map<string, number>();
   return out.filter((s) => !/^kriteria penerimaan$/i.test(s.title)).map((s, i) => {
     const base = slug(s.title);
