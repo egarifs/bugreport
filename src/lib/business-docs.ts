@@ -11,6 +11,9 @@ export function docFilePath(projectKey: string, storedPath: string) {
 export const isMarkdown = (fileName: string) => fileName.toLowerCase().endsWith(".md");
 export const isPdf = (fileName: string) => fileName.toLowerCase().endsWith(".pdf");
 
+const PDF_MAX_PAGES = 50;
+const PDF_PARSE_TIMEOUT_MS = 6000;
+
 export async function readDocText(projectKey: string, v: { storedPath: string; fileName: string }): Promise<string | null> {
   const filePath = docFilePath(projectKey, v.storedPath);
 
@@ -21,9 +24,26 @@ export async function readDocText(projectKey: string, v: { storedPath: string; f
   if (isPdf(v.fileName)) {
     try {
       const buffer = await fs.readFile(filePath);
-      const { text } = await extractText(new Uint8Array(buffer));
-      const extracted = Array.isArray(text) ? text.join("\n\n") : String(text || "");
-      return extracted.trim() || null;
+      // Validasi PDF signature (%PDF-)
+      if (buffer.length < 5 || buffer.subarray(0, 5).toString("latin1") !== "%PDF-") {
+        return null;
+      }
+
+      // Hardening: Timeout guard cegah thread loop/DoS
+      const parsePromise = extractText(new Uint8Array(buffer));
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("PDF extraction timeout")), PDF_PARSE_TIMEOUT_MS)
+      );
+
+      const res = await Promise.race([parsePromise, timeoutPromise]);
+      let pages = Array.isArray(res.text) ? res.text : [String(res.text || "")];
+      // Hardening: Batasi maksimal halaman yang diproses
+      if (pages.length > PDF_MAX_PAGES) {
+        pages = pages.slice(0, PDF_MAX_PAGES);
+      }
+
+      const extracted = pages.join("\n\n").trim();
+      return extracted || null;
     } catch {
       return null;
     }

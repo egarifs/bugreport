@@ -14,9 +14,13 @@ test("business-docs: split, rank, safe path", () => {
   assert.ok(docFilePath("CRM", "/app/uploads/CRM/docs/a.md").endsWith("/uploads/CRM/docs/a.md"));
 });
 
-test("business-docs: extracts text from PDF buffer", async () => {
-  const { isPdf } = await import("./business-docs");
+test("business-docs: extracts text from PDF buffer and handles invalid PDF safely", async () => {
+  const { isPdf, readDocText } = await import("./business-docs");
   assert.equal(isPdf("spec.pdf"), true);
   assert.equal(isPdf("spec.PDF"), true);
   assert.equal(isPdf("spec.md"), false);
+
+  // File not found returns null
+  const missing = await readDocText("TEST", { storedPath: "nonexistent.pdf", fileName: "nonexistent.pdf" });
+  assert.equal(missing, null);
 });
