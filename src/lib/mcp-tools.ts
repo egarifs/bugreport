@@ -11,7 +11,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import * as agent from "./agent-service";
 import { listTestResources, reportResourceStatus } from "./resource-service";
-import { agentReadiness, fillTestData } from "./agent-readiness";
+import { agentReadiness, fillTestData, generateBreakUiData } from "./agent-readiness";
 
 export interface McpContext {
   projectId: string;
@@ -23,6 +23,21 @@ export interface McpContext {
 }
 
 export const MCP_TOOLS_DEFINITIONS = [
+  {
+    name: "generate_worst_case_data",
+    description: "Generate data uji ekstrim / worst-case (break-ui skill) untuk stress testing tampilan UI (overflow, text wrapping, string panjang, emoji, HTML escaping).",
+    inputSchema: {
+      type: "object",
+      properties: {
+        kind: {
+          type: "string",
+          enum: ["name", "email", "title", "number", "multiline"],
+          description: "Jenis worst-case data yang diinginkan.",
+        },
+      },
+      required: ["kind"],
+    },
+  },
   {
     name: "list_modules",
     description: "Daftar modul aplikasi aktif di project ini. Pakai nama persis untuk field component di create_bug_draft.",
@@ -980,6 +995,23 @@ export async function executeMcpTool(
                 slug: rawSlug,
                 version: resultDoc.version.versionNum,
                 title,
+              }),
+            },
+          ],
+        };
+      }
+
+      case "generate_worst_case_data": {
+        const kind = (args.kind as "name" | "email" | "title" | "number" | "multiline") || "title";
+        const sample = generateBreakUiData(kind);
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({
+                kind,
+                sample,
+                description: "Gunakan sample ini untuk menguji apakah UI hancur / overflow (prinsip break-ui).",
               }),
             },
           ],

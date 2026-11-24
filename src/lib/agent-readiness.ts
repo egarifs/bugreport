@@ -20,3 +20,25 @@ export function fillTestData(text: string, testData: unknown): string {
   const data = testData && typeof testData === "object" && !Array.isArray(testData) ? (testData as Record<string, unknown>) : {};
   return text.replace(PLACEHOLDER, (m, k) => (k in data ? String(data[k]) : m));
 }
+
+/**
+ * Emil Kowalski /break-ui inspired stress test data generation.
+ * Generates edge-case strings for testing layout stability, truncation, and overflow.
+ */
+export function generateBreakUiData(kind: "name" | "email" | "title" | "number" | "multiline"): string {
+  switch (kind) {
+    case "name":
+      return "Hubert Blaine Wolfeschlegelsteinhausenbergerdorff Senior 👨‍👩‍👧‍👦";
+    case "email":
+      return "user.with+very.long.unbreakable.email.address.and.special.chars.plus.dots@department-of-quality-assurance-engineering.subdomain.example.co.id";
+    case "title":
+      return "BUG-CRITICAL-OVERFLOW: " + "A".repeat(120) + " / " + "🔥".repeat(10) + " <script>alert(1)</script> & <html> 'quote'";
+    case "number":
+      return "999999999999";
+    case "multiline":
+      return "Line 1\n".repeat(25) + "Line with unbreakable string: " + "supercalifragilisticexpialidocious".repeat(8);
+    default:
+      return "TEST_STRESS_VALUE_123456789";
+  }
+}
+

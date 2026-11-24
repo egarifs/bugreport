@@ -11,6 +11,9 @@ const c = (name) => `rgb(var(--c-${name}) / <alpha-value>)`;
 const group = (prefix, keys) => Object.fromEntries(keys.map((k) => [k === "" ? "DEFAULT" : k, c(k === "" ? prefix : `${prefix}-${k}`)]));
 
 module.exports = {
+  future: {
+    hoverOnlyWhenSupported: true,
+  },
   content: ["./src/**/*.{js,ts,jsx,tsx,mdx}"],
   // dark: variants follow the token rule: explicit data-theme wins, otherwise the OS setting.
   darkMode: [
