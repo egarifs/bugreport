@@ -20,7 +20,7 @@ const RETENTION_DAYS = 90;
 
 type Actor = { id?: string | null; name?: string | null; email?: string | null };
 type BugEvent =
-  | { kind: "assign" }
+  | { kind: "assign"; assigneeId?: string; roleSlot?: string }
   | { kind: "comment"; commentType: CommentType; excerpt: string; mentions?: string[] }
   | { kind: "status"; from: BugStatus; to: BugStatus }
   | { kind: "draft"; source: "mcp" | "test_run" | "form" };
@@ -153,13 +153,20 @@ export async function notifyBug(bugId: string, actor: Actor, ev: BugEvent) {
       where: { bugId: bug.id },
       select: { userId: true },
     });
-    const involved = [bug.reporterId, bug.assigneeId, ...coReporters.map((c) => c.userId)].filter(Boolean) as string[];
+    const multiAssignees = await prisma.bugAssignee.findMany({
+      where: { bugId: bug.id },
+      select: { userId: true },
+    });
+    const involved = [bug.reporterId, bug.assigneeId, ...coReporters.map((c) => c.userId), ...multiAssignees.map((a) => a.userId)].filter(Boolean) as string[];
 
     switch (ev.kind) {
-      case "assign":
-        return save(await allowed(bug.projectId, [bug.assigneeId], "project.read"), actor, {
-          ...base, type: "assign", title: `${who} menugaskan ${bug.key} ke Anda`, involvedIds: [bug.assigneeId!],
+      case "assign": {
+        const targetId = ev.assigneeId || bug.assigneeId;
+        if (!targetId) return 0;
+        return save(await allowed(bug.projectId, [targetId], "project.read"), actor, {
+          ...base, type: "assign", title: `${who} menugaskan ${bug.key} ke Anda`, involvedIds: [targetId],
         });
+      }
       case "comment": {
         // Send mention notifications if any
         if (ev.mentions && ev.mentions.length > 0) {

@@ -67,6 +67,12 @@ export default async function BugDetailPage({
     include: {
       reporter: { select: { id: true, name: true, email: true } },
       assignee: { select: { id: true, name: true, email: true } },
+      bugAssignees: {
+        include: {
+          user: { select: { id: true, name: true, email: true } },
+        },
+        orderBy: { createdAt: "asc" },
+      },
       reviewedBy: { select: { name: true, email: true } },
       duplicateOf: { select: { key: true, number: true, title: true } },
       duplicates: { select: { key: true, number: true, title: true } },
@@ -700,6 +706,135 @@ export default async function BugDetailPage({
             <h3 className="font-bold text-slate-900">Informasi Bug</h3>
 
             <div className="space-y-2 text-slate-600">
+              {/* Multi-Assignee Section */}
+              <div className="py-2 border-b border-slate-100 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-slate-800 text-xs">Assignee / PIC</span>
+                  {canEditFields && (
+                    <span className="text-[10px] text-slate-400">Dev, QA, & Design</span>
+                  )}
+                </div>
+
+                {bug.bugAssignees.length === 0 ? (
+                  <p className="text-slate-400 italic text-[11px]">Belum ada penugasan.</p>
+                ) : (
+                  <div className="space-y-1.5">
+                    {bug.bugAssignees.map((ba) => (
+                      <div key={ba.id} className="flex items-center justify-between gap-1 text-[11px] bg-slate-50 border border-slate-200/80 px-2 py-1 rounded">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <span className={`font-mono text-[9px] px-1 py-0.2 rounded font-bold uppercase ${
+                            ba.roleSlot === "QA" ? "bg-amber-100 text-amber-800"
+                            : ba.roleSlot === "DESIGN" ? "bg-purple-100 text-purple-800"
+                            : "bg-blue-100 text-blue-800"
+                          }`}>
+                            {ba.roleSlot}
+                          </span>
+                          <span className="truncate font-medium text-slate-800">
+                            {ba.user.name || ba.user.email}
+                          </span>
+                        </div>
+
+                        {canEditFields && (
+                          <form
+                            action={async () => {
+                              "use server";
+                              await requireProjectPermission(projectId, "bug.update");
+                              await prisma.bugAssignee.delete({ where: { id: ba.id } });
+                              // If deleted is primary assignee, nullify or switch
+                              if (bug.assigneeId === ba.userId && ba.roleSlot === "DEV") {
+                                const nextDev = await prisma.bugAssignee.findFirst({
+                                  where: { bugId: bug.id, roleSlot: "DEV" },
+                                });
+                                await prisma.bug.update({
+                                  where: { id: bug.id },
+                                  data: { assigneeId: nextDev ? nextDev.userId : null },
+                                });
+                              }
+                              revalidatePath(`/projects/${project.key}/bugs/${bug.number}`);
+                            }}
+                          >
+                            <button
+                              type="submit"
+                              title="Hapus penugasan"
+                              className="text-slate-400 hover:text-rose-600 font-bold px-1 text-xs"
+                            >
+                              ✕
+                            </button>
+                          </form>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {canEditFields && (
+                  <form
+                    action={async (formData: FormData) => {
+                      "use server";
+                      const actor = await requireProjectPermission(projectId, "bug.update");
+                      const userId = (formData.get("userId") as string)?.trim();
+                      const roleSlot = (formData.get("roleSlot") as string)?.trim() as "DEV" | "QA" | "DESIGN" | "OTHER";
+                      if (!userId || !roleSlot) return;
+
+                      // Check member
+                      const isMem = await prisma.projectMember.findUnique({
+                        where: { projectId_userId: { projectId, userId } },
+                      });
+                      if (!isMem) return;
+
+                      await prisma.bugAssignee.upsert({
+                        where: { bugId_userId_roleSlot: { bugId: bug.id, userId, roleSlot } },
+                        create: { bugId: bug.id, userId, roleSlot },
+                        update: {},
+                      });
+
+                      // Sync legacy assigneeId if primary DEV
+                      if (roleSlot === "DEV" || !bug.assigneeId) {
+                        await prisma.bug.update({
+                          where: { id: bug.id },
+                          data: { assigneeId: userId },
+                        });
+                      }
+
+                      await notifyBug(bug.id, actor, { kind: "assign", assigneeId: userId });
+                      revalidatePath(`/projects/${project.key}/bugs/${bug.number}`);
+                    }}
+                    className="flex items-center gap-1.5 pt-1"
+                  >
+                    <select
+                      name="userId"
+                      required
+                      className="flex-1 px-1.5 py-1 border border-slate-300 rounded text-[11px] bg-surface text-slate-800"
+                    >
+                      <option value="">+ Tambah PIC</option>
+                      {members.map((m) => (
+                        <option key={m.user.id} value={m.user.id}>
+                          {m.user.name || m.user.email} ({m.role})
+                        </option>
+                      ))}
+                    </select>
+
+                    <select
+                      name="roleSlot"
+                      defaultValue="DEV"
+                      className="w-20 px-1 py-1 border border-slate-300 rounded text-[11px] bg-surface text-slate-800 font-semibold"
+                    >
+                      <option value="DEV">DEV</option>
+                      <option value="QA">QA</option>
+                      <option value="DESIGN">DESIGN</option>
+                      <option value="OTHER">OTHER</option>
+                    </select>
+
+                    <button
+                      type="submit"
+                      className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-white rounded text-[11px] font-medium"
+                    >
+                      +
+                    </button>
+                  </form>
+                )}
+              </div>
+
               <div className="flex justify-between py-1 border-b border-slate-100">
                 <span className="text-slate-400">Reporter</span>
                 <span className="font-medium text-slate-800">

@@ -32,7 +32,7 @@ test("notifications: recipients, internal-note privacy, self-skip", async () => 
   assert.equal((await inbox(vendor)).length, before);
 
   assert.equal(await notifyBug(bug.id, vendor, { kind: "status", from: "OPEN", to: "READY_FOR_VERIFICATION" }), 1);
-  assert.match((await inbox(qa)).at(-1)!.title, /Open → Perlu verifikasi/);
+  assert.match((await inbox(qa)).at(-1)!.title, /Open → Ready for QA/);
 
   // draft -> reviewers only (qa), never vendor/dev/outsider
   assert.equal(await notifyBug(bug.id, { id: null, name: "Agent" }, { kind: "draft", source: "mcp" }), 1);

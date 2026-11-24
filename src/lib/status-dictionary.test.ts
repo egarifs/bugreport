@@ -12,8 +12,8 @@ describe("status dictionary", () => {
     }
   });
   it("AC-DICT-01 READY_FOR_VERIFICATION labels", () => {
-    assert.equal(statusLabel("READY_FOR_VERIFICATION"), "Perlu verifikasi");
-    assert.equal(statusLabel("READY_FOR_VERIFICATION", "portal"), "Siap dicek");
+    assert.equal(statusLabel("READY_FOR_VERIFICATION"), "Ready for QA");
+    assert.equal(statusLabel("READY_FOR_VERIFICATION", "portal"), "Siap dicek QA");
   });
 });
 

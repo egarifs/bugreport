@@ -160,15 +160,23 @@ export const BUG_TRANSITIONS: Record<BugStatus, readonly { to: BugStatus; permis
   ],
   OPEN: [
     { to: "IN_PROGRESS", permission: "bug.update" },
+    { to: "DESIGN_REVIEW", permission: "bug.update" },
     { to: "WONT_FIX", permission: "bug.update" },
   ],
   REOPENED: [
     { to: "IN_PROGRESS", permission: "bug.update" },
+    { to: "DESIGN_REVIEW", permission: "bug.update" },
     { to: "WONT_FIX", permission: "bug.update" },
   ],
   IN_PROGRESS: [
     { to: "READY_FOR_VERIFICATION", permission: "bug.update" },
+    { to: "DESIGN_REVIEW", permission: "bug.update" },
     { to: "OPEN", permission: "bug.update" },
+  ],
+  DESIGN_REVIEW: [
+    { to: "OPEN", permission: "bug.update" },
+    { to: "IN_PROGRESS", permission: "bug.update" },
+    { to: "READY_FOR_VERIFICATION", permission: "bug.update" },
   ],
   READY_FOR_VERIFICATION: [
     { to: "CLOSED", permission: "bug.close" },

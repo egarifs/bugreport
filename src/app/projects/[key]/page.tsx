@@ -59,13 +59,26 @@ export default async function ProjectDetailPage({
 
   const base: Prisma.BugWhereInput = { projectId: project.id };
   const viewWhere: Prisma.BugWhereInput =
-    view === "review" ? { status: "DRAFT" } : view === "mine" ? { assigneeId: user.id, status: { notIn: DONE } } : {};
+    view === "review"
+      ? { status: "DRAFT" }
+      : view === "mine"
+      ? {
+          status: { notIn: DONE },
+          OR: [{ assigneeId: user.id }, { bugAssignees: { some: { userId: user.id } } }],
+        }
+      : {};
 
   const today = startOfTodayWib();
   const sprints = await prisma.sprint.findMany({ where: { projectId: project.id }, orderBy: { startsAt: "desc" }, select: { id: true, name: true } });
   const [reviewCount, mineCount, modules, members, reviewedToday, closedToday, bugs] = await Promise.all([
     prisma.bug.count({ where: { ...base, status: "DRAFT" } }),
-    prisma.bug.count({ where: { ...base, assigneeId: user.id, status: { notIn: DONE } } }),
+    prisma.bug.count({
+      where: {
+        ...base,
+        status: { notIn: DONE },
+        OR: [{ assigneeId: user.id }, { bugAssignees: { some: { userId: user.id } } }],
+      },
+    }),
     activeModules(project.id),
     canReview
       ? prisma.projectMember.findMany({ where: { projectId: project.id }, include: { user: { select: { name: true, email: true } } } })

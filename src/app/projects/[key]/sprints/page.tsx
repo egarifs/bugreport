@@ -135,7 +135,7 @@ export default async function SprintsPage({ params, searchParams }: { params: Pr
                 {[
                   [`${done} / ${bugs.length}`, "Bug selesai"],
                   [String(late), "Lewat tenggat"],
-                  [String(ready), "Perlu verifikasi"],
+                  [String(ready), "Ready for QA"],
                   [String(bugs.length - done), "Belum selesai"],
                 ].map(([v, l]) => (
                   <div key={l} className="bg-surface border border-slate-200 rounded p-4">

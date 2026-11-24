@@ -27,6 +27,7 @@ enum BugStatus {
   DRAFT
   OPEN
   IN_PROGRESS
+  DESIGN_REVIEW
   READY_FOR_VERIFICATION
   CLOSED
   REOPENED
@@ -34,6 +35,13 @@ enum BugStatus {
   DUPLICATE
   CANNOT_REPRODUCE
   WONT_FIX
+}
+
+enum AssigneeRole {
+  DEV
+  QA
+  DESIGN
+  OTHER
 }
 
 enum BugSeverity {
@@ -80,6 +88,7 @@ model User {
   memberships    ProjectMember[]
   reportedBugs   Bug[]           @relation("BugReporter")
   assignedBugs   Bug[]           @relation("BugAssignee")
+  bugAssignees   BugAssignee[]
   reviewedBugs   Bug[]           @relation("BugReviewer")
   coReportedBugs BugCoReporter[] @relation("UserCoReported")
   comments       BugComment[]
@@ -238,8 +247,9 @@ model Bug {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  comments    BugComment[]
-  attachments BugAttachment[]
+  comments     BugComment[]
+  attachments  BugAttachment[]
+  bugAssignees BugAssignee[]
 
   coReporters    BugCoReporter[] @relation("BugCoReporters")
   mergedAsSource BugCoReporter[] @relation("BugMergedSources")
@@ -276,6 +286,20 @@ model BugAttachment {
   uploadedAt DateTime @default(now())
 
   @@index([bugId])
+}
+
+model BugAssignee {
+  id        String       @id @default(uuid())
+  bugId     String
+  bug       Bug          @relation(fields: [bugId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  roleSlot  AssigneeRole @default(DEV)
+  createdAt DateTime     @default(now())
+
+  @@unique([bugId, userId, roleSlot])
+  @@index([bugId])
+  @@index([userId])
 }
 
 model BugCoReporter {
