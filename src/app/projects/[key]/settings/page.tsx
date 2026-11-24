@@ -131,6 +131,22 @@ export default async function ProjectSettingsPage({
                     const roleStr = (formData.get("role") as string) || "QA";
                     const role = (["QA", "DEVELOPER", "VENDOR", "VIEWER"].includes(roleStr) ? roleStr : "QA") as ProjectRole;
 
+                    const targetProjectId = (formData.get("targetProjectId") as string)?.trim() || project.id;
+                    const isOtherProject = targetProjectId !== project.id;
+
+                    // If creating for another project, verify user membership
+                    let effectiveRole = role;
+                    if (isOtherProject) {
+                      const member = await prisma.projectMember.findUnique({
+                        where: { projectId_userId: { projectId: targetProjectId, userId: actor.id } },
+                        select: { role: true },
+                      });
+                      if (!member && !actor.isAdmin) {
+                        throw new Error("Tidak memiliki akses ke project target");
+                      }
+                      effectiveRole = member ? member.role : "ADMIN";
+                    }
+
                     const expireDays = Number(formData.get("expireDays")) || 30;
                     let expiresAt: Date | null = null;
                     if (expireDays > 0) {
@@ -139,21 +155,23 @@ export default async function ProjectSettingsPage({
 
                     const { rawKey, keyHash, keyPrefix } = generateApiKey();
 
-                    const agentQa = formData.get("preset") === "AGENT_QA";
+                    const agentQa = formData.get("preset") === "AGENT_QA" && ["ADMIN", "QA"].includes(effectiveRole);
                     // Agent QA: read cases, write results/evidence, create Draft bugs. No status change, no settings.
                     const scopes = agentQa
                       ? AGENT_QA_SCOPES
-                      : role === "QA"
+                      : effectiveRole === "QA" || effectiveRole === "ADMIN"
                       ? ["bug:read", "bug:create", "bug:comment", "bug:attach", "testcase:create", "testcase:read", "doc:read", "doc:manage"]
-                      : ["bug:read", "bug:comment", "testcase:read", "doc:read"];
+                      : effectiveRole === "DEVELOPER"
+                      ? ["bug:read", "bug:comment", "testcase:read", "doc:read"]
+                      : ["bug:read", "bug:comment", "testcase:read", "testrun:execute", "evidence:upload"];
 
                     await prisma.apiKey.create({
                       data: {
-                        projectId: project.id,
+                        projectId: targetProjectId,
                         name,
                         keyHash,
                         keyPrefix,
-                        role: agentQa ? "QA" : role,
+                        role: agentQa ? "QA" : effectiveRole,
                         preset: agentQa ? "AGENT_QA" : "CUSTOM",
                         expiresAt,
                         scopes,
