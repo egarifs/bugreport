@@ -92,6 +92,7 @@ model User {
   apiKeysCreated          ApiKey[]
   runningItems            TestRunItem[]            @relation("ItemRunner")
   chatMessages            ChatMessage[]
+  chatThreads             ChatThread[]
   notifications           Notification[]
   focusUntil              DateTime?
   notificationScope       String                   @default("INVOLVED_ONLY")
@@ -125,6 +126,7 @@ model Project {
   evidence                Evidence[]
   resourceLinks           ProjectResourceLink[]
   chatMessages            ChatMessage[]
+  chatThreads             ChatThread[]
   modules                 Module[]
   sprints                 Sprint[]
   notificationPreferences NotificationPreference[]
@@ -667,10 +669,26 @@ enum ChatMessageRole {
   SYSTEM
 }
 
+model ChatThread {
+  id        String        @id @default(uuid())
+  projectId String
+  project   Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  messages  ChatMessage[]
+
+  @@index([projectId, updatedAt])
+}
+
 model ChatMessage {
   id         String          @id @default(uuid())
   projectId  String
   project    Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  threadId   String?
+  thread     ChatThread?     @relation(fields: [threadId], references: [id], onDelete: Cascade)
   userId     String
   user       User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   role       ChatMessageRole
@@ -679,6 +697,7 @@ model ChatMessage {
   tokenUsage Json? // { inputTokens: 100, outputTokens: 200 }
   createdAt  DateTime        @default(now())
 
+  @@index([projectId, threadId, createdAt])
   @@index([projectId, userId, createdAt])
 }
 

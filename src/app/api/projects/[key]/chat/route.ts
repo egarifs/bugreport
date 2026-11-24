@@ -7,6 +7,42 @@ import { askClaudeProjectChat } from "@/lib/claude-service";
 import { ChatUserContext } from "@/lib/chat-tools";
 import { CHAT_MESSAGE_MAX, dailyTokenQuota, projectTokensToday } from "@/lib/chat-quota";
 
+export async function GET(
+  req: NextRequest,
+  { params }: { params: Promise<{ key: string }> }
+) {
+  const session = await auth();
+  const user = session?.user as { id?: string; email?: string; isAdmin?: boolean } | undefined;
+  if (!user?.id || !user.email) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { key } = await params;
+  const project = await prisma.project.findUnique({
+    where: { key: key.toUpperCase() },
+    include: {
+      members: { where: { userId: user.id } },
+    },
+  });
+
+  if (!project) return NextResponse.json({ error: "Project tidak ditemukan" }, { status: 404 });
+  if (!project.members[0] && !user.isAdmin) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const threads = await prisma.chatThread.findMany({
+    where: { projectId: project.id },
+    orderBy: { updatedAt: "desc" },
+    include: {
+      user: { select: { id: true, name: true, email: true } },
+      _count: { select: { messages: true } },
+    },
+    take: 50,
+  });
+
+  return NextResponse.json({ threads });
+}
+
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ key: string }> }
@@ -38,7 +74,7 @@ export async function POST(
     return NextResponse.json({ error: "Role Anda tidak punya akses AI Chat." }, { status: 403 });
   }
 
-  let body: { message?: string };
+  let body: { message?: string; threadId?: string };
   try {
     body = await req.json();
   } catch {
@@ -52,7 +88,8 @@ export async function POST(
   if (content.length > CHAT_MESSAGE_MAX) {
     return NextResponse.json({ error: `Pesan maksimal ${CHAT_MESSAGE_MAX} karakter.` }, { status: 400 });
   }
-  // ponytail: check-then-spend; concurrent requests can overshoot quota by a few replies. Add DB lock if it matters.
+
+  // Quota check
   if ((await projectTokensToday(project.id)) >= dailyTokenQuota()) {
     return NextResponse.json(
       { error: "Kuota AI project hari ini sudah habis. Reset pukul 00:00 WIB." },
@@ -78,19 +115,50 @@ export async function POST(
     );
   }
 
-  // 1. Simpan pesan User
-  await prisma.chatMessage.create({
+  // Resolve or create thread
+  let threadId = body.threadId;
+  let activeThread = null;
+  if (threadId) {
+    activeThread = await prisma.chatThread.findFirst({
+      where: { id: threadId, projectId: project.id },
+    });
+  }
+
+  if (!activeThread) {
+    // Generate simple title from first question (up to 50 chars)
+    const title = content.length > 50 ? `${content.slice(0, 47)}...` : content;
+    activeThread = await prisma.chatThread.create({
+      data: {
+        projectId: project.id,
+        userId: user.id,
+        title,
+      },
+    });
+    threadId = activeThread.id;
+  } else {
+    await prisma.chatThread.update({
+      where: { id: activeThread.id },
+      data: { updatedAt: new Date() },
+    });
+  }
+
+  // 1. Simpan pesan User dengan threadId
+  const userMsg = await prisma.chatMessage.create({
     data: {
       projectId: project.id,
+      threadId,
       userId: user.id,
       role: "USER",
       content,
     },
+    include: {
+      user: { select: { id: true, name: true, email: true } },
+    },
   });
 
-  // 2. Ambil riwayat percakapan terkini (10 pesan terakhir)
+  // 2. Ambil riwayat percakapan terkini dalam thread ini (maks 10 pesan untuk hemat token)
   const history = await prisma.chatMessage.findMany({
-    where: { projectId: project.id, userId: user.id },
+    where: { projectId: project.id, threadId },
     orderBy: { createdAt: "desc" },
     take: 10,
   });
@@ -107,19 +175,37 @@ export async function POST(
     isAdmin: Boolean(user.isAdmin),
   };
 
-  // NDJSON stream: {"step": "..."} lines while tools run, then {"message": {...}} or {"error": "..."}.
+  // NDJSON stream
   const enc = new TextEncoder();
   const stream = new ReadableStream({
     async start(controller) {
       const send = (o: object) => controller.enqueue(enc.encode(JSON.stringify(o) + "\n"));
+      // Kirim thread info awal agar client sinkron
+      send({
+        thread: {
+          id: activeThread.id,
+          title: activeThread.title,
+        },
+        userMessage: userMsg,
+      });
+
       try {
         const { reply, usage } = await askClaudeProjectChat(formattedHistory, ctx, (step) => send({ step }));
-        const message = await prisma.chatMessage.create({
-          data: { projectId: project.id, userId: user.id!, role: "ASSISTANT", content: reply, tokenUsage: { ...usage } },
+        const assistantMsg = await prisma.chatMessage.create({
+          data: {
+            projectId: project.id,
+            threadId,
+            userId: user.id!,
+            role: "ASSISTANT",
+            content: reply,
+            tokenUsage: { ...usage },
+          },
+          include: {
+            user: { select: { id: true, name: true, email: true } },
+          },
         });
-        send({ message });
+        send({ message: assistantMsg });
       } catch (err: unknown) {
-        // never echo provider errors to client: may contain request/key details
         console.error("chat error:", err instanceof Error ? err.name : "unknown");
         send({ error: "Gagal memproses chat AI. Coba lagi nanti." });
       } finally {
@@ -127,7 +213,12 @@ export async function POST(
       }
     },
   });
+
   return new Response(stream, {
-    headers: { "Content-Type": "application/x-ndjson; charset=utf-8", "Cache-Control": "no-store", "X-Accel-Buffering": "no" },
+    headers: {
+      "Content-Type": "application/x-ndjson; charset=utf-8",
+      "Cache-Control": "no-store",
+      "X-Accel-Buffering": "no",
+    },
   });
 }
