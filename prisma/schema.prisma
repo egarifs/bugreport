@@ -64,6 +64,8 @@ enum CommentType {
 }
 
 model User {
+  sandboxProject     Project?              @relation("SandboxOwner")
+  onboarding         OnboardingProgress?
   id                 String                @id @default(uuid())
   email              String                @unique
   name               String?
@@ -113,14 +115,18 @@ model User {
 }
 
 model Project {
-  id          String   @id @default(uuid())
-  key         String   @unique // e.g. "CRM", "PKT"
-  name        String
-  description String?
-  isArchived  Boolean  @default(false)
-  isTest      Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id             String   @id @default(uuid())
+  key            String   @unique // e.g. "CRM", "PKT"
+  name           String
+  description    String?
+  isArchived     Boolean  @default(false)
+  isTest         Boolean  @default(false)
+  // Project Latihan (onboarding): satu per pengguna, bisa dipakai sejak PENDING. Tidak ikut daftar/laporan orang lain.
+  isSandbox      Boolean  @default(false)
+  sandboxOwnerId String?  @unique
+  sandboxOwner   User?    @relation("SandboxOwner", fields: [sandboxOwnerId], references: [id], onDelete: Cascade)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   members   ProjectMember[]
   bugs      Bug[]
@@ -138,6 +144,9 @@ model Project {
   chatThreads             ChatThread[]
   modules                 Module[]
   sprints                 Sprint[]
+  stlcDocs                StlcDoc[]
+  performanceNotes        PerformanceNote[]
+  dodItems                String[]                 @default(["BLOCKER", "HIGH", "TEST_RUNS", "REQUIREMENTS", "SUMMARY"])
   notificationPreferences NotificationPreference[]
 
   @@index([key])
@@ -164,16 +173,19 @@ enum SprintStatus {
 }
 
 model Sprint {
-  id        String       @id @default(uuid())
+  id        String               @id @default(uuid())
   projectId String
-  project   Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  project   Project              @relation(fields: [projectId], references: [id], onDelete: Cascade)
   name      String
   startsAt  DateTime
   endsAt    DateTime
-  status    SprintStatus @default(ACTIVE)
+  status    SprintStatus         @default(ACTIVE)
   closedAt  DateTime?
-  createdAt DateTime     @default(now())
+  createdAt DateTime             @default(now())
   bugs      Bug[]
+  sections  RequirementSection[]
+  closure   SprintClosure?
+  stlcDocs  StlcDoc[]
 
   @@unique([projectId, name])
   @@index([projectId])
@@ -352,6 +364,7 @@ model BusinessDoc {
   updatedAt   DateTime @updatedAt
 
   versions BusinessDocVersion[]
+  sections RequirementSection[]
 
   @@unique([projectId, slug])
   @@index([projectId])
@@ -364,17 +377,17 @@ enum DocVersionStatus {
 }
 
 model BusinessDocVersion {
-  id           String      @id @default(uuid())
+  id           String           @id @default(uuid())
   docId        String
-  doc          BusinessDoc @relation(fields: [docId], references: [id], onDelete: Cascade)
+  doc          BusinessDoc      @relation(fields: [docId], references: [id], onDelete: Cascade)
   versionNum   Int
   fileName     String
   storedPath   String
   fileSize     Int
   mimeType     String
-  isCurrent    Boolean     @default(true)
+  isCurrent    Boolean          @default(true)
   uploadedById String?
-  uploadedAt   DateTime    @default(now())
+  uploadedAt   DateTime         @default(now())
   // Revisi baru PENDING sampai Admin menyetujui; hanya APPROVED yang bisa isCurrent.
   status       DocVersionStatus @default(APPROVED)
   changeNote   String?
@@ -433,6 +446,9 @@ model TestCase {
   testData       Json? // values for {{name}} placeholders in steps; never credentials
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
+
+  sectionId String?
+  section   RequirementSection? @relation(fields: [sectionId], references: [id], onDelete: SetNull)
 
   runItems TestRunItem[]
   versions TestCaseVersion[]
@@ -657,17 +673,17 @@ model ApiKeyRateLimit {
 }
 
 model AgentRun {
-  id          String   @id @default(uuid())
+  id          String         @id @default(uuid())
   projectId   String
-  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  project     Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
   apiKeyId    String?
-  apiKey      ApiKey?  @relation(fields: [apiKeyId], references: [id], onDelete: SetNull)
+  apiKey      ApiKey?        @relation(fields: [apiKeyId], references: [id], onDelete: SetNull)
   agentName   String // e.g. "claude-code", "playwright-reporter"
   modelName   String? // e.g. "claude-3-7-sonnet"
   runId       String // unique identifier passed by the agent run
   status      AgentRunStatus @default(RUNNING)
   createdBugs Bug[]
-  createdAt   DateTime @default(now())
+  createdAt   DateTime       @default(now())
 
   // Agent session (F9)
   toolName   String?
@@ -727,16 +743,17 @@ model ChatMessage {
 
 // Per-project master list of application modules under test. Managed by project admins.
 model Module {
-  id         String     @id @default(uuid())
+  id         String               @id @default(uuid())
   projectId  String
-  project    Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  project    Project              @relation(fields: [projectId], references: [id], onDelete: Cascade)
   name       String
-  sortOrder  Int        @default(0)
+  sortOrder  Int                  @default(0)
   archivedAt DateTime?
-  createdAt  DateTime   @default(now())
-  updatedAt  DateTime   @updatedAt
+  createdAt  DateTime             @default(now())
+  updatedAt  DateTime             @updatedAt
   bugs       Bug[]
   testCases  TestCase[]
+  sections   RequirementSection[]
 
   @@unique([projectId, name])
 }
@@ -839,3 +856,108 @@ model RolePermission {
   @@index([role])
 }
 
+enum RequirementStatus {
+  APPROVED
+  READY
+  IN_SPRINT
+  DEV_DONE
+  VERIFIED
+}
+
+// Satu baris per bagian (heading) dari versi dokumen Requirement yang berlaku. Disinkronkan saat dibuka.
+model RequirementSection {
+  id                 String            @id @default(uuid())
+  docId              String
+  doc                BusinessDoc       @relation(fields: [docId], references: [id], onDelete: Cascade)
+  anchor             String // slug heading, stabil antar versi
+  title              String
+  contentHash        String // berubah => status kembali APPROVED
+  status             RequirementStatus @default(APPROVED)
+  acceptanceCriteria String[]          @default([])
+  moduleId           String?
+  module             Module?           @relation(fields: [moduleId], references: [id], onDelete: SetNull)
+  sprintId           String?
+  sprint             Sprint?           @relation(fields: [sprintId], references: [id], onDelete: SetNull)
+  readyAt            DateTime?
+  devDoneAt          DateTime?
+  devDoneById        String?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+
+  testCases TestCase[]
+
+  @@unique([docId, anchor])
+  @@index([docId])
+}
+
+enum StlcKind {
+  TEST_PLAN
+  TEST_SUMMARY
+  RELEASE_NOTES
+}
+
+enum StlcStatus {
+  DRAFT
+  APPROVED
+  FINAL
+}
+
+// Rencana uji, laporan uji, dan release notes ditulis di BugBoard. Terpisah dari BusinessDoc (berkas) agar AI chat tidak terpengaruh.
+model StlcDoc {
+  id             String     @id @default(uuid())
+  projectId      String
+  project        Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  kind           StlcKind
+  title          String
+  releaseVersion String?
+  sprintId       String?
+  sprint         Sprint?    @relation(fields: [sprintId], references: [id], onDelete: SetNull)
+  status         StlcStatus @default(DRAFT)
+  body           Json       @default("{}")
+  snapshot       Json? // angka dibekukan saat Test Summary difinalkan
+  createdById    String?
+  approvedById   String?
+  approvedAt     DateTime?
+  finalizedById  String?
+  finalizedAt    DateTime?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  @@index([projectId, kind])
+}
+
+model SprintClosure {
+  id              String   @id @default(uuid())
+  sprintId        String   @unique
+  sprint          Sprint   @relation(fields: [sprintId], references: [id], onDelete: Cascade)
+  checklist       Json
+  exceptionReason String?
+  closedById      String?
+  createdAt       DateTime @default(now())
+}
+
+// Catatan konteks lead per orang per periode. Hanya Admin project yang menulis; orang itu bisa membaca.
+model PerformanceNote {
+  id         String   @id @default(uuid())
+  projectId  String
+  project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  userId     String
+  periodType String
+  periodKey  String
+  body       String
+  authorId   String?
+  updatedAt  DateTime @updatedAt
+
+  @@unique([projectId, userId, periodType, periodKey])
+}
+
+// Kemajuan onboarding per pengguna. Langkah ditandai oleh aksi nyata (event), bukan klik "tandai selesai".
+model OnboardingProgress {
+  id             String   @id @default(uuid())
+  userId         String   @unique
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  guideRole      String? // peran panduan: hanya memengaruhi isi panduan, bukan hak akses
+  completedSteps String[] @default([])
+  dismissedTours String[] @default([])
+  updatedAt      DateTime @updatedAt
+}
