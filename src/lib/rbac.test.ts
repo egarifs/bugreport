@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { hasPermission, syncRolePermissionsCache, invalidateRolePermissionCache, ROLE_PERMISSIONS } from "./permissions";
+import { hasPermission, syncRolePermissionsCache, invalidateRolePermissionCache } from "./permissions";
 
 test("RBAC: default permission matrix respects role boundaries", () => {
   invalidateRolePermissionCache();
