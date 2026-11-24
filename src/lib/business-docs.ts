@@ -4,8 +4,16 @@ import { extractText } from "unpdf";
 
 // storedPath is absolute and differs per host (/app/uploads vs ~/lab/...). Resolve from basename only:
 // portable across moves and immune to path traversal.
-export function docFilePath(projectKey: string, storedPath: string) {
-  return path.join(process.cwd(), "uploads", projectKey, "docs", path.basename(storedPath));
+export function docFilePath(projectKey: string, storedPath: string): string {
+  const safeProjectKey = path.basename(projectKey.replace(/[^a-zA-Z0-9_-]/g, ""));
+  const safeFileName = path.basename(storedPath);
+  const baseDir = path.resolve(process.cwd(), "uploads", safeProjectKey, "docs");
+  const fullPath = path.resolve(baseDir, safeFileName);
+  // Strict containment guard against symlinks or path manipulation
+  if (!fullPath.startsWith(baseDir)) {
+    throw new Error("Path traversal detected");
+  }
+  return fullPath;
 }
 
 export const isMarkdown = (fileName: string) => fileName.toLowerCase().endsWith(".md");

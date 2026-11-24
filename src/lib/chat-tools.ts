@@ -194,12 +194,15 @@ export async function executeChatTool(
       if (!d) return JSON.stringify({ error: "Dokumen tidak ditemukan. Cek judul lewat search_business_docs." });
       const text = await readDocText(d.projectKey, d.version);
       if (text === null) return JSON.stringify({ title: d.title, error: "Isi file belum bisa dibaca atau file hilang." });
+      // Security guard: Bungkus konten dokumen agar model tahu ini data pasif, bukan instruksi sistem
+      const rawSlice = text.slice(0, DOC_READ_MAX);
+      const safeContent = `<untrusted_document_context title="${encodeURIComponent(d.title)}">\n${rawSlice}\n</untrusted_document_context>`;
       return JSON.stringify({
         title: d.title,
         version: `v${d.version.versionNum}`,
         truncated: text.length > DOC_READ_MAX,
         outline: text.length > DOC_READ_MAX ? splitSections(text).map((s) => s.heading).filter((h, i, a) => a.indexOf(h) === i) : undefined,
-        content: text.slice(0, DOC_READ_MAX),
+        content: safeContent,
       });
     }
 

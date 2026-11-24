@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { prisma } from "./db";
 import { executeChatTool, ChatUserContext } from "./chat-tools";
+import { docFilePath } from "./business-docs";
 
 test("AI Chat Shared Threads & Security Audit", async (t) => {
   const pA = await prisma.project.create({ data: { key: `THRA${Date.now().toString().slice(-4)}`, name: "Project A" } });
@@ -11,7 +12,6 @@ test("AI Chat Shared Threads & Security Audit", async (t) => {
   const userB = await prisma.user.create({ data: { email: `userb_${Date.now()}@test.local`, name: "User B", status: "ACTIVE" } });
 
   await t.test("THREAD-01: User A creates thread, User B in same project can see thread and questions", async () => {
-    // User A creates thread and message
     const thread = await prisma.chatThread.create({
       data: {
         projectId: pA.id,
@@ -40,7 +40,6 @@ test("AI Chat Shared Threads & Security Audit", async (t) => {
       },
     });
 
-    // User B checks threads in Project A
     const projectThreads = await prisma.chatThread.findMany({
       where: { projectId: pA.id },
       include: {
@@ -92,5 +91,51 @@ test("AI Chat Shared Threads & Security Audit", async (t) => {
     const parsed = JSON.parse(res);
     assert.ok(parsed.error, "Cross-project bug fetch must return error");
     assert.ok(!res.includes("Bug Rahasia Project B"));
+  });
+
+  await t.test("SEC-04: Strict Path Traversal Prevention on docFilePath", () => {
+    const safe = docFilePath("../../../etc", "passwd");
+    assert.ok(safe.includes("uploads/etc/docs/passwd"));
+    assert.ok(!safe.includes("../"));
+
+    const safeFile = docFilePath("PRJ", "../../secret.txt");
+    assert.ok(safeFile.endsWith("uploads/PRJ/docs/secret.txt"));
+  });
+
+  await t.test("SEC-05: Untrusted Document Context Wrapping for Prompt Injection Defense", async () => {
+    const docWithPayload = await prisma.businessDoc.create({
+      data: {
+        projectId: pA.id,
+        title: "Security Spec Document",
+        slug: "security-spec-doc",
+        description: "Contains prompt injection payload",
+        versions: {
+          create: {
+            versionNum: 1,
+            fileName: "spec.md",
+            storedPath: "/dummy/spec.md",
+            fileSize: 100,
+            mimeType: "text/markdown",
+            isCurrent: true,
+          },
+        },
+      },
+    });
+
+    const ctxA: ChatUserContext = {
+      userId: userA.id,
+      projectId: pA.id,
+      role: "QA",
+      isAdmin: false,
+    };
+
+    const res = await executeChatTool("read_business_doc", { title: docWithPayload.title }, ctxA);
+    const parsed = JSON.parse(res);
+    if (parsed.content) {
+      assert.ok(parsed.content.includes("<untrusted_document_context"));
+      assert.ok(parsed.content.includes("</untrusted_document_context>"));
+    } else {
+      assert.ok(parsed.error);
+    }
   });
 });
