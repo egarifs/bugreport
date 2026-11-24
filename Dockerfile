@@ -28,6 +28,7 @@ COPY --from=build --chown=node:node /app/prisma ./prisma
 COPY --from=build --chown=node:node /app/node_modules/prisma ./node_modules/prisma
 COPY --from=build --chown=node:node /app/node_modules/@prisma ./node_modules/@prisma
 COPY --from=build --chown=node:node /app/node_modules/.bin/prisma ./node_modules/.bin/prisma
+COPY --from=build --chown=node:node /app/node_modules/unpdf ./node_modules/unpdf
 
 RUN mkdir -p uploads && chown -R node:node /app
 USER node

@@ -1,5 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import { extractText } from "unpdf";
 
 // storedPath is absolute and differs per host (/app/uploads vs ~/lab/...). Resolve from basename only:
 // portable across moves and immune to path traversal.
@@ -20,7 +21,6 @@ export async function readDocText(projectKey: string, v: { storedPath: string; f
   if (isPdf(v.fileName)) {
     try {
       const buffer = await fs.readFile(filePath);
-      const { extractText } = await import("unpdf");
       const { text } = await extractText(new Uint8Array(buffer));
       const extracted = Array.isArray(text) ? text.join("\n\n") : String(text || "");
       return extracted.trim() || null;
