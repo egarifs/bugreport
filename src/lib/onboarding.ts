@@ -64,3 +64,12 @@ export const FEATURES: readonly { title: string; when: string; path: string }[] 
   { title: "Dokumen & RTM", when: "Saat memeriksa requirement dan cakupan ujinya.", path: "/docs" },
   { title: "Laporan", when: "Saat memantau kesiapan rilis, tren, dan performa.", path: "/reports" },
 ];
+
+export const TOUR_ID = "bug-list";
+/** Langkah tur sorotan di daftar bug Latihan. Penyorot memakai elemen nyata lewat selector; langkah tanpa elemen dilewati. */
+export const TOUR_STEPS: readonly { selector: string; title: string; text: string }[] = [
+  { selector: 'nav[aria-label="Tampilan bug"]', title: "Tampilan bug", text: "Pindah antara Perlu review, Tugas saya, dan Semua bug." },
+  { selector: 'form[role="search"]', title: "Cari dan saring", text: "Cari ID atau judul, lalu saring menurut severity, modul, atau sprint." },
+  { selector: "table", title: "Daftar bug", text: "Klik satu bug untuk melihat detail, mengubah status, dan menulis komentar." },
+  { selector: 'a[href$="/bugs/new"]', title: "Laporkan bug", text: "Mulai dari sini untuk membuat laporan baru. Ini langkah pertama di checklist." },
+];

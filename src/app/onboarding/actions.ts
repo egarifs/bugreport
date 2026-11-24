@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { isGuideRole } from "@/lib/onboarding";
+import { isGuideRole, TOUR_ID } from "@/lib/onboarding";
 import { ensureSandbox, setGuideRole } from "@/lib/onboarding-service";
 import { resetSandbox } from "@/lib/sandbox-service";
 
@@ -33,4 +33,13 @@ export async function resetMySandbox(): Promise<void> {
   const userId = await currentUserId();
   const p = await resetSandbox(userId);
   redirect(`/projects/${p.key}`);
+}
+
+/** Tandai tur sudah ditutup (selesai atau dilewati); tidak muncul lagi. Hanya id tur yang dikenal. */
+export async function dismissTour(tourId: string): Promise<void> {
+  const userId = await currentUserId();
+  if (tourId !== TOUR_ID) return;
+  const cur = await prisma.onboardingProgress.findUnique({ where: { userId }, select: { dismissedTours: true } });
+  if (cur?.dismissedTours.includes(tourId)) return;
+  await prisma.onboardingProgress.upsert({ where: { userId }, update: { dismissedTours: { push: tourId } }, create: { userId, dismissedTours: [tourId] } });
 }

@@ -6,7 +6,9 @@ import { RouteTransition } from "./route-transition";
 import { Suspense } from "react";
 import { hasPermission, ROLE_PERMISSIONS } from "@/lib/permissions";
 import Link from "next/link";
-import { resetMySandbox } from "@/app/onboarding/actions";
+import { dismissTour, resetMySandbox } from "@/app/onboarding/actions";
+import { GuidedTour } from "@/components/onboarding/guided-tour";
+import { TOUR_ID } from "@/lib/onboarding";
 
 function SandboxBand() {
   return (
@@ -37,9 +39,11 @@ export async function AppShell({ children, activeProjectKey }: AppShellProps) {
   const sandbox = activeProjectKey
     ? await prisma.project.findFirst({ where: { key: activeProjectKey.toUpperCase(), isSandbox: true, sandboxOwnerId: user.id }, select: { key: true } })
     : null;
+  const tourOpen = sandbox ? !(await prisma.onboardingProgress.findUnique({ where: { userId: user.id }, select: { dismissedTours: true } }))?.dismissedTours.includes(TOUR_ID) : false;
+  const tour = sandbox && tourOpen ? <GuidedTour projectKey={sandbox.key} tourId={TOUR_ID} dismiss={dismissTour} /> : null;
   // PENDING: hanya halaman project Latihan miliknya, tanpa sidebar penuh. Status lain: tanpa shell.
   if (user.status !== "ACTIVE") {
-    return user.status === "PENDING" && sandbox ? <div className="min-h-screen bg-slate-50"><SandboxBand />{children}</div> : <>{children}</>;
+    return user.status === "PENDING" && sandbox ? <div className="min-h-screen bg-slate-50 relative"><SandboxBand />{children}{tour}</div> : <>{children}</>;
   }
 
   // Fetch projects user has access to
@@ -82,6 +86,7 @@ export async function AppShell({ children, activeProjectKey }: AppShellProps) {
         <RouteTransition>
           {children}
         </RouteTransition>
+        {tour}
       </div>
     </div>
   );
