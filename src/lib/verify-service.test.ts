@@ -1,3 +1,4 @@
+import { createTestProject } from "./test-project";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { prisma } from "./db";
@@ -18,7 +19,7 @@ test("verifyBug: pass closes + records build; fail needs reason, reopens; vendor
   const t = Date.now();
   const mk = (n: string) => prisma.user.create({ data: { email: `${n}_vf${t}@example.com`, name: n, status: "ACTIVE" } });
   const [qa, vendor] = await Promise.all([mk("qa"), mk("vendor")]);
-  const project = await prisma.project.create({
+  const project = await createTestProject({
     data: { key: `VF${String(t).slice(-6)}`, name: "Verify", members: { create: [{ userId: qa.id, role: "QA" }, { userId: vendor.id, role: "VENDOR" }] } },
   });
   const ready = (n: number) =>

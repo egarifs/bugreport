@@ -1,3 +1,4 @@
+import { createTestProject } from "./test-project";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { prisma } from "./db";
@@ -7,8 +8,8 @@ import { checkProjectPermission } from "./authz";
 
 test("AI Chat Shared Threads & Security Audit", async (t) => {
   const uniq = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`.toUpperCase(); // kunci unik (4 digit waktu bisa bentrok)
-  const pA = await prisma.project.create({ data: { key: `THRA${uniq}`, name: "Project A" } });
-  const pB = await prisma.project.create({ data: { key: `THRB${uniq}`, name: "Project B" } });
+  const pA = await createTestProject({ data: { key: `THRA${uniq}`, name: "Project A" } });
+  const pB = await createTestProject({ data: { key: `THRB${uniq}`, name: "Project B" } });
 
   const userA = await prisma.user.create({ data: { email: `usera_${Date.now()}@test.local`, name: "User A", status: "ACTIVE" } });
   const userB = await prisma.user.create({ data: { email: `userb_${Date.now()}@test.local`, name: "User B", status: "ACTIVE" } });

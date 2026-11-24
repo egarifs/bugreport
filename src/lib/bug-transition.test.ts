@@ -1,3 +1,4 @@
+import { createTestProject } from "./test-project";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { prisma } from "./db";
@@ -8,7 +9,7 @@ test("AC-PERM-01: VENDOR close is denied, status unchanged, attempt audited", as
   const mk = (n: string, isAdmin = false) =>
     prisma.user.create({ data: { email: `${n}_pm${t}@example.com`, name: n, status: "ACTIVE", isAdmin } });
   const [vendor, qa] = await Promise.all([mk("vendor"), mk("qa")]);
-  const project = await prisma.project.create({
+  const project = await createTestProject({
     data: {
       key: `PM${String(t).slice(-6)}`, name: "Perm",
       members: { create: [{ userId: vendor.id, role: "VENDOR" }, { userId: qa.id, role: "QA" }] },

@@ -1,3 +1,4 @@
+import { createTestProject } from "./test-project";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { prisma } from "./db";
@@ -6,7 +7,7 @@ import { executeMcpTool, MCP_TOOLS_DEFINITIONS, McpContext } from "./mcp-tools";
 
 test("PRD-03 MCP Server & AI Agent Integration", async (t) => {
   // Setup project and user
-  const project = await prisma.project.create({
+  const project = await createTestProject({
     data: {
       key: `MCP${Date.now().toString().slice(-4)}`,
       name: "MCP Test Project",

@@ -1,3 +1,4 @@
+import { createTestProject } from "./test-project";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { prisma } from "./db";
@@ -7,7 +8,7 @@ test("notifications: recipients, internal-note privacy, self-skip", async () => 
   const t = Date.now();
   const mk = (n: string, isAdmin = false) => prisma.user.create({ data: { email: `${n}_n${t}@example.com`, name: n, status: "ACTIVE", isAdmin } });
   const [qa, vendor, dev, outsider] = await Promise.all([mk("qa"), mk("vendor"), mk("dev"), mk("outsider")]);
-  const project = await prisma.project.create({
+  const project = await createTestProject({
     data: {
       key: `N${String(t).slice(-6)}`, name: "Notify",
       members: { create: [{ userId: qa.id, role: "QA" }, { userId: vendor.id, role: "VENDOR" }, { userId: dev.id, role: "DEVELOPER" }] },
@@ -51,7 +52,7 @@ test("notifications: revisi dokumen ke Admin proyek saja, keputusan ke pengungga
   const t = Date.now();
   const mk = (n: string) => prisma.user.create({ data: { email: `${n}_d${t}@example.com`, name: n, status: "ACTIVE" } });
   const [po, qa] = await Promise.all([mk("po"), mk("qa")]);
-  const project = await prisma.project.create({
+  const project = await createTestProject({
     data: { key: `D${String(t).slice(-6)}`, name: "Doc", members: { create: [{ userId: po.id, role: "ADMIN" }, { userId: qa.id, role: "QA" }] } },
   });
   const inbox = (u: { id: string }) => prisma.notification.findMany({ where: { userId: u.id } });

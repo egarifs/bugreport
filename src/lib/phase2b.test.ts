@@ -1,3 +1,4 @@
+import { createTestProject } from "./test-project";
 import test from "node:test";
 import assert from "node:assert/strict";
 import * as XLSX from "xlsx";
@@ -58,7 +59,7 @@ test("PRD-02B Business Docs & Test Cases", async (t) => {
 
   await t.test("Fail test run item creates bug draft idempotently", async () => {
     // Setup test project
-    const project = await prisma.project.create({
+    const project = await createTestProject({
       data: {
         key: `P2B${Date.now().toString().slice(-4)}`,
         name: "Phase 2B Test Project",

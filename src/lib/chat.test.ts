@@ -1,3 +1,4 @@
+import { createTestProject } from "./test-project";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { prisma } from "./db";
@@ -7,7 +8,7 @@ import { startOfDayWib, projectTokensToday } from "./chat-quota";
 
 test("PRD-04 Project AI Chat (Bugs + Business Docs)", async (t) => {
   // Setup project
-  const project = await prisma.project.create({
+  const project = await createTestProject({
     data: {
       key: `P4${Date.now().toString().slice(-4)}`,
       name: "Phase 4 AI Chat Project",
