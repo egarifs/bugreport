@@ -2,19 +2,28 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { deleteViewAction, saveViewAction } from "./saved-view-actions";
+
+export type SavedView = { id: string; name: string; query: string; shared: boolean; mine: boolean };
 
 export type FilterCategory = { param: string; label: string; options: { value: string; label: string }[] };
 
 const csv = (v: string | null) => (v ? v.split(",").filter(Boolean) : []);
 
 // One "Filter" button: categories on the left, searchable checkboxes on the right. Every change is written to the URL.
-export function FilterMenu({ categories, meId }: { categories: FilterCategory[]; meId: string }) {
+export function FilterMenu({ categories, meId, projectKey, savedViews, canShare }: {
+  categories: FilterCategory[]; meId: string; projectKey: string; savedViews: SavedView[]; canShare: boolean;
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const sp = useSearchParams();
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(categories[0]?.param ?? "");
   const [search, setSearch] = useState("");
+  const [name, setName] = useState("");
+  const [share, setShare] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+  const SAVED = "__saved";
   const root = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -44,6 +53,19 @@ export function FilterMenu({ categories, meId }: { categories: FilterCategory[];
     write({ [param]: cur.includes(value) ? cur.filter((v) => v !== value) : [...cur, value] });
   };
 
+  async function save() {
+    const p = new URLSearchParams(sp.toString());
+    p.delete("page"); p.delete("sel");
+    const res = await saveViewAction(projectKey, name, p.toString(), share);
+    setMsg(("error" in res && res.error) || ("ok" in res && res.ok) || null);
+    if ("ok" in res) { setName(""); setShare(false); router.refresh(); }
+  }
+  async function remove(id: string) {
+    const res = await deleteViewAction(projectKey, id);
+    setMsg(("error" in res && res.error) || ("ok" in res && res.ok) || null);
+    if ("ok" in res) router.refresh();
+  }
+  const savedOpen = active === SAVED;
   const cat = categories.find((c) => c.param === active) ?? categories[0];
   const options = useMemo(
     () => cat?.options.filter((o) => o.label.toLowerCase().includes(search.trim().toLowerCase())) ?? [],
@@ -90,15 +112,21 @@ export function FilterMenu({ categories, meId }: { categories: FilterCategory[];
       {open && cat && (
         <div role="dialog" aria-label="Filter bug" className="absolute left-0 top-full mt-2 z-30 flex w-[min(560px,92vw)] bg-surface border border-slate-200 rounded-lg shadow-lg overflow-hidden">
           <ul className="w-48 shrink-0 border-r border-slate-200 py-1 max-h-[420px] overflow-y-auto">
+            <li>
+              <button type="button" aria-current={savedOpen ? "true" : undefined} onClick={() => { setActive(SAVED); setMsg(null); }}
+                className={`w-full flex items-center justify-between px-4 py-2.5 text-sm ${savedOpen ? "bg-action-soft text-action font-semibold" : "text-slate-700 hover:bg-slate-50"}`}>
+                <span>Filter tersimpan</span><span aria-hidden className="text-slate-400">›</span>
+              </button>
+            </li>
             {categories.map((c) => {
               const n = selected(c.param).length;
               return (
                 <li key={c.param}>
                   <button
                     type="button"
-                    aria-current={c.param === cat.param ? "true" : undefined}
+                    aria-current={!savedOpen && c.param === cat.param ? "true" : undefined}
                     onClick={() => { setActive(c.param); setSearch(""); }}
-                    className={`w-full flex items-center justify-between px-4 py-2.5 text-sm ${c.param === cat.param ? "bg-action-soft text-action font-semibold" : "text-slate-700 hover:bg-slate-50"}`}
+                    className={`w-full flex items-center justify-between px-4 py-2.5 text-sm ${!savedOpen && c.param === cat.param ? "bg-action-soft text-action font-semibold" : "text-slate-700 hover:bg-slate-50"}`}
                   >
                     <span>{c.label}{n > 0 && <span className="ml-1.5 text-[10px] font-mono text-slate-500">({n})</span>}</span>
                     <span aria-hidden className="text-slate-400">›</span>
@@ -113,6 +141,34 @@ export function FilterMenu({ categories, meId }: { categories: FilterCategory[];
               <button type="button" className={`${quick} ${mine ? "font-semibold text-action" : ""}`} onClick={() => write({ assignee: mine ? null : [meId] })}>Ditugaskan ke saya</button>
             </li>
           </ul>
+          {savedOpen ? (
+            <div className="flex-1 min-w-0 flex flex-col">
+              <ul className="p-1 max-h-[260px] overflow-y-auto" aria-label="Filter tersimpan">
+                {savedViews.length === 0 && <li className="px-3 py-3 text-xs text-slate-400">Belum ada filter tersimpan.</li>}
+                {savedViews.map((v) => (
+                  <li key={v.id} className="flex items-center gap-1 rounded hover:bg-slate-50">
+                    <button type="button" className="flex-1 min-w-0 text-left px-3 py-2 text-sm text-slate-800 truncate"
+                      onClick={() => { router.replace(`${pathname}?${v.query}`, { scroll: false }); setOpen(false); }}>
+                      {v.name}{v.shared && <span className="ml-2 text-[10px] px-1.5 rounded-full border border-slate-200 text-slate-500">Project</span>}
+                    </button>
+                    <button type="button" aria-label={`Hapus filter ${v.name}`} onClick={() => remove(v.id)} className="px-2 py-1 text-slate-400 hover:text-bad">×</button>
+                  </li>
+                ))}
+              </ul>
+              <form className="mt-auto p-3 border-t border-slate-100 space-y-2" onSubmit={(e) => { e.preventDefault(); void save(); }}>
+                <label className="sr-only" htmlFor="sv-name">Nama filter</label>
+                <input id="sv-name" value={name} onChange={(e) => setName(e.target.value)} maxLength={60} placeholder="Nama untuk filter saat ini"
+                  className="w-full px-3 py-2 text-sm border border-slate-300 rounded-md bg-surface focus:outline-none focus:ring-2 focus:ring-action" />
+                {canShare && (
+                  <label className="flex items-center gap-2 text-xs text-slate-600"><input type="checkbox" checked={share} onChange={(e) => setShare(e.target.checked)} /> Bagikan ke semua anggota project</label>
+                )}
+                <div className="flex items-center gap-3">
+                  <button type="submit" disabled={!name.trim()} className="px-3 py-1.5 bg-action text-on-action text-xs font-semibold rounded-md disabled:opacity-50">Simpan filter</button>
+                  <span role="status" className="text-xs text-slate-500">{msg}</span>
+                </div>
+              </form>
+            </div>
+          ) : (
           <div className="flex-1 min-w-0 flex flex-col">
             <div className="p-3 border-b border-slate-100">
               <label className="sr-only" htmlFor="filter-search">Cari {cat.label}</label>
@@ -138,6 +194,7 @@ export function FilterMenu({ categories, meId }: { categories: FilterCategory[];
               ))}
             </ul>
           </div>
+          )}
         </div>
       )}
     </div>

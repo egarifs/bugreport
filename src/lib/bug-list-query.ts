@@ -121,6 +121,11 @@ export function pageWindow(page: number, total: number, size = PAGE_SIZE) {
 
 // Builds a list URL from the current filters plus overrides (undefined/empty removes a param).
 export function bugListHref(projectKey: string, f: BugListFilters, over: Record<string, string | undefined> = {}): string {
+  const qs = bugListQuery(f, over);
+  return `/projects/${projectKey}${qs ? `?${qs}` : ""}`;
+}
+
+export function bugListQuery(f: BugListFilters, over: Record<string, string | undefined> = {}): string {
   const base: Record<string, string | undefined> = {
     view: f.view,
     layout: f.layout === "board" ? "board" : undefined,
@@ -137,6 +142,11 @@ export function bugListHref(projectKey: string, f: BugListFilters, over: Record<
   };
   const p = new URLSearchParams();
   for (const [k, v] of Object.entries({ ...base, ...over })) if (v) p.set(k, v);
-  const qs = p.toString();
-  return `/projects/${projectKey}${qs ? `?${qs}` : ""}`;
+  return p.toString();
+}
+
+// Saved views store only what the parser accepts, minus paging: a stored string can never smuggle other params.
+export function sanitizeViewQuery(query: string): string {
+  const raw = Object.fromEntries(new URLSearchParams(query)) as BugListRawParams;
+  return bugListQuery(parseBugListFilters(raw, "all"), { page: undefined, cols: undefined });
 }

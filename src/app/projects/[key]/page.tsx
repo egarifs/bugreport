@@ -20,6 +20,7 @@ import { TriageKeys } from "./triage-keys";
 import { BugBoard } from "./bug-board";
 import { LayoutToggle } from "./layout-toggle";
 import { FilterMenu } from "./filter-menu";
+import { listSavedViews } from "@/lib/saved-view-service";
 import { loadBoard } from "@/lib/bug-board-service";
 import { BOARD_COLUMNS, BOARD_PAGE, dragTargets } from "@/lib/bug-board";
 import {
@@ -63,6 +64,7 @@ export default async function ProjectDetailPage({
   const sprints = await prisma.sprint.findMany({ where: { projectId: project.id }, orderBy: { startsAt: "desc" }, select: { id: true, name: true } });
   const isBoard = filters.layout === "board";
   const colLimit = filters.cols;
+  const savedViews = await listSavedViews(project.id, user.id);
   const total = await prisma.bug.count({ where: listWhere });
   const win = pageWindow(filters.page, total);
   const boardColumns = isBoard ? await loadBoard(listWhere, colLimit) : [];
@@ -291,6 +293,9 @@ export default async function ProjectDetailPage({
               </form>
               <FilterMenu
                 meId={userId}
+                projectKey={project.key}
+                canShare={canReview}
+                savedViews={savedViews}
                 categories={[
                   { param: "assignee", label: "Assignee", options: members.map((m) => ({ value: m.userId, label: (m.user.name || m.user.email) + (m.userId === userId ? " (Saya)" : "") })) },
                   { param: "reporter", label: "Dilaporkan oleh", options: members.map((m) => ({ value: m.userId, label: m.user.name || m.user.email })) },

@@ -65,6 +65,7 @@ enum CommentType {
 
 model User {
   sandboxProject     Project?              @relation("SandboxOwner")
+  savedBugViews      SavedBugView[]
   onboarding         OnboardingProgress?
   id                 String                @id @default(uuid())
   email              String                @unique
@@ -125,6 +126,7 @@ model Project {
   isSandbox      Boolean  @default(false)
   sandboxOwnerId String?  @unique
   sandboxOwner   User?    @relation("SandboxOwner", fields: [sandboxOwnerId], references: [id], onDelete: Cascade)
+  savedBugViews  SavedBugView[]
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
@@ -960,4 +962,25 @@ model OnboardingProgress {
   completedSteps String[] @default([])
   dismissedTours String[] @default([])
   updatedAt      DateTime @updatedAt
+}
+
+enum SavedViewVisibility {
+  PRIVATE
+  PROJECT
+}
+
+// Named bug-list filter. `query` is the sanitized URL query (see bug-saved-view.ts), never raw user input.
+model SavedBugView {
+  id         String              @id @default(uuid())
+  projectId  String
+  project    Project             @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  ownerId    String
+  owner      User                @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  name       String
+  query      String
+  visibility SavedViewVisibility @default(PRIVATE)
+  createdAt  DateTime            @default(now())
+
+  @@unique([projectId, ownerId, name])
+  @@index([projectId, visibility])
 }
