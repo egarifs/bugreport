@@ -123,3 +123,44 @@ test("filter tersimpan: simpan, terapkan dari menu, hapus", async ({ page }) => 
   await expect.poll(() => prisma.savedBugView.count({ where: { projectId: project.id, ownerId: user.id, name } })).toBe(0);
   await prisma.$disconnect();
 });
+
+test("aksi massal: ubah status, assign, dan tag beberapa bug sekaligus", async ({ page }) => {
+  const prisma = new PrismaClient();
+  const { project, user } = await qaLogin(prisma, page);
+  const stamp = `E2E massal ${Date.now()}`;
+  const last = await prisma.bug.findFirst({ where: { projectId: project.id }, orderBy: { number: "desc" } });
+  const base = (last?.number ?? 0) + 1;
+  const ids: string[] = [];
+  for (let i = 0; i < 2; i++) {
+    const b = await prisma.bug.create({
+      data: { projectId: project.id, number: base + i, key: `CRM-${base + i}`, title: `${stamp} ${i}`, severity: "LOW", status: "OPEN", reporterId: user.id, actualResult: "a", expectedResult: "b", stepsToReproduce: "1" },
+    });
+    ids.push(b.id);
+  }
+  await page.setViewportSize({ width: 1400, height: 900 });
+  await page.goto(`/projects/CRM?view=all&q=${encodeURIComponent(stamp)}`);
+  await expect(page.getByRole("form", { name: "Aksi massal" })).toBeHidden();
+
+  await page.getByRole("checkbox", { name: "Pilih semua bug di halaman ini" }).check();
+  const bar = page.getByRole("form", { name: "Aksi massal" });
+  await expect(bar.getByText("dipilih")).toContainText("2");
+
+  await bar.getByLabel("Status tujuan").selectOption({ label: "In progress" });
+  await bar.getByRole("button", { name: "Terapkan" }).first().click();
+  await expect(bar.getByRole("status")).toContainText("2 bug diubah");
+  await expect.poll(() => prisma.bug.count({ where: { id: { in: ids }, status: "IN_PROGRESS" } })).toBe(2);
+
+  // selection cleared after success; pick one again and tag it
+  await page.getByRole("checkbox", { name: `Pilih CRM-${base}` }).check();
+  await bar.getByLabel("Tag", { exact: true }).fill("massal-e2e");
+  await bar.getByRole("button", { name: "Tambah" }).click();
+  await expect(bar.getByRole("status")).toContainText("1 bug diubah");
+  expect(await prisma.bug.count({ where: { id: { in: ids }, tags: { some: { name: "massal-e2e" } } } })).toBe(1);
+
+  await expect(bar.getByText("dipilih")).toContainText("0"); // selection cleared after success
+  await page.getByRole("checkbox", { name: `Pilih CRM-${base + 1}` }).check();
+  await bar.getByLabel("Assignee").selectOption({ label: "Board QA" });
+  await bar.getByRole("button", { name: "Terapkan" }).nth(1).click();
+  await expect.poll(async () => (await prisma.bug.findUniqueOrThrow({ where: { id: ids[1] } })).assigneeId).toBe(user.id);
+  await prisma.$disconnect();
+});

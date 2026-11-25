@@ -20,6 +20,7 @@ import { TriageKeys } from "./triage-keys";
 import { BugBoard } from "./bug-board";
 import { LayoutToggle } from "./layout-toggle";
 import { FilterMenu } from "./filter-menu";
+import { BulkBar } from "./bulk-bar";
 import { listSavedViews } from "@/lib/saved-view-service";
 import { listProjectTags } from "@/lib/bug-tag-service";
 import { loadBoard } from "@/lib/bug-board-service";
@@ -338,11 +339,19 @@ export default async function ProjectDetailPage({
           ) : (
             <div className="flex flex-wrap items-start gap-5">
             <div className="flex-[999_1_520px] min-w-0">
+              {canWork && (
+                <BulkBar
+                  projectKey={project.key}
+                  statuses={(["OPEN", "IN_PROGRESS", "DESIGN_REVIEW", "READY_FOR_VERIFICATION", "WONT_FIX"] as const).map((v) => ({ value: v, label: STATUS_LABEL[v] }))}
+                  members={members.map((m) => ({ id: m.userId, label: m.user.name || m.user.email }))}
+                />
+              )}
               {/* Desktop: dense table. Left strip = severity, readable at a glance. */}
               <table className="hidden md:table w-full text-left text-sm bg-surface border border-slate-200 rounded-lg overflow-hidden shadow-xs">
                 <thead className="bg-slate-50 border-b border-slate-200 text-xs text-slate-600">
                   <tr>
                     <th scope="col" className="w-[3px] p-0"><span className="sr-only">Severity</span></th>
+                    {canWork && <th scope="col" className="py-2 pl-3 pr-0 w-8"><input id="bulk-all" type="checkbox" aria-label="Pilih semua bug di halaman ini" /></th>}
                     <th scope="col" className="py-2 px-3 w-28 font-bold">ID</th>
                     <th scope="col" className="py-2 px-3 font-bold">Judul</th>
                     <th scope="col" className="py-2 px-3 w-24 font-bold">Severity</th>
@@ -356,6 +365,7 @@ export default async function ProjectDetailPage({
                   {bugs.map((b) => (
                     <tr key={b.id} aria-selected={selected?.id === b.id} className={`row-interactive hover:bg-slate-50/80 ${selected?.id === b.id ? "bg-action-soft" : ""}`}>
                       <td className={`p-0 ${SEVERITY_STYLE[b.severity].strip} strip-accent`} />
+                      {canWork && <td className="py-2 pl-3 pr-0"><input type="checkbox" name="ids" value={b.id} form="bulk-form" aria-label={`Pilih ${b.key}`} /></td>}
                       <td className="py-2 px-3 font-bold whitespace-nowrap">
                         <Link href={bugHref(b.number)} className="text-action hover:underline">{b.key}</Link>
                       </td>
