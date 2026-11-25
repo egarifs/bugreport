@@ -71,9 +71,10 @@ export function FilterMenu({ categories, meId, projectKey, savedViews, canShare 
     () => cat?.options.filter((o) => o.label.toLowerCase().includes(search.trim().toLowerCase())) ?? [],
     [cat, search],
   );
-  const chips = categories.flatMap((c) =>
-    selected(c.param).map((v) => ({ param: c.param, value: v, text: `${c.label}: ${c.options.find((o) => o.value === v)?.label ?? v}` })),
-  );
+  // One chip per active category: "Severity: High, Blocker".
+  const chips = categories
+    .map((c) => ({ param: c.param, text: `${c.label}: ${selected(c.param).map((v) => c.options.find((o) => o.value === v)?.label ?? v).join(", ")}`, n: selected(c.param).length }))
+    .filter((c) => c.n > 0);
   const unassigned = selected("assignee").length === 1 && selected("assignee")[0] === "none";
   const mine = selected("assignee").length === 1 && selected("assignee")[0] === meId;
 
@@ -89,18 +90,19 @@ export function FilterMenu({ categories, meId, projectKey, savedViews, canShare 
       >
         <svg aria-hidden width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M2 4.5h7M12 4.5h2M2 11.5h2M7 11.5h7"/><circle cx="10.5" cy="4.5" r="1.5"/><circle cx="5.5" cy="11.5" r="1.5"/></svg>
         Filter
+        <svg aria-hidden width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 6l4 4 4-4"/></svg>
         {total > 0 && <span className="px-1.5 rounded-full bg-action text-on-action text-[10px] font-mono">{total}</span>}
       </button>
 
       {chips.map((c) => (
         <button
-          key={`${c.param}:${c.value}`}
+          key={c.param}
           type="button"
-          onClick={() => toggle(c.param, c.value)}
+          onClick={() => write({ [c.param]: null })}
           aria-label={`Hapus filter ${c.text}`}
-          className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full border border-slate-200 bg-slate-50 text-[11px] text-slate-700 hover:bg-slate-100"
+          className="inline-flex items-center gap-1.5 max-w-[320px] px-2.5 py-1 rounded-full border border-slate-200 bg-action-soft text-[11px] text-action font-medium hover:bg-slate-100"
         >
-          {c.text} <span aria-hidden>×</span>
+          <span className="truncate">{c.text}</span> <span aria-hidden>×</span>
         </button>
       ))}
       {total > 0 && (
@@ -186,7 +188,7 @@ export function FilterMenu({ categories, meId, projectKey, savedViews, canShare 
               {options.length === 0 && <li className="px-3 py-3 text-xs text-slate-400">Tidak ada pilihan.</li>}
               {options.map((o) => (
                 <li key={o.value}>
-                  <label className="flex items-center gap-3 px-3 py-2 text-sm text-slate-800 rounded hover:bg-slate-50 cursor-pointer">
+                  <label className={`flex items-center gap-3 px-3 py-2 text-sm rounded cursor-pointer ${selected(cat.param).includes(o.value) ? "bg-action-soft text-action font-medium" : "text-slate-800 hover:bg-slate-50"}`}>
                     <input type="checkbox" className="w-4 h-4" checked={selected(cat.param).includes(o.value)} onChange={() => toggle(cat.param, o.value)} />
                     <span className="truncate">{o.label}</span>
                   </label>
