@@ -21,6 +21,7 @@ import { BugBoard } from "./bug-board";
 import { LayoutToggle } from "./layout-toggle";
 import { FilterMenu } from "./filter-menu";
 import { listSavedViews } from "@/lib/saved-view-service";
+import { listProjectTags } from "@/lib/bug-tag-service";
 import { loadBoard } from "@/lib/bug-board-service";
 import { BOARD_COLUMNS, BOARD_PAGE, dragTargets } from "@/lib/bug-board";
 import {
@@ -64,7 +65,7 @@ export default async function ProjectDetailPage({
   const sprints = await prisma.sprint.findMany({ where: { projectId: project.id }, orderBy: { startsAt: "desc" }, select: { id: true, name: true } });
   const isBoard = filters.layout === "board";
   const colLimit = filters.cols;
-  const savedViews = await listSavedViews(project.id, user.id);
+  const [savedViews, projectTags] = await Promise.all([listSavedViews(project.id, user.id), listProjectTags(project.id)]);
   const total = await prisma.bug.count({ where: listWhere });
   const win = pageWindow(filters.page, total);
   const boardColumns = isBoard ? await loadBoard(listWhere, colLimit) : [];
@@ -87,6 +88,7 @@ export default async function ProjectDetailPage({
         module: { select: { name: true } },
         _count: { select: { comments: true, attachments: true, testRunLinks: true } },
         sprint: { select: { name: true } },
+        tags: { select: { name: true }, orderBy: { name: "asc" } },
       },
     }),
   ]);
@@ -97,7 +99,7 @@ export default async function ProjectDetailPage({
     { id: "all", label: "Semua bug", show: true },
   ];
   // Tab links reset filters and paging; selection links keep both.
-  const href = (v: View) => bugListHref(project.key, { ...filters, view: v, q: undefined, status: [], severity: [], priority: [], moduleIds: [], sprintIds: [], assigneeIds: [], reporterIds: [], page: 1 });
+  const href = (v: View) => bugListHref(project.key, { ...filters, view: v, q: undefined, status: [], severity: [], priority: [], moduleIds: [], sprintIds: [], assigneeIds: [], reporterIds: [], tagIds: [], page: 1 });
   const selHref = (k: string) => bugListHref(project.key, filters, { sel: k });
   const pageHref = (n: number) => bugListHref(project.key, filters, { page: n > 1 ? String(n) : undefined });
   const selected = bugs.find((b) => b.key === sp.sel) ?? null;
@@ -277,7 +279,7 @@ export default async function ProjectDetailPage({
                 {Object.entries({
                   view, layout: filters.layout, status: filters.status.join(","), severity: filters.severity.join(","),
                   priority: filters.priority.join(","), module: filters.moduleIds.join(","), sprint: filters.sprintIds.join(","),
-                  assignee: filters.assigneeIds.join(","), reporter: filters.reporterIds.join(","),
+                  assignee: filters.assigneeIds.join(","), reporter: filters.reporterIds.join(","), tag: filters.tagIds.join(","),
                 }).map(([n, v]) => v && <input key={n} type="hidden" name={n} value={v} />)}
                 <label className="sr-only" htmlFor="q">Cari bug</label>
                 <input
@@ -304,6 +306,7 @@ export default async function ProjectDetailPage({
                   { param: "priority", label: "Priority", options: Object.values(BugPriority).map((v) => ({ value: v, label: v })) },
                   { param: "status", label: "Status", options: Object.values(BugStatus).map((v) => ({ value: v, label: STATUS_LABEL[v] })) },
                   { param: "module", label: "Modul", options: modules.map((m) => ({ value: m.id, label: m.name })) },
+                  { param: "tag", label: "Tag", options: projectTags.map((t) => ({ value: t.id, label: `#${t.name}` })) },
                   { param: "sprint", label: "Sprint", options: sprints.map((x) => ({ value: x.id, label: x.name })) },
                 ]}
               />
@@ -365,6 +368,7 @@ export default async function ProjectDetailPage({
                             <span className="text-slate-400">Modul belum diisi</span>
                           ) : null}
                           {b.sprint && <span className="px-1.5 rounded-full border border-slate-200 bg-slate-50 text-slate-600">{b.sprint.name}</span>}
+                          {b.tags.map((t) => <span key={t.name} className="px-1.5 rounded-full border border-slate-200 text-slate-500">#{t.name}</span>)}
                           {source(b) && <span>dari {source(b)}</span>}
                           {(b._count.comments > 0 || b._count.attachments > 0) && (
                             <span className="font-mono" aria-label={`${b._count.comments} komentar, ${b._count.attachments} lampiran`}>

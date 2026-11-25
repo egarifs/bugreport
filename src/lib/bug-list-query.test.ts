@@ -66,3 +66,11 @@ test("board column limit survives in the URL only when raised", () => {
   assert.equal(bugListHref("CRM", f), "/projects/CRM?view=all&layout=board&cols=50");
   assert.equal(bugListHref("CRM", parseBugListFilters({ layout: "board" }, "all")), "/projects/CRM?view=all&layout=board");
 });
+
+test("tag filter matches any selected tag and survives in the URL", () => {
+  const f = parseBugListFilters({ view: "all", tag: "t1,t2" }, "all");
+  assert.deepEqual(f.tagIds, ["t1", "t2"]);
+  assert.ok((buildBugWhere(f, ctx).AND as object[]).some((c) => JSON.stringify(c) === JSON.stringify({ tags: { some: { id: { in: ["t1", "t2"] } } } })));
+  assert.equal(isFiltered(f), true);
+  assert.equal(bugListHref("CRM", f), "/projects/CRM?view=all&tag=t1%2Ct2");
+});

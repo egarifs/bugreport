@@ -6,7 +6,7 @@ export type BoardCard = {
   id: string; key: string; number: number; title: string;
   severity: BugSeverity; status: BugStatus; createdAt: string;
   moduleName: string | null; assigneeName: string | null; sprintName: string | null;
-  comments: number; attachments: number;
+  comments: number; attachments: number; tags: string[];
 };
 export type BoardColumnData = { id: string; label: string; count: number; cards: BoardCard[] };
 
@@ -27,6 +27,7 @@ export async function loadBoard(where: Prisma.BugWhereInput, limit: number): Pro
             module: { select: { name: true } },
             assignee: { select: { name: true, email: true } },
             sprint: { select: { name: true } },
+            tags: { select: { name: true }, orderBy: { name: "asc" } },
             _count: { select: { comments: true, attachments: true } },
           },
         }),
@@ -41,7 +42,7 @@ export async function loadBoard(where: Prisma.BugWhereInput, limit: number): Pro
           moduleName: b.module?.name ?? null,
           assigneeName: b.assignee ? b.assignee.name || b.assignee.email : null,
           sprintName: b.sprint?.name ?? null,
-          comments: b._count.comments, attachments: b._count.attachments,
+          comments: b._count.comments, attachments: b._count.attachments, tags: b.tags.map((t) => t.name),
         })),
       };
     }),

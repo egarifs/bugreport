@@ -127,6 +127,7 @@ model Project {
   sandboxOwnerId String?  @unique
   sandboxOwner   User?    @relation("SandboxOwner", fields: [sandboxOwnerId], references: [id], onDelete: Cascade)
   savedBugViews  SavedBugView[]
+  bugTags        BugTag[]
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
@@ -264,6 +265,7 @@ model Bug {
   comments     BugComment[]
   attachments  BugAttachment[]
   bugAssignees BugAssignee[]
+  tags         BugTag[]
 
   coReporters    BugCoReporter[] @relation("BugCoReporters")
   mergedAsSource BugCoReporter[] @relation("BugMergedSources")
@@ -983,4 +985,16 @@ model SavedBugView {
 
   @@unique([projectId, ownerId, name])
   @@index([projectId, visibility])
+}
+
+// Free-form label per project, lowercase, attached to bugs many-to-many.
+model BugTag {
+  id        String   @id @default(uuid())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  name      String
+  bugs      Bug[]
+  createdAt DateTime @default(now())
+
+  @@unique([projectId, name])
 }

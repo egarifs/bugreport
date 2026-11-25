@@ -25,11 +25,12 @@ export type BugListFilters = {
   sprintIds: string[];
   assigneeIds: string[]; // user ids, or UNASSIGNED
   reporterIds: string[];
+  tagIds: string[];
   page: number;
 };
 
 export type BugListRawParams = Partial<Record<
-  "view" | "layout" | "cols" | "q" | "status" | "severity" | "priority" | "module" | "sprint" | "assignee" | "reporter" | "page",
+  "view" | "layout" | "cols" | "q" | "status" | "severity" | "priority" | "module" | "sprint" | "assignee" | "reporter" | "tag" | "page",
   string
 >>;
 
@@ -62,6 +63,7 @@ export function parseBugListFilters(raw: BugListRawParams, defaultView: BugListV
     sprintIds: idList(raw.sprint),
     assigneeIds: idList(raw.assignee),
     reporterIds: idList(raw.reporter),
+    tagIds: idList(raw.tag),
     page: Number.isFinite(page) && page > 0 ? Math.min(page, 10_000) : 1,
   };
 }
@@ -70,7 +72,7 @@ export function parseBugListFilters(raw: BugListRawParams, defaultView: BugListV
 export function isFiltered(f: BugListFilters): boolean {
   return Boolean(
     f.q || f.status.length || f.severity.length || f.priority.length ||
-    f.moduleIds.length || f.sprintIds.length || f.assigneeIds.length || f.reporterIds.length,
+    f.moduleIds.length || f.sprintIds.length || f.assigneeIds.length || f.reporterIds.length || f.tagIds.length,
   );
 }
 
@@ -94,6 +96,7 @@ export function buildBugWhere(f: BugListFilters, ctx: { projectId: string; userI
   if (f.moduleIds.length) and.push({ moduleId: { in: f.moduleIds } });
   if (f.sprintIds.length) and.push({ sprintId: { in: f.sprintIds } });
   if (f.reporterIds.length) and.push({ reporterId: { in: f.reporterIds } });
+  if (f.tagIds.length) and.push({ tags: { some: { id: { in: f.tagIds } } } });
   if (f.assigneeIds.length) {
     const users = f.assigneeIds.filter((id) => id !== UNASSIGNED);
     const or: Prisma.BugWhereInput[] = [];
@@ -137,6 +140,7 @@ export function bugListQuery(f: BugListFilters, over: Record<string, string | un
     sprint: f.sprintIds.join(","),
     assignee: f.assigneeIds.join(","),
     reporter: f.reporterIds.join(","),
+    tag: f.tagIds.join(","),
     page: f.page > 1 ? String(f.page) : undefined,
     cols: f.cols > BOARD_PAGE ? String(f.cols) : undefined,
   };

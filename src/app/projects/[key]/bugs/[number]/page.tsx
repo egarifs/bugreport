@@ -25,6 +25,7 @@ import {
 } from "@/lib/merge-duplicate-service";
 import { MergeDuplicateModal } from "./merge-duplicate-modal";
 import { MergeUndoBanner } from "./merge-undo-banner";
+import { addTagAction, removeTagAction } from "./tag-actions";
 
 export default async function BugDetailPage({
   params,
@@ -74,6 +75,7 @@ export default async function BugDetailPage({
         orderBy: { createdAt: "asc" },
       },
       reviewedBy: { select: { name: true, email: true } },
+      tags: { select: { id: true, name: true }, orderBy: { name: "asc" } },
       duplicateOf: { select: { key: true, number: true, title: true } },
       duplicates: { select: { key: true, number: true, title: true } },
       coReporters: {
@@ -328,7 +330,27 @@ export default async function BugDetailPage({
             </section>
           )}
           <div className="bg-surface border border-slate-200 rounded-lg p-6 shadow-sm">
-            <h1 className="text-lg font-bold text-slate-900 mb-4">{bug.title}</h1>
+            <h1 className="text-lg font-bold text-slate-900 mb-2">{bug.title}</h1>
+
+            <div className="flex flex-wrap items-center gap-1.5 mb-4" aria-label="Tag">
+              {bug.tags.map((t) => (
+                <span key={t.id} className="inline-flex items-center gap-1 pl-2 pr-1 py-0.5 text-xs rounded-full border border-slate-200 bg-slate-50 text-slate-700">
+                  #{t.name}
+                  {canEditFields && (
+                    <form action={removeTagAction.bind(null, project.key, bug.id, bug.number, t.id)} className="inline">
+                      <button type="submit" aria-label={`Hapus tag ${t.name}`} className="w-4 h-4 rounded-full text-slate-400 hover:text-bad hover:bg-slate-200 leading-none">×</button>
+                    </form>
+                  )}
+                </span>
+              ))}
+              {bug.tags.length === 0 && !canEditFields && <span className="text-xs text-slate-400">Belum ada tag</span>}
+              {canEditFields && (
+                <ActionForm action={addTagAction.bind(null, project.key, bug.id, bug.number)} className="inline-flex items-center gap-1.5">
+                  <label className="sr-only" htmlFor="tag-input">Tambah tag</label>
+                  <input id="tag-input" name="tag" maxLength={30} placeholder="+ tag" className="w-24 px-2 py-0.5 text-xs border border-slate-200 rounded-full bg-surface focus:outline-none focus:ring-1 focus:ring-slate-400" />
+                </ActionForm>
+              )}
+            </div>
 
             <div className="space-y-4 text-xs">
               {bug.description && bug.description !== bug.title && (

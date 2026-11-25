@@ -97,9 +97,9 @@ export function BugBoard({ projectKey, columns, allowed }: {
                         <SeverityBadge severity={c.severity} />
                       </div>
                       <p className="mt-1 text-sm text-slate-900 leading-snug line-clamp-3">{c.title}</p>
-                      {(c.moduleName || c.sprintName) && (
+                      {(c.moduleName || c.sprintName || c.tags.length > 0) && (
                         <p className="mt-1.5 flex flex-wrap gap-1">
-                          {[c.moduleName, c.sprintName].filter(Boolean).map((t) => <span key={t} className="text-[11px] px-1.5 rounded-full border border-slate-200 bg-slate-50 text-slate-600">{t}</span>)}
+                          {[c.moduleName, c.sprintName, ...c.tags.map((t) => `#${t}`)].filter(Boolean).map((t) => <span key={t} className="text-[11px] px-1.5 rounded-full border border-slate-200 bg-slate-50 text-slate-600">{t}</span>)}
                         </p>
                       )}
                       <div className="mt-2 flex items-center gap-2 text-[11px] text-slate-500">
