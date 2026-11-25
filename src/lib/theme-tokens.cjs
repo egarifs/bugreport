@@ -1,16 +1,16 @@
 // Single source of truth for colors. tailwind.config.js turns these into CSS variables per theme and
 // contrast.test.ts checks every text/background pair in BOTH themes against WCAG AA.
 // Slate keeps its role names, so in dark the scale flips: slate-50 is still "page background",
-// slate-900 is still "body text". Light values equal the pre-theme palette (no visual change).
+// slate-900 is still "body text". Light values follow the revamp design (warm cream); dark is unchanged.
 const light = {
-  "slate-50": "#F4F6F7", "slate-100": "#E9EDF0", "slate-200": "#D3DAE0", "slate-300": "#B8C2CB",
-  "slate-400": "#5F6B76", "slate-500": "#4E5A65", "slate-600": "#3B4752", "slate-700": "#2A3641",
-  "slate-800": "#1E2A35", "slate-900": "#15212B",
-  surface: "#FFFFFF", "surface-base": "#F4F6F7", "surface-raised": "#FFFFFF", "surface-sunken": "#E9EDF0",
-  "text-base": "#15212B", "text-muted": "#4E5A65",
-  "border-base": "#D3DAE0", "border-muted": "#E9EDF0",
-  "badge-neutral-bg": "#E9EDF0", "badge-neutral-text": "#3B4752",
-  ink: "#15212B", "ink-hover": "#2A3641", "on-ink": "#FFFFFF", scrim: "#15212B",
+  "slate-50": "#F6F4EF", "slate-100": "#ECE7DE", "slate-200": "#E2DDD3", "slate-300": "#CFC8BB",
+  "slate-400": "#5C564C", "slate-500": "#4E4A41", "slate-600": "#3E3930", "slate-700": "#2E2A23",
+  "slate-800": "#24211B", "slate-900": "#1F1C17",
+  surface: "#FFFDF9", "surface-base": "#F6F4EF", "surface-raised": "#FFFDF9", "surface-sunken": "#ECE7DE",
+  "text-base": "#1F1C17", "text-muted": "#5C564C",
+  "border-base": "#E2DDD3", "border-muted": "#ECE7DE",
+  "badge-neutral-bg": "#ECE7DE", "badge-neutral-text": "#3E3930",
+  ink: "#1F1C17", "ink-hover": "#2E2A23", "on-ink": "#FFFFFF", scrim: "#1F1C17",
   action: "#1E5AA8", "action-hover": "#174A8C", "action-soft": "#E8EFF8", "on-action": "#FFFFFF",
   link: "#1E5AA8",
   "sev-blocker": "#B42318", "sev-blocker-bg": "#FDECEA",

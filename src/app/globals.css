@@ -11,7 +11,13 @@ body {
   @apply bg-slate-50 text-slate-900 font-sans;
   font-variant-numeric: tabular-nums;
   min-height: 100dvh;
+  /* Tekstur titik halus dari desain (hanya tema terang). */
+  background-image: radial-gradient(rgba(80, 56, 20, 0.05) 0.7px, transparent 0.9px), radial-gradient(rgba(80, 56, 20, 0.035) 0.7px, transparent 0.9px);
+  background-size: 4px 4px, 7px 7px;
+  background-position: 0 0, 2px 3px;
 }
+[data-theme="dark"] body { background-image: none; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) body { background-image: none; } }
 
 /* Controls: safe touch handling & no accidental text selection on buttons */
 button, a, [role="button"] {
