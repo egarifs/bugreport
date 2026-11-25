@@ -125,3 +125,24 @@ Setup tes, navigasi rail, kamus status + izin, state kosong/error, triase, lapor
 - Setiap fitur berstatus Selesai memiliki tes otomatis untuk logika non-trivial dan lolos CI.
 - Pengujian manual per peran (QA, Developer, Vendor, Klien, PO/Admin, Pending) di situs live tanpa bug P0/P1.
 - Tidak ada perubahan pada fitur MCP dan AI chat.
+
+## 9. Perbandingan aplikasi dengan desain (25 Nov 2026)
+
+Metode: membandingkan teks/label tiap artboard dengan HTML halaman yang sama dari build lokal commit `bea7940` (identik dengan production), ditambah login production yang publik. Ini perbandingan **teks dan token**, bukan piksel; label yang hanya muncul pada kondisi tertentu (dialog, hover) bisa tampak "hilang". Halaman production yang butuh login tidak dibuka dengan kata sandi (kebijakan keamanan), jadi diverifikasi lewat build lokal.
+
+| Area | Hasil |
+|---|---|
+| Login (production) | Sama untuk kalimat utama. Beda: judul merek "Bug Report by egarifs" vs desain "BugBoard Sismedika"; production juga menampilkan form email + kata sandi, desain hanya Google. |
+| Font dan warna aksi | Sama (Atkinson Hyperlegible, aksi `#1E5AA8`). |
+| Latar dan skala abu | **Beda**: aplikasi memakai abu dingin (`#F4F6F7`), desain krem hangat (`#F6F4EF`) dengan tekstur titik. |
+| Semua project (`Projects`) | **Beda**: desain berupa tabel (Peran Anda, Bug aktif, Penghalang rilis, Menunggu review, Aktivitas terakhir), tab Saya anggota/Semua/Arsip, pencarian, pelipatan project uji. |
+| Pengaturan project (`Settings`) | **Beda**: desain memakai tab "Umum dan anggota / Modul / Agent dan API key / Kuota AI Chat"; aplikasi masih satu halaman panjang. |
+| Sprint | **Beda**: daftar sprint Berjalan/Berikutnya/Selesai di kiri, "Lihat tren", "Tutup sprint…", panel revisi dokumen belum seperti desain. |
+| Dokumen bisnis | **Beda**: pembaca per bagian ("Bagian terpilih", "Dirujuk oleh", "Riwayat bagian ini", pencarian bagian) belum ada. |
+| Kesiapan rilis | **Beda**: "Bagikan PDF", kartu Blocker/High aktif, "Cakupan requirement", tautan "Buka RTM" dan "Lihat release notes draf" belum ada di halaman ini. |
+| Notifikasi | **Beda**: pengelompokan persetujuan per orang, "Tandai semua dibaca", "Pekerjaan Anda". |
+| Triase (`TriageLight`) | Sebagian beda: perintah cepat, grup "Insight", pemilih Tema, kolom "Sumber", panel Triase dengan aksi cepat. Kerangka tampilan dan filter sudah ada. |
+| Test case | Sebagian beda: "Tanpa modul", "Role pengguna", pemindahan modul massal, "Buat test run dari pilihan". |
+| Laporkan bug | Hampir sama; beda: indikator "Draf tersimpan otomatis", kolom Lingkungan dan Requirement. |
+
+Kesimpulan: fitur dan alur utama ada, tetapi **lapisan tampilan desain belum diterapkan penuh** (palet hangat, tab Pengaturan, tabel Semua project, grup notifikasi, pembaca dokumen per bagian, beberapa panel Kesiapan rilis). Ini perlu menjadi fase tersendiri ("penyelarasan visual").
