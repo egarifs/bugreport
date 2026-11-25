@@ -76,11 +76,11 @@ Setup tes, navigasi rail, kamus status + izin, state kosong/error, triase, lapor
 - Metrik "revisi disetujui" menggabungkan setuju dan tolak.
 
 ### 4.3 Dokumen STLC dan PDF
-- Test Plan: sumber Word dan Notion belum ada.
+- Test Plan: sumber Word dan Notion belum ada (ditunda, lihat 7).
 - Release notes: bagian "Perubahan fitur" dari revisi requirement belum ada.
 - Test Summary tidak mencantumkan alasan pengecualian penutupan sprint.
 - DoD butir High belum memeriksa "dipindah dengan alasan" (hanya Closed atau tidak).
-- PDF memakai cetak peramban; tata letak A4 satu halaman per orang belum dirapikan. Footer "Dokumen internal" ada.
+- PDF memakai cetak peramban (diputuskan cukup, lihat 7). Footer "Dokumen internal" ada.
 - Sidebar Dokumen belum dikelompokkan seperti desain (hanya tautan dari halaman Dokumen).
 - Status "Perlu dicek ulang" pada RTM belum mengikuti revisi requirement.
 
@@ -112,12 +112,14 @@ Setup tes, navigasi rail, kamus status + izin, state kosong/error, triase, lapor
 | Performa dipakai sebagai peringkat | Dampak budaya tim | Tanpa peringkat, definisi terlihat, pembanding periode lalu + median |
 | RTM bergantung format heading dokumen | Bagian tidak terdeteksi untuk PDF | Dokumen non-Markdown menjadi satu bagian |
 
-## 7. Pertanyaan terbuka untuk PO
-1. Perlu PDF A4 yang dirancang (bukan cetak peramban) untuk Performa dan Test Summary?
-2. Apakah Admin boleh melihat Performa semua orang dari project mana pun, atau hanya project di mana ia Admin?
-3. Sumber Test Plan dari Word/Notion wajib untuk rilis berikutnya?
-4. Klien boleh melihat agregat performa tim (`B5`) atau cukup status rilis?
-5. Kapan database dev dibersihkan, dan siapa yang menyetujui?
+## 7. Keputusan PO (25 Nov 2026)
+| # | Pertanyaan | Keputusan | Dampak |
+|---|---|---|---|
+| 1 | PDF Performa/Test Summary | Cukup cetak peramban | Item "A4 dirancang" dikeluarkan dari lingkup |
+| 2 | Siapa melihat performa orang lain | Admin project itu saja (Admin situs tetap bisa) | Sesuai perilaku sekarang |
+| 3 | Sumber Test Plan Word/Notion | Tidak wajib; tulis di BugBoard | Ditunda ke fase berikutnya |
+| 4 | Agregat performa tim untuk Klien (`B5`) | Belum diputuskan | Tetap terbuka |
+| 5 | Bersihkan DB dev (±1.065 project sisa tes) | Setuju, setelah backup | Menunggu dijalankan manual (tindakan tak bisa dibatalkan; perintah sempat diblokir) |
 
 ## 8. Kriteria penerimaan umum
 - Setiap fitur berstatus Selesai memiliki tes otomatis untuk logika non-trivial dan lolos CI.
