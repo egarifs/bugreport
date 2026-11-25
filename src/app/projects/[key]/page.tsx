@@ -17,16 +17,17 @@ import { revalidatePath } from "next/cache";
 import { ActionForm, type ActionResult } from "@/components/ui/action-form";
 import { triageBug, startOfTodayWib } from "@/lib/triage-service";
 import { TriageKeys } from "./triage-keys";
-
-type View = "review" | "mine" | "all";
-const DONE: BugStatus[] = ["CLOSED", "INVALID", "DUPLICATE", "CANNOT_REPRODUCE", "WONT_FIX"];
+import {
+  UNASSIGNED, bugListHref, bugOrderBy, bugTabWhere, buildBugWhere, isFiltered, pageWindow, parseBugListFilters,
+  type BugListView as View, type BugListRawParams,
+} from "@/lib/bug-list-query";
 
 export default async function ProjectDetailPage({
   params,
   searchParams,
 }: {
   params: Promise<{ key: string }>;
-  searchParams: Promise<{ done?: string; sel?: string; view?: string; status?: string; severity?: string; module?: string; sprint?: string; q?: string }>;
+  searchParams: Promise<BugListRawParams & { done?: string; sel?: string }>;
 }) {
   const session = await auth();
   const user = session?.user as { id?: string; email?: string; isAdmin?: boolean } | undefined;
@@ -48,60 +49,29 @@ export default async function ProjectDetailPage({
   const sp = await searchParams;
   // Landing page per role: QA reviews drafts, vendor/dev sees own work, client goes to portal.
   if (role === "CLIENT" && !user.isAdmin) redirect(`/projects/${project.key}/portal`);
-  const view: View =
-    sp.view === "review" || sp.view === "mine" || sp.view === "all"
-      ? sp.view
-      : canReview ? "review" : canWork ? "mine" : "all";
-
-  const status = Object.values(BugStatus).includes(sp.status as BugStatus) ? (sp.status as BugStatus) : undefined;
-  const severity = Object.values(BugSeverity).includes(sp.severity as BugSeverity) ? (sp.severity as BugSeverity) : undefined;
-  const q = sp.q?.trim();
-
+  const filters = parseBugListFilters(sp, canReview ? "review" : canWork ? "mine" : "all");
+  const { view, status, severity, q } = filters;
   const base: Prisma.BugWhereInput = { projectId: project.id };
-  const viewWhere: Prisma.BugWhereInput =
-    view === "review"
-      ? { status: "DRAFT" }
-      : view === "mine"
-      ? {
-          status: { notIn: DONE },
-          OR: [{ assigneeId: user.id }, { bugAssignees: { some: { userId: user.id } } }],
-        }
-      : {};
+  const listWhere = buildBugWhere(filters, { projectId: project.id, userId: user.id });
 
   const today = startOfTodayWib();
   const sprints = await prisma.sprint.findMany({ where: { projectId: project.id }, orderBy: { startsAt: "desc" }, select: { id: true, name: true } });
+  const total = await prisma.bug.count({ where: listWhere });
+  const win = pageWindow(filters.page, total);
   const [reviewCount, mineCount, modules, members, reviewedToday, closedToday, bugs] = await Promise.all([
     prisma.bug.count({ where: { ...base, status: "DRAFT" } }),
-    prisma.bug.count({
-      where: {
-        ...base,
-        status: { notIn: DONE },
-        OR: [{ assigneeId: user.id }, { bugAssignees: { some: { userId: user.id } } }],
-      },
-    }),
+    prisma.bug.count({ where: { ...base, ...bugTabWhere("mine", user.id) } }),
     activeModules(project.id),
-    canReview
-      ? prisma.projectMember.findMany({ where: { projectId: project.id }, include: { user: { select: { name: true, email: true } } } })
-      : Promise.resolve([]),
+    prisma.projectMember.findMany({ where: { projectId: project.id }, include: { user: { select: { name: true, email: true } } } }),
     canReview ? prisma.bug.count({ where: { ...base, reviewedAt: { gte: today } } }) : Promise.resolve(0),
     canReview
       ? prisma.auditLog.count({ where: { projectId: project.id, action: "bug.status_change", createdAt: { gte: today }, changes: { path: ["after", "status"], equals: "CLOSED" } } })
       : Promise.resolve(0),
     prisma.bug.findMany({
-      where: {
-        ...base,
-        ...viewWhere,
-        ...(status ? { status } : {}),
-        ...(severity ? { severity } : {}),
-        ...(sp.module ? { moduleId: sp.module } : {}),
-        ...(sp.sprint ? { sprintId: sp.sprint } : {}),
-        ...(q
-          ? { OR: [{ title: { contains: q, mode: "insensitive" } }, { key: { contains: q, mode: "insensitive" } }] }
-          : {}),
-      },
-      // Enum order in Postgres = BLOCKER..LOW, so asc puts the most severe first; then oldest first.
-      orderBy: view === "all" ? [{ createdAt: "desc" }] : [{ severity: "asc" }, { createdAt: "asc" }],
-      take: 200,
+      where: listWhere,
+      orderBy: bugOrderBy(view),
+      skip: win.skip,
+      take: win.take,
       include: {
         assignee: { select: { name: true, email: true } },
         module: { select: { name: true } },
@@ -115,15 +85,12 @@ export default async function ProjectDetailPage({
     { id: "mine", label: "Tugas saya", count: mineCount, show: canWork },
     { id: "all", label: "Semua bug", show: true },
   ];
-  const href = (v: View) => `/projects/${project.key}?view=${v}`;
-  const selHref = (k: string) => {
-    const p = new URLSearchParams();
-    for (const [n, v] of Object.entries({ view: view, status, severity, module: sp.module, sprint: sp.sprint, q })) if (v) p.set(n, v);
-    p.set("sel", k);
-    return `/projects/${project.key}?${p}`;
-  };
+  // Tab links reset filters and paging; selection links keep both.
+  const href = (v: View) => bugListHref(project.key, { ...filters, view: v, q: undefined, status: undefined, severity: undefined, moduleId: undefined, sprintId: undefined, assigneeId: undefined, reporterId: undefined, page: 1 });
+  const selHref = (k: string) => bugListHref(project.key, filters, { sel: k });
+  const pageHref = (n: number) => bugListHref(project.key, filters, { page: n > 1 ? String(n) : undefined });
   const selected = bugs.find((b) => b.key === sp.sel) ?? null;
-  const filtered = Boolean(status || severity || sp.module || sp.sprint || q);
+  const filtered = isFiltered(filters);
   const bugHref = (n: number) => `/projects/${project.key}/bugs/${n}`;
   const source = (b: (typeof bugs)[number]) => (b.agentRunId ? "Agent" : b._count.testRunLinks ? "Test run" : null);
 
@@ -291,7 +258,7 @@ export default async function ProjectDetailPage({
                   )}
                 </Link>
               ))}
-              <span className="ml-auto text-xs text-slate-400 font-mono pr-1">{bugs.length} bug</span>
+              <span className="ml-auto text-xs text-slate-400 font-mono pr-1">{total} bug</span>
             </nav>
 
             <form className="flex flex-wrap items-center gap-2 text-xs" role="search">
@@ -324,18 +291,29 @@ export default async function ProjectDetailPage({
               )}
 
               {modules.length > 0 && (
-                <select name="module" defaultValue={sp.module ?? ""} aria-label="Modul" className="px-2.5 py-1.5 border border-slate-200 rounded-md bg-surface text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-1 focus:ring-slate-400 cursor-pointer">
+                <select name="module" defaultValue={filters.moduleId ?? ""} aria-label="Modul" className="px-2.5 py-1.5 border border-slate-200 rounded-md bg-surface text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-1 focus:ring-slate-400 cursor-pointer">
                   <option value="">Semua modul</option>
                   {modules.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
                 </select>
               )}
 
               {sprints.length > 0 && (
-                <select name="sprint" defaultValue={sp.sprint ?? ""} aria-label="Sprint" className="px-2.5 py-1.5 border border-slate-200 rounded-md bg-surface text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-1 focus:ring-slate-400 cursor-pointer">
+                <select name="sprint" defaultValue={filters.sprintId ?? ""} aria-label="Sprint" className="px-2.5 py-1.5 border border-slate-200 rounded-md bg-surface text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-1 focus:ring-slate-400 cursor-pointer">
                   <option value="">Semua sprint</option>
                   {sprints.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
                 </select>
               )}
+
+              <select name="assignee" defaultValue={filters.assigneeId ?? ""} aria-label="Assignee" className="px-2.5 py-1.5 border border-slate-200 rounded-md bg-surface text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-1 focus:ring-slate-400 cursor-pointer">
+                <option value="">Semua assignee</option>
+                <option value={UNASSIGNED}>Belum di-assign</option>
+                {members.map((m) => <option key={m.userId} value={m.userId}>{m.user.name || m.user.email}</option>)}
+              </select>
+
+              <select name="reporter" defaultValue={filters.reporterId ?? ""} aria-label="Reporter" className="px-2.5 py-1.5 border border-slate-200 rounded-md bg-surface text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-1 focus:ring-slate-400 cursor-pointer">
+                <option value="">Semua reporter</option>
+                {members.map((m) => <option key={m.userId} value={m.userId}>{m.user.name || m.user.email}</option>)}
+              </select>
 
               <button type="submit" className="px-3 py-1.5 border border-slate-200 bg-slate-50 hover:bg-slate-100 rounded-md font-semibold text-slate-700 transition-colors">
                 Terapkan
@@ -422,6 +400,15 @@ export default async function ProjectDetailPage({
                   </li>
                 ))}
               </ul>
+              {total > win.take && (
+                <nav aria-label="Halaman" className="mt-3 flex items-center justify-between text-xs text-slate-500">
+                  <span className="font-mono">{win.from}–{win.to} dari {total}</span>
+                  <span className="flex gap-2">
+                    {win.current > 1 ? <Link href={pageHref(win.current - 1)} className="px-3 py-1.5 border border-slate-200 rounded-md bg-surface hover:bg-slate-50 font-semibold text-slate-700">Sebelumnya</Link> : <span aria-disabled className="px-3 py-1.5 border border-slate-100 rounded-md text-slate-300">Sebelumnya</span>}
+                    {win.current < win.pages ? <Link href={pageHref(win.current + 1)} className="px-3 py-1.5 border border-slate-200 rounded-md bg-surface hover:bg-slate-50 font-semibold text-slate-700">Berikutnya</Link> : <span aria-disabled className="px-3 py-1.5 border border-slate-100 rounded-md text-slate-300">Berikutnya</span>}
+                  </span>
+                </nav>
+              )}
               {canReview && (
                 <p className="hidden md:block mt-3 text-xs text-slate-500">
                   <kbd className="px-1 border rounded">J</kbd>/<kbd className="px-1 border rounded">K</kbd> pilih · <kbd className="px-1 border rounded">A</kbd> terima · <kbd className="px-1 border rounded">X</kbd> tolak · <kbd className="px-1 border rounded">↵</kbd> buka detail

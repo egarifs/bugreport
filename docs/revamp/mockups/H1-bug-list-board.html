@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<title>Bug, tampilan List dan Board</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Atkinson+Hyperlegible+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F6F4EF;--surface:#FFFDF9;--side:#F1EEE7;--line:#E2DDD3;--line2:#ECE7DE;--ink:#1F1C17;--ink2:#3E3930;--mute:#5C564C;--accent:#1E5AA8;--accent-bg:#E7ECF4;--hover:#F3EEE4;--crit:#B42318;--high:#C2410C;--med:#A16207;--low:#14783D;--ctl:#8F877A}
+:root[data-theme=dark]{--bg:#16140F;--surface:#1F1C16;--side:#1A1812;--line:#34302A;--line2:#2A2620;--ink:#F3EFE6;--ink2:#D6D0C3;--mute:#A8A092;--accent:#7FB0F0;--accent-bg:#232C3A;--hover:#2A2620;--crit:#FF8A7A;--high:#FFA766;--med:#F0C36A;--low:#6FD39A;--ctl:#7D7567}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 14px/20px 'Atkinson Hyperlegible',system-ui,sans-serif}
+.mono{font-family:'Atkinson Hyperlegible Mono',ui-monospace,monospace}
+.app{display:flex;min-height:100vh}
+nav{flex:0 0 220px;background:var(--side);border-right:1px solid var(--line);padding:16px 12px;display:flex;flex-direction:column;gap:2px}
+nav .proj{font-weight:600;padding:8px;margin-bottom:12px}
+nav a{display:flex;align-items:center;height:44px;padding:0 12px;border-radius:8px;color:var(--ink2);text-decoration:none;font-weight:500}
+nav a:hover{background:var(--hover)}
+nav a[aria-current]{background:var(--accent-bg);color:var(--accent);font-weight:600}
+main{flex:1;min-width:0;padding:20px 28px 40px}
+header.top{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+h1{margin:0;font:600 22px/28px inherit;font-family:inherit}
+h1 small{font-weight:400;font-size:14px;color:var(--mute);margin-left:10px}
+.btn{height:44px;padding:0 16px;border:1px solid var(--ctl);border-radius:8px;background:var(--surface);color:var(--ink);font:500 14px/20px inherit;font-family:inherit;cursor:pointer;display:inline-flex;align-items:center;gap:8px;text-decoration:none}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+:root[data-theme=dark] .btn.primary{color:#0E1A2B}
+.btn:focus-visible,.tab:focus-visible,input:focus-visible,.card:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.seg{display:inline-flex;border:1px solid var(--ctl);border-radius:8px;overflow:hidden;background:var(--surface)}
+.seg button{height:42px;padding:0 14px;border:0;background:transparent;color:var(--ink2);font:500 14px/20px inherit;font-family:inherit;cursor:pointer;display:flex;align-items:center;gap:6px}
+.seg button[aria-pressed=true]{background:var(--accent-bg);color:var(--accent);font-weight:600}
+.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:16px 0}
+.bar input{flex:1 1 240px;max-width:380px;height:44px;padding:0 14px;border:1px solid var(--ctl);border-radius:8px;background:var(--surface);color:var(--ink);font:inherit}
+.chip{height:44px;padding:0 12px;border:1px dashed var(--ctl);border-radius:8px;background:var(--surface);color:var(--ink2);font:inherit;cursor:pointer}
+.chip b{color:var(--accent);font-weight:600}
+.views{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:4px}
+.views span{color:var(--mute);font-size:13px}
+.pill{height:32px;padding:0 12px;border:1px solid var(--line);border-radius:16px;background:var(--surface);color:var(--ink2);font:500 13px/18px inherit;font-family:inherit;cursor:pointer}
+.pill[aria-pressed=true]{background:var(--accent-bg);border-color:var(--accent);color:var(--accent)}
+.sp{margin-left:auto;color:var(--mute)}
+/* list */
+.table{background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden;box-shadow:0 1px 2px rgba(31,28,23,.04)}
+.tr{display:grid;grid-template-columns:28px 76px minmax(0,1fr) 112px 116px 120px 96px 76px;gap:12px;align-items:center;padding:12px 16px;border-bottom:1px solid var(--line2)}
+.tr:last-child{border-bottom:0}
+.tr.th{background:var(--bg);font-weight:500;font-size:13px;color:var(--mute);padding:10px 16px}
+.tr:not(.th):hover{background:var(--hover)}
+.tr.sel{background:var(--accent-bg)}
+.t-title{font-weight:500}
+.t-sub{font-size:13px;color:var(--mute);margin-top:2px}
+.sev{display:inline-flex;align-items:center;gap:6px;font-weight:500;font-size:13px}
+.sev i{width:8px;height:8px;border-radius:2px;background:currentColor}
+.s-crit{color:var(--crit)}.s-high{color:var(--high)}.s-med{color:var(--med)}.s-low{color:var(--low)}
+.st{display:inline-flex;align-items:center;height:24px;padding:0 10px;border-radius:12px;border:1px solid var(--line);font-size:13px;font-weight:500;color:var(--ink2);background:var(--bg)}
+.av{width:26px;height:26px;border-radius:50%;background:var(--line);color:var(--ink);display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
+.who{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink2)}
+.sla{font-size:13px;font-weight:500}
+.sla.late{color:var(--crit)}
+.tag{display:inline-block;font-size:12px;line-height:18px;padding:0 8px;border-radius:9px;background:var(--bg);border:1px solid var(--line);color:var(--ink2);margin-right:4px}
+.bulk{display:none;margin-bottom:10px;padding:8px 12px;border:1px solid var(--accent);border-radius:10px;background:var(--accent-bg);gap:10px;align-items:center}
+.bulk.on{display:flex}
+.pager{display:flex;justify-content:space-between;align-items:center;padding:10px 4px;color:var(--mute);font-size:13px}
+/* board */
+.board{display:flex;gap:14px;overflow-x:auto;align-items:flex-start;padding-bottom:12px}
+.col{flex:0 0 288px;background:var(--side);border:1px solid var(--line);border-radius:10px;display:flex;flex-direction:column;max-height:calc(100vh - 260px)}
+.col.over{outline:2px dashed var(--accent);outline-offset:-4px}
+.col.deny{outline:2px dashed var(--crit);outline-offset:-4px}
+.col h2{margin:0;padding:12px 14px;font:600 14px/20px inherit;font-family:inherit;display:flex;justify-content:space-between;align-items:center}
+.col h2 .n{font:500 12px/18px 'Atkinson Hyperlegible Mono',monospace;color:var(--mute);background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:0 8px}
+.cards{padding:0 10px 10px;display:flex;flex-direction:column;gap:8px;overflow-y:auto;min-height:60px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px 12px;cursor:grab;display:flex;flex-direction:column;gap:8px;box-shadow:0 1px 2px rgba(31,28,23,.05)}
+.card:hover{border-color:var(--ctl)}
+.card.drag{opacity:.45}
+.card .k{display:flex;justify-content:space-between;align-items:center;font-size:12px}
+.card .k a{color:var(--accent);text-decoration:none;font-weight:500}
+.card .ti{font-weight:500;font-size:14px;line-height:20px}
+.card .ft{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--mute)}
+.card .ft .r{margin-left:auto;display:flex;align-items:center;gap:10px}
+.more{margin:0 10px 10px;height:36px;border:1px dashed var(--ctl);border-radius:8px;background:transparent;color:var(--ink2);font:inherit;cursor:pointer}
+.kebab{border:0;background:transparent;color:var(--mute);cursor:pointer;height:24px;width:24px;border-radius:4px}
+.kebab:hover{background:var(--hover)}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:8px;font-weight:500;display:none}
+.toast.on{display:block}
+.note{margin-top:20px;padding:14px 16px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink2);font-size:13px}
+.note b{color:var(--ink)}
+@media (max-width:1100px){.tr{grid-template-columns:28px 70px minmax(0,1fr) 100px 96px}.tr>.hide-md{display:none}}
+@media (max-width:760px){nav{display:none}main{padding:16px}.col{flex-basis:84vw}}
+@media (prefers-reduced-motion:no-preference){.card,.tr,.btn{transition:background-color 120ms,border-color 120ms}}
+</style>
+</head>
+<body>
+<div class="app">
+<nav aria-label="Navigasi project">
+<div class="proj">CRM Contoh</div>
+<a href="#" aria-current="page">Bug</a><a href="#">Test case</a><a href="#">Test run</a><a href="#">Sprint</a><a href="#">Laporan</a>
+<a href="#" style="margin-top:auto" id="theme">Tema: terang</a>
+</nav>
+<main>
+<header class="top">
+<h1>Bug<small id="count">12 bug</small></h1>
+<div style="display:flex;gap:10px;flex-wrap:wrap">
+<div class="seg" role="group" aria-label="Tampilan">
+<button type="button" id="vList" aria-pressed="true">☰ List</button>
+<button type="button" id="vBoard" aria-pressed="false">▦ Board</button>
+</div>
+<button class="btn" type="button">Impor</button>
+<a class="btn primary" href="13-bug-laporkan.html">+ Laporkan bug</a>
+</div>
+</header>
+
+<div class="bar" role="search">
+<input type="search" placeholder="Cari ID (CRM-1) atau judul" aria-label="Cari">
+<button class="chip" type="button">Status</button>
+<button class="chip" type="button">Severity: <b>Critical, High</b></button>
+<button class="chip" type="button">Assignee</button>
+<button class="chip" type="button">Reporter</button>
+<button class="chip" type="button">Sprint</button>
+<button class="chip" type="button">Tag</button>
+<button class="btn" type="button" style="height:44px">Simpan tampilan</button>
+</div>
+<div class="views" role="group" aria-label="Tampilan tersimpan">
+<span>Tampilan tersimpan:</span>
+<button class="pill" aria-pressed="true" type="button">Semua bug</button>
+<button class="pill" aria-pressed="false" type="button">Bug saya</button>
+<button class="pill" aria-pressed="false" type="button">Critical minggu ini <small>· proyek</small></button>
+<button class="pill" aria-pressed="false" type="button">Menunggu retest</button>
+</div>
+<div style="height:12px"></div>
+
+<div class="bulk" id="bulk" role="region" aria-label="Aksi massal"><b id="bn">0</b> dipilih
+<button class="btn" type="button" style="height:36px">Ubah status</button><button class="btn" type="button" style="height:36px">Assign</button><button class="btn" type="button" style="height:36px">Tambah tag</button></div>
+
+<section id="list" aria-label="Daftar bug">
+<div class="table" id="tbl"></div>
+<div class="pager"><span>1–12 dari 148</span><span><button class="btn" style="height:36px" type="button">Sebelumnya</button> <button class="btn" style="height:36px" type="button">Berikutnya</button></span></div>
+<div class="note"><b>Pintasan:</b> J/K pindah baris · A terima · X tolak · D duplikat · ↵ buka detail. Klik baris membuka panel pratinjau + triase di kanan (tidak digambar di mockup ini; sama seperti 10-bug-triase).</div>
+</section>
+
+<section id="board" aria-label="Board bug" hidden>
+<div class="board" id="brd"></div>
+<div class="note"><b>Board:</b> seret kartu ke kolom lain untuk ganti status; server memvalidasi transisi dan izin. Kolom <b>Ditutup</b> menolak dari <b>Draft</b> (coba seret). Tanpa mouse: menu <b>⋯ → Pindah ke…</b> di tiap kartu. Tiap kolom memuat 25 kartu, sisanya lewat "Muat lagi".</div>
+</section>
+</main>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+const S=['Draft','Baru','Dikerjakan','Siap retest','Ditutup'];
+const ok={Draft:['Baru','Ditutup-no'],Baru:['Dikerjakan','Draft'],Dikerjakan:['Baru','Siap retest'],'Siap retest':['Dikerjakan','Ditutup'],Ditutup:['Baru']};
+const B=[
+['CRM-5','Hapus User Group yang memiliki anggota aktif memicu API error 422','crit','Draft','AG','Agent',1,'Auth','Sprint 7',1,0,'1 hari'],
+['CRM-6','[Automated] Verifikasi payment gateway timeout','high','Draft','AG','Agent',0,'Payment','Sprint 7',0,1,'1 hari'],
+['CRM-4','Filter Type hilang pada Approval Access Control','med','Baru','RS','Rina',2,'Approval','Sprint 7',2,0,'5 jam'],
+['CRM-9','Export CSV menghilangkan kolom tanggal lahir','high','Baru','BP','Budi',0,'Export','Sprint 7',0,2,'2 hari'],
+['CRM-12','Tombol Simpan ganda mengirim dua request','med','Dikerjakan','BP','Budi',3,'Form','Sprint 7',3,0,'Lewat 1 hari'],
+['CRM-3','Pencarian kontak lambat di atas 5.000 data','crit','Dikerjakan','DK','Dewi',4,'Kontak','Sprint 6',5,1,'Lewat 3 jam'],
+['CRM-8','Label notifikasi terpotong di layar sempit','low','Dikerjakan','DK','Dewi',0,'UI','Sprint 7',0,0,'3 hari'],
+['CRM-2','Sesi habis tanpa pesan saat unggah file besar','high','Siap retest','RS','Rina',1,'Auth','Sprint 6',2,1,'4 jam'],
+['CRM-7','Zona waktu salah pada pengingat tindak lanjut','med','Siap retest','BP','Budi',0,'Kalender','Sprint 6',1,0,'2 hari'],
+['CRM-1','Login gagal untuk email dengan huruf kapital','crit','Ditutup','DK','Dewi',2,'Auth','Sprint 6',4,0,'Selesai'],
+['CRM-10','Typo pada halaman Pengaturan','low','Ditutup','RS','Rina',0,'UI','Sprint 6',0,0,'Selesai'],
+['CRM-11','Avatar tidak muncul setelah ganti foto','low','Ditutup','BP','Budi',0,'UI','Sprint 5',1,0,'Selesai']];
+const sevN={crit:'Critical',high:'High',med:'Medium',low:'Low'};
+const $=s=>document.querySelector(s);
+function sev(x){return `<span class="sev s-${x}"><i></i>${sevN[x]}</span>`}
+function slaC(t){return t.startsWith('Lewat')?'sla late':'sla'}
+function renderList(){
+ let h=`<div class="tr th"><span><input type="checkbox" aria-label="Pilih semua" id="all"></span><span>ID</span><span>Judul</span><span>Severity</span><span>Status</span><span class="hide-md">Assignee</span><span class="hide-md">Sprint</span><span class="hide-md">SLA</span></div>`;
+ B.forEach((b,i)=>{h+=`<div class="tr${i==0?' sel':''}"><span><input type="checkbox" class="ck" aria-label="Pilih ${b[0]}"></span><a class="mono" style="color:var(--accent);text-decoration:none" href="12-bug-detail.html">${b[0]}</a><div><div class="t-title">${b[1]}</div><div class="t-sub"><span class="tag">${b[7]}</span>${b[6]?`💬 ${b[6]} `:''}${b[9]?`📎 ${b[9]}`:''}</div></div>${sev(b[2])}<span><span class="st">${b[3]}</span></span><span class="who hide-md"><span class="av">${b[4]}</span>${b[5]}</span><span class="hide-md" style="font-size:13px">${b[8]}</span><span class="hide-md ${slaC(b[11])}">${b[11]}</span></div>`});
+ $('#tbl').innerHTML=h;
+ const upd=()=>{const n=document.querySelectorAll('.ck:checked').length;$('#bn').textContent=n;$('#bulk').classList.toggle('on',n>0)};
+ document.querySelectorAll('.ck').forEach(c=>c.onchange=upd);
+ $('#all').onchange=e=>{document.querySelectorAll('.ck').forEach(c=>c.checked=e.target.checked);upd()};
+}
+let dragId=null;
+function card(b){return `<article class="card" draggable="true" tabindex="0" data-id="${b[0]}"><div class="k"><a class="mono" href="12-bug-detail.html">${b[0]}</a>${sev(b[2])}<button class="kebab" aria-label="Menu ${b[0]}" type="button">⋯</button></div><div class="ti">${b[1]}</div><div><span class="tag">${b[7]}</span><span class="tag">${b[8]}</span></div><div class="ft"><span class="av">${b[4]}</span><span class="${slaC(b[11])}">${b[11]}</span><span class="r"><span>💬 ${b[6]}</span><span>📎 ${b[9]}</span></span></div></article>`}
+function renderBoard(){
+ $('#brd').innerHTML=S.map(s=>{const items=B.filter(b=>b[3]==s);return `<div class="col" data-s="${s}"><h2>${s}<span class="n">${items.length}</span></h2><div class="cards">${items.map(card).join('')}</div>${items.length>=25?'<button class="more">Muat lagi</button>':''}</div>`}).join('');
+ document.querySelectorAll('.card').forEach(c=>{
+  c.ondragstart=e=>{dragId=c.dataset.id;c.classList.add('drag');e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',dragId)};
+  c.ondragend=()=>{c.classList.remove('drag');document.querySelectorAll('.col').forEach(x=>x.classList.remove('over','deny'))};
+ });
+ document.querySelectorAll('.col').forEach(col=>{
+  const allowed=()=>{const b=B.find(x=>x[0]==dragId);return b&&b[3]!=col.dataset.s&&ok[b[3]].includes(col.dataset.s)};
+  col.ondragover=e=>{e.preventDefault();col.classList.toggle('over',allowed());col.classList.toggle('deny',!allowed())};
+  col.ondragleave=()=>col.classList.remove('over','deny');
+  col.ondrop=e=>{e.preventDefault();col.classList.remove('over','deny');const b=B.find(x=>x[0]==dragId);if(!b||b[3]==col.dataset.s)return;
+   if(allowed()){const from=b[3];b[3]=col.dataset.s;renderBoard();toast(`${b[0]} dipindah: ${from} → ${b[3]}`)}else toast(`Transisi ${b[3]} → ${col.dataset.s} tidak diizinkan. Kartu dikembalikan.`)};
+ });
+}
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(toast.h);toast.h=setTimeout(()=>t.classList.remove('on'),2800)}
+function view(v){const l=v=='list';$('#list').hidden=!l;$('#board').hidden=l;$('#vList').setAttribute('aria-pressed',l);$('#vBoard').setAttribute('aria-pressed',!l);if(!l)renderBoard();try{history.replaceState(null,'','?view='+v);localStorage.setItem('bug-view',v)}catch(e){}}
+$('#vList').onclick=()=>view('list');$('#vBoard').onclick=()=>view('board');
+$('#theme').onclick=e=>{e.preventDefault();const r=document.documentElement;const d=r.dataset.theme=='dark';if(d)delete r.dataset.theme;else r.dataset.theme='dark';e.target.textContent='Tema: '+(d?'terang':'gelap')};
+document.querySelectorAll('.pill').forEach(p=>p.onclick=()=>{document.querySelectorAll('.pill').forEach(x=>x.setAttribute('aria-pressed',x==p))});
+renderList();
+let q=new URLSearchParams(location.search).get('view');if(q=='board')view('board');
+</script>
+</body>
+</html>
