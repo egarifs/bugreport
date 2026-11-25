@@ -10,6 +10,8 @@ import {
   closeRunAction, createBugAction, linkBugAction, logAttemptAction, reopenRunAction, updateAllVersionsAction, updateVersionAction,
 } from "../test-run-actions";
 import { AgentLeasePoll } from "./agent-lease-poll";
+import { RunProgressBar, RunStateBadge } from "@/components/ui/run-state-indicator";
+import { countsOf, testRunState } from "@/lib/test-run-state";
 
 const GLYPH: Record<string, string> = { NOT_RUN: "○", PASS: "✓", FAIL: "✗", BLOCKED: "◼", SKIPPED: "⊘" };
 
@@ -120,6 +122,7 @@ export default async function TestRunDetailPage({
   const pending = run.items.filter((i) => i.status === "NOT_RUN");
   const now = Date.now();
   const hasActiveLease = run.items.some((i) => i.leaseExpiresAt && i.leaseExpiresAt.getTime() > now);
+  const runState = testRunState({ status: run.status, decision: run.decision, counts: countsOf(run.items), hasActiveLease });
   const href = (extra: string) => `${base}?${extra}`;
 
   return (
@@ -131,6 +134,7 @@ export default async function TestRunDetailPage({
           <h1 className="font-bold text-slate-900 text-sm">{run.name}</h1>
           <span className="text-xs font-mono px-2 py-0.5 rounded bg-slate-100 text-slate-700">{run.environment}</span>
           {run.buildVersion && <span className="text-xs font-mono px-2 py-0.5 rounded bg-slate-100 text-slate-700">{run.buildVersion}</span>}
+          <RunStateBadge kind={runState.kind} done={runState.done} total={runState.total} />
           <span className={`text-xs px-2 py-0.5 rounded border ${open ? "border-slate-200 text-slate-600" : "border-slate-700 text-slate-900 font-bold"}`}>
             {open ? "Berjalan" : `Ditutup · ${run.decision ? DECISION[run.decision] : ""}`}
           </span>
@@ -150,6 +154,7 @@ export default async function TestRunDetailPage({
 
         <main className="p-6 space-y-4 flex-1">
           <AgentLeasePoll active={hasActiveLease} />
+          <RunProgressBar counts={countsOf(run.items)} active={open && runState.kind !== "passed" && runState.kind !== "failed"} />
           <section aria-label="Ringkasan" className="flex flex-wrap items-center gap-x-5 gap-y-1 text-sm text-slate-700">
             <span className="font-bold text-slate-900">{total} test case</span>
             {["PASS", "FAIL", "BLOCKED", "SKIPPED", "NOT_RUN"].map((s) => (

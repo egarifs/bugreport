@@ -83,6 +83,18 @@ input:not([type="checkbox"]):not([type="radio"]), textarea, select {
   animation: shimmer 2s infinite linear;
 }
 
+/* Test run indicator: stripes slide while a run is unfinished, the final icon pops once. */
+@keyframes run-stripes { from { background-position: 0 0; } to { background-position: 28px 0; } }
+@keyframes run-pop { 0% { transform: scale(.6); opacity: 0; } 70% { transform: scale(1.12); } 100% { transform: scale(1); opacity: 1; } }
+.run-stripes {
+  background-color: rgb(251 191 36 / .35);
+  background-image: repeating-linear-gradient(135deg, rgb(245 158 11 / .55) 0 7px, transparent 7px 14px);
+  background-size: 28px 28px;
+  animation: run-stripes 1s linear infinite;
+}
+.run-pop { animation: run-pop .35s ease-out both; }
+@media (prefers-reduced-motion: reduce) { .run-stripes, .run-pop { animation: none; } }
+
 /* Interactive & Report Micro-motions */
 @keyframes bar-grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 @keyframes status-pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .75; transform: scale(1.04); } }

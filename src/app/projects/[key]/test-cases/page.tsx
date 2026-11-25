@@ -1,3 +1,5 @@
+import { RunProgressBar, RunStateIcon } from "@/components/ui/run-state-indicator";
+import { countsOf, testRunState } from "@/lib/test-run-state";
 import { ActionForm, SubmitButton, type ActionResult } from "@/components/ui/action-form";
 import { activeModules } from "@/lib/modules";
 import { requireProjectPermission } from "@/lib/authz";
@@ -219,6 +221,8 @@ export default async function TestCasesPage({
                   const passCount = r.items.filter((i) => i.status === "PASS").length;
                   const failCount = r.items.filter((i) => i.status === "FAIL").length;
                   const total = r.items.length;
+                  const counts = countsOf(r.items);
+                  const state = testRunState({ status: r.status, decision: r.decision, counts, hasActiveLease: r.items.some((i) => i.leaseExpiresAt && i.leaseExpiresAt.getTime() > Date.now()) });
                   return (
                     <Link
                       key={r.id}
@@ -226,12 +230,13 @@ export default async function TestCasesPage({
                       className="bg-surface border border-slate-200 hover:border-slate-300 rounded-lg p-4 block shadow-sm"
                     >
                       <div className="flex items-start justify-between">
-                        <span className="font-semibold text-sm text-slate-900">{r.name}</span>
+                        <span className="flex items-center gap-2 min-w-0"><RunStateIcon kind={state.kind} /><span className="font-semibold text-sm text-slate-900 truncate">{r.name}</span></span>
                         <span className="text-xs font-mono px-2 py-0.5 rounded bg-action-soft text-link">
                           {r.environment}
                         </span>
                       </div>
-                      <p className="text-xs text-slate-500 mt-1">Build: {r.buildVersion || "-"}</p>
+                      <p className="text-xs text-slate-500 mt-1">Build: {r.buildVersion || "-"} · {state.label} {state.total > 0 && <span className="font-mono">{state.done}/{state.total}</span>}</p>
+                      <div className="mt-2"><RunProgressBar counts={counts} active={state.kind === "running" || state.kind === "waiting"} /></div>
                       <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
                         <span className="text-slate-600">{total} test cases</span>
                         <div className="flex items-center gap-2">
