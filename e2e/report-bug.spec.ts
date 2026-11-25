@@ -61,3 +61,24 @@ test("lapor bug: draf tersimpan otomatis, pulih setelah reload, bisa dihapus", a
   await page.reload();
   await expect(page.getByLabel("Judul bug *")).toHaveValue("");
 });
+
+test("lapor bug: tag dari form tersimpan dan tampil di detail", async ({ page }) => {
+  const prisma = new PrismaClient();
+  const title = `E2E form tag ${Date.now()}`;
+  // other specs insert bugs directly; keep the sequence counter ahead of them
+  const last = await prisma.bug.findFirst({ where: { project: { key: "CRM" } }, orderBy: { number: "desc" }, select: { number: true } });
+  await prisma.project.update({ where: { key: "CRM" }, data: { bugSeq: last?.number ?? 0 } });
+  await login(page, "step1-qa@example.test");
+  await page.goto("/projects/CRM/bugs/new");
+  await page.getByLabel("Judul bug *").fill(title);
+  await page.locator("select[name=severity]").selectOption({ index: 1 });
+  await page.locator("select[name=moduleId]").selectOption({ index: 1 });
+  await page.getByLabel("Tag", { exact: true }).fill("Login Page, UI, #ui");
+  await page.getByRole("button", { name: /^Kirim|Laporkan|Simpan/ }).last().click();
+  await expect(page).toHaveURL(/\/bugs\/\d+$/);
+  await expect(page.getByText(/^#login-page/)).toBeVisible();
+  await expect(page.getByText(/^#ui/)).toBeVisible();
+  const bug = await prisma.bug.findFirstOrThrow({ where: { title }, include: { tags: true } });
+  expect(bug.tags.map((t) => t.name).sort()).toEqual(["login-page", "ui"]);
+  await prisma.$disconnect();
+});

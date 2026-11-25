@@ -15,6 +15,7 @@ import { DraftAutosave } from "./draft-autosave";
 import { AppShell } from "@/components/layout/app-shell";
 import { ScreenshotInput } from "./screenshot-input";
 import { SANDBOX_MAX_BYTES } from "@/lib/sandbox";
+import { parseTagList } from "@/lib/bug-tag-service";
 import { parseBugKeys, parseLinks, parseUrl, readScreenshots, type Screenshot } from "@/lib/bug-input";
 import { randomUUID } from "node:crypto";
 import fs from "node:fs/promises";
@@ -223,6 +224,11 @@ export default async function NewBugPage({
                 </div>
               </div>
               <div>
+                <label htmlFor="tags" className={LABEL}>Tag</label>
+                <input id="tags" type="text" name="tags" placeholder="login, ui, regresi" className={INPUT} />
+                <p className={HINT}>Pisahkan dengan koma, maksimal 10.</p>
+              </div>
+              <div>
                 <label htmlFor="links" className={LABEL}>Tautan lain</label>
                 <textarea id="links" name="links" rows={2} placeholder={"https://figma.com/...\nhttps://docs.google.com/..."} className={`${TEXTAREA} font-mono text-xs`} />
                 <p className={HINT}>Satu URL per baris, maksimal 10.</p>
@@ -270,12 +276,13 @@ async function createBug(projectId: string, _prev: ActionResult, formData: FormD
   const moduleId = await ownModuleId(projectId, formData.get("moduleId") as string);
   if (!moduleId && (await activeModules(projectId)).length > 0) return { error: "Pilih modul tempat bug terjadi." };
 
-  let jamUrl: string | null, taskUrl: string | null, links: string[], relatedKeys: string[], shots: Screenshot[];
+  let jamUrl: string | null, taskUrl: string | null, links: string[], relatedKeys: string[], tagNames: string[], shots: Screenshot[];
   try {
     jamUrl = parseUrl(formData.get("jamUrl"), "Link jam.dev");
     taskUrl = parseUrl(formData.get("taskUrl"), "Link task");
     links = parseLinks(formData.get("links"));
     relatedKeys = parseBugKeys(formData.get("relatedKeys"));
+    tagNames = parseTagList(formData.get("tags"));
     const box = await prisma.project.findUnique({ where: { id: projectId }, select: { isSandbox: true } });
     shots = await readScreenshots(formData.getAll("screenshots"), box?.isSandbox ? SANDBOX_MAX_BYTES : undefined);
   } catch (e) {
@@ -318,6 +325,7 @@ async function createBug(projectId: string, _prev: ActionResult, formData: FormD
           taskUrl,
           links,
           related: { connect: related.map((r) => ({ id: r.id })) },
+          tags: { connectOrCreate: tagNames.map((name) => ({ where: { projectId_name: { projectId, name } }, create: { projectId, name } })) },
           reporterId: author.id,
           attachments: {
             create: stored.map((s) => ({ fileName: s.name, storedName: s.storedName, fileSize: s.bytes.length, mimeType: s.mime })),
@@ -338,7 +346,7 @@ async function createBug(projectId: string, _prev: ActionResult, formData: FormD
     action: "bug.create",
     entityType: "bug",
     entityId: bug.id,
-    changes: { after: { key: bug.key, status, severity, title, screenshots: stored.length, related: relatedKeys } },
+    changes: { after: { key: bug.key, status, severity, title, screenshots: stored.length, related: relatedKeys, tags: tagNames } },
   });
 
   if (status === BugStatus.DRAFT) await notifyBug(bug.id, author, { kind: "draft", source: "form" });

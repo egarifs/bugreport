@@ -2,10 +2,17 @@ import { createTestProject } from "./test-project";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { prisma } from "./db";
-import { addBugTag, normalizeTag, removeBugTag } from "./bug-tag-service";
+import { addBugTag, normalizeTag, parseTagList, removeBugTag } from "./bug-tag-service";
 
 test("normalizeTag lowercases, hyphenates and strips #", () => {
   assert.equal(normalizeTag("  #Login Page "), "login-page");
+});
+
+test("parseTagList splits, normalizes, de-duplicates and validates", () => {
+  assert.deepEqual(parseTagList("UI, login page, #ui,, "), ["ui", "login-page"]);
+  assert.deepEqual(parseTagList(null), []);
+  assert.throws(() => parseTagList("x".repeat(31)), /lebih dari 30/);
+  assert.throws(() => parseTagList(Array.from({ length: 11 }, (_, i) => `t${i}`).join(",")), /Maksimal 10/);
 });
 
 test("tags: shared per project, role-gated, orphans removed, project-scoped", async () => {

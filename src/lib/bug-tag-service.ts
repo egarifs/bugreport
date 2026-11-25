@@ -13,6 +13,15 @@ export function normalizeTag(raw: string): string {
   return raw.trim().replace(/^#+/, "").replace(/\s+/g, "-").toLowerCase();
 }
 
+// "UI, login page, #ui" -> ["ui", "login-page"]. Throws a user-facing message on invalid input.
+export function parseTagList(raw: unknown): string[] {
+  const names = [...new Set(String(raw ?? "").split(",").map(normalizeTag).filter(Boolean))];
+  const long = names.find((n) => n.length > TAG_NAME_MAX);
+  if (long) throw new Error(`Tag "${long.slice(0, 12)}…" lebih dari ${TAG_NAME_MAX} karakter.`);
+  if (names.length > TAGS_PER_BUG) throw new Error(`Maksimal ${TAGS_PER_BUG} tag per bug.`);
+  return names;
+}
+
 export function listProjectTags(projectId: string) {
   return prisma.bugTag.findMany({ where: { projectId }, orderBy: { name: "asc" }, select: { id: true, name: true } });
 }
