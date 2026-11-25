@@ -23,6 +23,10 @@ export function FilterMenu({ categories, meId, projectKey, savedViews, canShare 
   const [name, setName] = useState("");
   const [share, setShare] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+  // Optimistic selections: show a click at once, drop them when the URL catches up.
+  const [local, setLocal] = useState<Record<string, string[]>>({});
+  const urlKey = sp.toString();
+  useEffect(() => setLocal({}), [urlKey]);
   const SAVED = "__saved";
   const root = useRef<HTMLDivElement>(null);
 
@@ -35,7 +39,7 @@ export function FilterMenu({ categories, meId, projectKey, savedViews, canShare 
     return () => { document.removeEventListener("mousedown", onDown); document.removeEventListener("keydown", onKey); };
   }, [open]);
 
-  const selected = (param: string) => csv(sp.get(param));
+  const selected = (param: string) => local[param] ?? csv(sp.get(param));
   const total = categories.reduce((n, c) => n + selected(c.param).length, 0);
 
   function write(changes: Record<string, string[] | null>) {
@@ -45,6 +49,7 @@ export function FilterMenu({ categories, meId, projectKey, savedViews, canShare 
       else p.delete(k);
     }
     p.delete("page");
+    setLocal((l) => ({ ...l, ...Object.fromEntries(Object.entries(changes).map(([k, v]) => [k, v ?? []])) }));
     const qs = p.toString();
     router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
   }
