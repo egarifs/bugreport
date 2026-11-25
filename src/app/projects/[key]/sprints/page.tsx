@@ -9,6 +9,7 @@ import { hasPermission } from "@/lib/permissions";
 import { BugStatus, type Prisma } from "@prisma/client";
 import { DOD_KEYS, DOD_LABEL, closeVerdict, dodChecklist } from "@/lib/stlc";
 import { sprintDodFacts } from "@/lib/stlc-service";
+import { groupSprints } from "@/lib/sprint-groups";
 import { revalidatePath } from "next/cache";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
@@ -141,19 +142,36 @@ export default async function SprintsPage({ params, searchParams }: { params: Pr
               </p>
             )}
           </div>
-          {project.sprints.length > 1 && (
-            <nav aria-label="Pilih sprint" className="flex flex-wrap gap-2">
-              {project.sprints.map((s) => (
-                <Link key={s.id} href={`/projects/${project.key}/sprints?id=${s.id}`} aria-current={s.id === sprint?.id ? "page" : undefined}
-                  className={`px-3 min-h-[44px] flex items-center text-xs font-bold rounded border ${s.id === sprint?.id ? "bg-ink text-on-ink border-ink" : "border-slate-300 text-slate-700 hover:bg-slate-50"}`}>
-                  {s.name}
-                </Link>
-              ))}
-            </nav>
+          {sprint && (
+            <div className="flex flex-wrap gap-2">
+              <Link href={`/projects/${project.key}/reports?tab=trend&sprint=${sprint.id}`} className="px-3 min-h-[44px] flex items-center text-sm font-bold rounded border border-slate-300 bg-surface hover:bg-slate-50">Lihat tren</Link>
+              {canManage && sprint.status === "ACTIVE" && <a href="#tutup-sprint" className="px-3 min-h-[44px] flex items-center text-sm font-bold rounded bg-ink text-on-ink hover:bg-ink-hover">Tutup sprint…</a>}
+            </div>
           )}
         </header>
 
-        <main className="p-6 space-y-6 flex-1">
+        <div className="flex flex-col md:flex-row flex-1">
+        {project.sprints.length > 0 && (
+          <aside aria-label="Daftar sprint" className="md:w-60 shrink-0 border-b md:border-b-0 md:border-r border-slate-200 p-4 space-y-4">
+            {groupSprints(project.sprints, now).map((g) => (
+              <section key={g.key} aria-label={g.label}>
+                <h2 className="mb-1 text-xs font-bold uppercase tracking-wide text-slate-500">{g.label}</h2>
+                <ul className="space-y-1">
+                  {g.items.map((x) => (
+                    <li key={x.id}>
+                      <Link href={`/projects/${project.key}/sprints?id=${x.id}`} aria-current={x.id === sprint?.id ? "page" : undefined}
+                        className={`block px-3 py-2 rounded border text-sm ${x.id === sprint?.id ? "bg-ink text-on-ink border-ink" : "border-transparent text-slate-800 hover:bg-slate-100"}`}>
+                        <span className="block font-bold truncate">{x.name}</span>
+                        <span className={`block text-xs ${x.id === sprint?.id ? "text-on-ink/80" : "text-slate-500"}`}>{fmt(x.startsAt)} – {fmt(x.endsAt)}</span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            ))}
+          </aside>
+        )}
+        <main className="p-6 space-y-6 flex-1 min-w-0">
           {sprint && (
             <>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -214,7 +232,7 @@ export default async function SprintsPage({ params, searchParams }: { params: Pr
               </div>
 
               {canManage && sprint.status === "ACTIVE" && (
-                <ActionForm action={closeSprint} className="bg-slate-100 border border-slate-200 rounded p-4 flex flex-wrap items-center gap-3">
+                <div id="tutup-sprint" className="scroll-mt-6"><ActionForm action={closeSprint} className="bg-slate-100 border border-slate-200 rounded p-4 flex flex-wrap items-center gap-3">
                   <input type="hidden" name="projectKey" value={project.key} />
                   <input type="hidden" name="sprintId" value={sprint.id} />
                   <fieldset className="w-full">
@@ -234,7 +252,7 @@ export default async function SprintsPage({ params, searchParams }: { params: Pr
                     </select>
                   </label>
                   <SubmitButton pendingText="Menutup..." className="px-3.5 py-2 bg-ink hover:bg-ink-hover text-on-ink text-sm font-bold rounded min-h-[44px]">Tutup sprint</SubmitButton>
-                </ActionForm>
+                </ActionForm></div>
               )}
             </>
           )}
@@ -265,6 +283,7 @@ export default async function SprintsPage({ params, searchParams }: { params: Pr
             </section>
           )}
         </main>
+        </div>
       </div>
     </AppShell>
   );
