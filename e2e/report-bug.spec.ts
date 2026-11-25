@@ -18,10 +18,11 @@ test("lapor bug: peringatan mirip, panduan, prioritas hanya untuk reviewer", asy
 
   await login(page, "step1-qa@example.test");
   await page.goto("/projects/CRM/bugs/new");
+  await page.getByText("Tambah detail").click();
   await expect(page.getByLabel("Prioritas")).toBeVisible();
   await page.getByText("Panduan severity × prioritas").click();
   await expect(page.getByText("dampak ke pengguna")).toBeVisible();
-  await page.getByLabel("Judul bug *").fill(title);
+  await page.getByLabel("Judul bug").fill(title);
   const warn = page.getByRole("status").filter({ hasText: "Mirip CRM-" });
   await expect(warn.getByText(`CRM-${n}`, { exact: true })).toBeVisible();
   await expect(warn).toBeVisible();
@@ -38,8 +39,8 @@ test("lapor bug: peringatan mirip, panduan, prioritas hanya untuk reviewer", asy
   const p2 = await ctx.newPage();
   await login(p2, email);
   await p2.goto("/projects/CRM/bugs/new");
+  await p2.getByText("Tambah detail").click();
   await expect(p2.getByLabel("Prioritas")).toHaveCount(0);
-  await expect(p2.getByText("Prioritas ditentukan QA saat triase.")).toBeVisible();
   await ctx.close();
   await prisma.$disconnect();
 });
@@ -49,17 +50,18 @@ test("lapor bug: draf tersimpan otomatis, pulih setelah reload, bisa dihapus", a
   await page.goto("/projects/CRM/bugs/new");
   await page.evaluate(() => Object.keys(localStorage).filter((k) => k.startsWith("bugdraft:")).forEach((k) => localStorage.removeItem(k)));
   await page.reload();
-  await page.getByLabel("Judul bug *").fill("Draf otomatis e2e");
-  await page.getByLabel("Deskripsi").fill("isi deskripsi");
+  await page.getByLabel("Judul bug").fill("Draf otomatis e2e");
+  await page.getByText("Tambah detail").click();
+  await page.getByLabel("Catatan").fill("isi deskripsi");
   await expect(page.getByText("Draf tersimpan otomatis")).toBeVisible();
   await page.reload();
-  await expect(page.getByLabel("Judul bug *")).toHaveValue("Draf otomatis e2e");
-  await expect(page.getByLabel("Deskripsi")).toHaveValue("isi deskripsi");
+  await expect(page.getByLabel("Judul bug")).toHaveValue("Draf otomatis e2e");
+  await expect(page.getByLabel("Catatan")).toHaveValue("isi deskripsi");
   await expect(page.getByText("Draf sebelumnya dipulihkan")).toBeVisible();
   await page.getByRole("button", { name: "Hapus draf" }).click();
-  await expect(page.getByLabel("Judul bug *")).toHaveValue("");
+  await expect(page.getByLabel("Judul bug")).toHaveValue("");
   await page.reload();
-  await expect(page.getByLabel("Judul bug *")).toHaveValue("");
+  await expect(page.getByLabel("Judul bug")).toHaveValue("");
 });
 
 test("lapor bug: tag dari form tersimpan dan tampil di detail", async ({ page }) => {
@@ -70,15 +72,63 @@ test("lapor bug: tag dari form tersimpan dan tampil di detail", async ({ page })
   await prisma.project.update({ where: { key: "CRM" }, data: { bugSeq: last?.number ?? 0 } });
   await login(page, "step1-qa@example.test");
   await page.goto("/projects/CRM/bugs/new");
-  await page.getByLabel("Judul bug *").fill(title);
-  await page.locator("select[name=severity]").selectOption({ index: 1 });
-  await page.locator("select[name=moduleId]").selectOption({ index: 1 });
+  await page.getByLabel("Judul bug").fill(title);
+  await page.getByText("Tambah detail").click();
+  await page.getByText(/^Lainnya/).click();
   await page.getByLabel("Tag", { exact: true }).fill("Login Page, UI, #ui");
-  await page.getByRole("button", { name: /^Kirim|Laporkan|Simpan/ }).last().click();
+  await page.getByRole("button", { name: "Simpan & buka detail" }).click();
   await expect(page).toHaveURL(/\/bugs\/\d+$/);
   await expect(page.getByText(/^#login-page/)).toBeVisible();
   await expect(page.getByText(/^#ui/)).toBeVisible();
   const bug = await prisma.bug.findFirstOrThrow({ where: { title }, include: { tags: true } });
   expect(bug.tags.map((t) => t.name).sort()).toEqual(["login-page", "ui"]);
   await prisma.$disconnect();
+});
+
+test("lapor bug cepat: judul saja, Ctrl+Enter, form kosong lagi, pilihan terakhir diingat", async ({ page }) => {
+  const prisma = new PrismaClient();
+  const stamp = Date.now();
+  const last = await prisma.bug.findFirst({ where: { project: { key: "CRM" } }, orderBy: { number: "desc" }, select: { number: true } });
+  await prisma.project.update({ where: { key: "CRM" }, data: { bugSeq: last?.number ?? 0 } });
+  await login(page, "step1-qa@example.test");
+  await page.goto("/projects/CRM/bugs/new");
+  await page.evaluate(() => Object.keys(localStorage).filter((k) => k.startsWith("bug")).forEach((k) => localStorage.removeItem(k)));
+  await page.reload();
+  await expect(page.getByLabel("Judul bug")).toBeFocused();
+
+  // only the title is needed; severity falls back to Medium, no module, saved as Draft
+  await page.getByLabel("Judul bug").fill(`E2E cepat A ${stamp}`);
+  await page.keyboard.press("Control+Enter");
+  await expect(page.getByText(/dibuat\./)).toBeVisible();
+  await expect(page.getByLabel("Judul bug")).toHaveValue("");
+  await expect(page.getByLabel("Judul bug")).toBeFocused();
+  const a = await prisma.bug.findFirstOrThrow({ where: { title: `E2E cepat A ${stamp}` } });
+  expect([a.severity, a.status, a.moduleId]).toEqual(["MEDIUM", "DRAFT", null]);
+
+  // choose severity and module once; the next report starts with them
+  await page.getByLabel("Judul bug").fill(`E2E cepat B ${stamp}`);
+  await page.getByText("Tambah detail").click();
+  await page.getByLabel("Severity").selectOption("HIGH");
+  const modules = await page.locator("select[name=moduleId] option").evaluateAll((os) => os.map((o) => (o as HTMLOptionElement).value).filter(Boolean));
+  if (modules[0]) await page.locator("select[name=moduleId]").selectOption(modules[0]);
+  await page.getByRole("button", { name: "Simpan", exact: true }).click();
+  await expect(page.getByText(/dibuat\./)).toBeVisible();
+  await expect(page.getByLabel("Severity")).toHaveValue("HIGH");
+  if (modules[0]) await expect(page.locator("select[name=moduleId]")).toHaveValue(modules[0]);
+  await expect(page.getByLabel("Judul bug")).toHaveValue("");
+  const b = await prisma.bug.findFirstOrThrow({ where: { title: `E2E cepat B ${stamp}` } });
+  expect(b.severity).toBe("HIGH");
+
+  // the draft from the first report is spent, a reload does not bring it back
+  await page.reload();
+  await expect(page.getByLabel("Judul bug")).toHaveValue("");
+  await prisma.$disconnect();
+});
+
+test("pintasan N di daftar bug membuka form lapor", async ({ page }) => {
+  await login(page, "step1-qa@example.test");
+  await page.goto("/projects/CRM?view=all");
+  await page.locator("body").click({ position: { x: 5, y: 5 } });
+  await page.keyboard.press("n");
+  await expect(page).toHaveURL(/\/bugs\/new$/);
 });

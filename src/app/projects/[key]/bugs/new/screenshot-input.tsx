@@ -40,6 +40,18 @@ export function ScreenshotInput() {
   }
 
   useEffect(() => {
+    window.dispatchEvent(new CustomEvent("bug:screenshots", { detail: files.length }));
+  }, [files.length]);
+
+  // The form was reset after a successful save: forget the previews too.
+  useEffect(() => {
+    const form = input.current?.closest("form");
+    const onReset = () => { setFiles([]); setError(""); };
+    form?.addEventListener("reset", onReset);
+    return () => form?.removeEventListener("reset", onReset);
+  }, []);
+
+  useEffect(() => {
     function onPaste(e: ClipboardEvent) {
       const pasted = [...(e.clipboardData?.files ?? [])].filter((f) => f.type.startsWith("image/"));
       if (!pasted.length) return;

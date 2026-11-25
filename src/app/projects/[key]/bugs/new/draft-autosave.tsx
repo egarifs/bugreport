@@ -49,7 +49,14 @@ export function DraftAutosave({ storageKey }: { storageKey: string }) {
       const snap = snapshot;
       setTimeout(() => {
         // Rejected submit shows an error in the status line: put the user's text back and keep the draft.
-        if (snap && form.querySelector("[role=status]")?.textContent?.trim()) { write(snap); submitted = false; }
+        if (snap && form.querySelector("[data-form-error]")) { write(snap); submitted = false; return; }
+        // Accepted submit that keeps the user on the page: the draft is spent.
+        if (submitted) {
+          try { localStorage.removeItem(storageKey); } catch { /* ignore */ }
+          submitted = false;
+          setRestored(false);
+          setMsg("");
+        }
       }, 100);
     };
     form.addEventListener("input", save);

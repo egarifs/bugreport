@@ -13,7 +13,8 @@
     "Aksi Massal",
     "Lapor Bug",
     "Impor Bug",
-    "Triase"
+    "Triase",
+    "Test Run"
   ],
   "testCases": [
     {
@@ -620,6 +621,116 @@
       "precondition": "Login sebagai Developer",
       "steps": "1) Pilih bug Draft",
       "expectedResult": "Panel menampilkan Triase hanya untuk reviewer tanpa tombol Terima dan Tolak."
+    },
+    {
+      "code": "TC-RPT-006",
+      "title": "Catat bug hanya dengan judul",
+      "module": "Lapor Bug",
+      "priority": "CRITICAL",
+      "testType": "Functional",
+      "targetRole": "QA",
+      "precondition": "Project punya modul",
+      "steps": "1) Buka Laporkan bug\n2) Ketik judul saja\n3) Tekan Ctrl+Enter",
+      "expectedResult": "Bug dibuat sebagai Draft dengan severity Medium dan tanpa modul. Muncul pesan KEY-n dibuat dengan tautan Buka. Form kosong dan fokus kembali ke judul."
+    },
+    {
+      "code": "TC-RPT-007",
+      "title": "Pilihan terakhir diingat untuk laporan berikutnya",
+      "module": "Lapor Bug",
+      "priority": "MEDIUM",
+      "testType": "Functional",
+      "targetRole": "QA",
+      "precondition": "-",
+      "steps": "1) Buka Tambah detail, pilih severity High dan sebuah modul\n2) Simpan\n3) Perhatikan form kosong berikutnya",
+      "expectedResult": "Severity High dan modul yang sama terisi lagi. Tautan lupakan pilihan tersimpan mengembalikan default."
+    },
+    {
+      "code": "TC-RPT-008",
+      "title": "Tempel screenshot dengan Ctrl+V tanpa membuka detail",
+      "module": "Lapor Bug",
+      "priority": "HIGH",
+      "testType": "Functional",
+      "targetRole": "QA",
+      "precondition": "Ada gambar di clipboard",
+      "steps": "1) Fokus ke judul\n2) Tekan Ctrl+V",
+      "expectedResult": "Muncul keterangan screenshot terlampir. Setelah Simpan, lampiran tersimpan pada bug dan form bersih."
+    },
+    {
+      "code": "TC-RPT-009",
+      "title": "Pintasan N di daftar bug membuka form lapor",
+      "module": "Lapor Bug",
+      "priority": "LOW",
+      "testType": "Functional",
+      "targetRole": "QA",
+      "precondition": "Fokus tidak di kolom input",
+      "steps": "1) Di halaman daftar bug tekan N\n2) Ketik N di kotak pencarian",
+      "expectedResult": "Tombol N membuka form saat fokus di luar input. Saat mengetik di kotak pencarian huruf n biasa dan tidak berpindah halaman."
+    },
+    {
+      "code": "TC-RPT-010",
+      "title": "Langsung Open hanya untuk reviewer dengan modul",
+      "module": "Lapor Bug",
+      "priority": "HIGH",
+      "testType": "Security",
+      "targetRole": "QA",
+      "precondition": "Role QA",
+      "steps": "1) Buka Tambah detail, Lainnya\n2) Centang Langsung Open tanpa modul lalu simpan\n3) Ulangi dengan modul dipilih",
+      "expectedResult": "Tanpa modul ditolak dengan pesan Pilih modul. Dengan modul bug berstatus Open. Developer tidak melihat opsi ini dan panggilan langsung ditolak server."
+    },
+    {
+      "code": "TC-RUN-001",
+      "title": "Indikator berputar selama test run belum lolos",
+      "module": "Test Run",
+      "priority": "HIGH",
+      "testType": "UI",
+      "targetRole": "QA",
+      "precondition": "Test run berisi 2 test case, belum dijalankan",
+      "steps": "1) Buka halaman test run",
+      "expectedResult": "Muncul indikator amber berputar dengan teks Menunggu dijalankan 0/2 dan bar progres bergaris bergerak."
+    },
+    {
+      "code": "TC-RUN-002",
+      "title": "Indikator berubah hijau saat semua lolos",
+      "module": "Test Run",
+      "priority": "HIGH",
+      "testType": "Functional",
+      "targetRole": "QA",
+      "precondition": "Test run 2 item",
+      "steps": "1) Catat Lolos untuk kedua item\n2) Muat ulang halaman",
+      "expectedResult": "Indikator menjadi centang hijau dengan teks Lolos 2/2 dan bar penuh hijau tanpa animasi garis."
+    },
+    {
+      "code": "TC-RUN-003",
+      "title": "Indikator merah saat ada yang gagal setelah semua dijalankan",
+      "module": "Test Run",
+      "priority": "HIGH",
+      "testType": "Functional",
+      "targetRole": "QA",
+      "precondition": "Test run 2 item",
+      "steps": "1) Catat Lolos untuk satu item dan Gagal untuk lainnya",
+      "expectedResult": "Selama masih ada yang belum dijalankan tetap berputar. Setelah semua dijalankan menjadi silang merah dengan teks Gagal."
+    },
+    {
+      "code": "TC-RUN-004",
+      "title": "Daftar test run menampilkan status dan progres",
+      "module": "Test Run",
+      "priority": "MEDIUM",
+      "testType": "UI",
+      "targetRole": "QA",
+      "precondition": "Beberapa test run dengan hasil berbeda",
+      "steps": "1) Buka Test case, tab Runs",
+      "expectedResult": "Setiap kartu menampilkan ikon status, teks status n/total, dan bar progres."
+    },
+    {
+      "code": "TC-RUN-005",
+      "title": "Animasi dihentikan untuk pengguna reduced motion",
+      "module": "Test Run",
+      "priority": "LOW",
+      "testType": "Accessibility",
+      "targetRole": "QA",
+      "precondition": "Sistem diatur mengurangi gerakan",
+      "steps": "1) Buka test run yang belum lolos",
+      "expectedResult": "Spinner dan strip tidak bergerak tetapi status tetap terbaca dari teks dan ikon."
     }
   ]
 }

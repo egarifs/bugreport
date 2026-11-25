@@ -1,6 +1,6 @@
 # Test case project bugreport
 
-Dibuat otomatis dari `docs/testcases/bugreport.json` oleh `prisma/seed-bugreport.ts` (55 test case, 9 modul). Sumber kebenaran ada di JSON.
+Dibuat otomatis dari `docs/testcases/bugreport.json` oleh `prisma/seed-bugreport.ts` (65 test case, 10 modul). Sumber kebenaran ada di JSON.
 
 | Kode | Judul | Modul | Prioritas | Tipe | Role | Prasyarat | Langkah | Hasil diharapkan |
 |---|---|---|---|---|---|---|---|---|
@@ -59,3 +59,13 @@ Dibuat otomatis dari `docs/testcases/bugreport.json` oleh `prisma/seed-bugreport
 | TC-TRI-002 | Terima draft tanpa modul ditolak | Triase | HIGH | Negative | QA | Bug Draft tanpa modul | 1) Klik Terima tanpa memilih modul | Muncul pesan Pilih modul sebelum menerima bug dan status tetap Draft. |
 | TC-TRI-003 | Tolak draft menjadi Invalid | Triase | MEDIUM | Functional | QA | Ada bug Draft | 1) Klik Tolak (atau tekan X) | Status menjadi Invalid dan bug keluar dari antrean review. |
 | TC-TRI-004 | Triase hanya untuk reviewer | Triase | CRITICAL | Security | Developer | Login sebagai Developer | 1) Pilih bug Draft | Panel menampilkan Triase hanya untuk reviewer tanpa tombol Terima dan Tolak. |
+| TC-RPT-006 | Catat bug hanya dengan judul | Lapor Bug | CRITICAL | Functional | QA | Project punya modul | 1) Buka Laporkan bug<br>2) Ketik judul saja<br>3) Tekan Ctrl+Enter | Bug dibuat sebagai Draft dengan severity Medium dan tanpa modul. Muncul pesan KEY-n dibuat dengan tautan Buka. Form kosong dan fokus kembali ke judul. |
+| TC-RPT-007 | Pilihan terakhir diingat untuk laporan berikutnya | Lapor Bug | MEDIUM | Functional | QA | - | 1) Buka Tambah detail, pilih severity High dan sebuah modul<br>2) Simpan<br>3) Perhatikan form kosong berikutnya | Severity High dan modul yang sama terisi lagi. Tautan lupakan pilihan tersimpan mengembalikan default. |
+| TC-RPT-008 | Tempel screenshot dengan Ctrl+V tanpa membuka detail | Lapor Bug | HIGH | Functional | QA | Ada gambar di clipboard | 1) Fokus ke judul<br>2) Tekan Ctrl+V | Muncul keterangan screenshot terlampir. Setelah Simpan, lampiran tersimpan pada bug dan form bersih. |
+| TC-RPT-009 | Pintasan N di daftar bug membuka form lapor | Lapor Bug | LOW | Functional | QA | Fokus tidak di kolom input | 1) Di halaman daftar bug tekan N<br>2) Ketik N di kotak pencarian | Tombol N membuka form saat fokus di luar input. Saat mengetik di kotak pencarian huruf n biasa dan tidak berpindah halaman. |
+| TC-RPT-010 | Langsung Open hanya untuk reviewer dengan modul | Lapor Bug | HIGH | Security | QA | Role QA | 1) Buka Tambah detail, Lainnya<br>2) Centang Langsung Open tanpa modul lalu simpan<br>3) Ulangi dengan modul dipilih | Tanpa modul ditolak dengan pesan Pilih modul. Dengan modul bug berstatus Open. Developer tidak melihat opsi ini dan panggilan langsung ditolak server. |
+| TC-RUN-001 | Indikator berputar selama test run belum lolos | Test Run | HIGH | UI | QA | Test run berisi 2 test case, belum dijalankan | 1) Buka halaman test run | Muncul indikator amber berputar dengan teks Menunggu dijalankan 0/2 dan bar progres bergaris bergerak. |
+| TC-RUN-002 | Indikator berubah hijau saat semua lolos | Test Run | HIGH | Functional | QA | Test run 2 item | 1) Catat Lolos untuk kedua item<br>2) Muat ulang halaman | Indikator menjadi centang hijau dengan teks Lolos 2/2 dan bar penuh hijau tanpa animasi garis. |
+| TC-RUN-003 | Indikator merah saat ada yang gagal setelah semua dijalankan | Test Run | HIGH | Functional | QA | Test run 2 item | 1) Catat Lolos untuk satu item dan Gagal untuk lainnya | Selama masih ada yang belum dijalankan tetap berputar. Setelah semua dijalankan menjadi silang merah dengan teks Gagal. |
+| TC-RUN-004 | Daftar test run menampilkan status dan progres | Test Run | MEDIUM | UI | QA | Beberapa test run dengan hasil berbeda | 1) Buka Test case, tab Runs | Setiap kartu menampilkan ikon status, teks status n/total, dan bar progres. |
+| TC-RUN-005 | Animasi dihentikan untuk pengguna reduced motion | Test Run | LOW | Accessibility | QA | Sistem diatur mengurangi gerakan | 1) Buka test run yang belum lolos | Spinner dan strip tidak bergerak tetapi status tetap terbaca dari teks dan ikon. |

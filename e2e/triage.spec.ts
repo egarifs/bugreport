@@ -21,7 +21,7 @@ test("triase: pilih draft, ubah severity, terima lewat pintasan A", async ({ pag
   await page.getByRole("button", { name: "Login Dev (Auto-create user)" }).click();
   await expect(page).toHaveURL(/\/projects/);
   await page.setViewportSize({ width: 1280, height: 900 });
-  await page.goto("/projects/CRM?view=review");
+  await page.goto(`/projects/CRM?view=review&q=${encodeURIComponent(title)}`); // queue holds many drafts and pages by 25: narrow to this bug
   await page.getByRole("link", { name: title }).click();
   const panel = page.getByRole("complementary", { name: new RegExp(`triase CRM-${n}`) });
   await expect(panel).toBeVisible();

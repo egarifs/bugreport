@@ -16,6 +16,7 @@ import { BugPreviewPanel } from "./bug-preview-panel";
 import { BugBoard } from "./bug-board";
 import { BulkBar } from "./bulk-bar";
 import { TriageKeys } from "./triage-keys";
+import { NewBugShortcut } from "./new-bug-shortcut";
 
 // Statuses a bulk "Ubah status" may target (moves that need extra input stay on the detail page).
 const BULK_STATUSES = ["OPEN", "IN_PROGRESS", "DESIGN_REVIEW", "READY_FOR_VERIFICATION", "WONT_FIX"] as const;
@@ -68,6 +69,7 @@ export default async function ProjectBugsPage({
         <BugListHeader projectKey={project.key} projectName={project.name} role={role} canCreate={canCreate} />
 
         <main className="p-4 md:p-6 flex-1">
+          {canCreate && <NewBugShortcut href={newBugHref} />}
           {sp.done && <p role="status" className="mb-3 px-3 py-2 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs rounded-md">{sp.done.slice(0, 120)}</p>}
           {canReview && (
             <div aria-label="Ringkasan hari ini" className="flex flex-wrap items-center gap-x-5 gap-y-1 mb-3 px-3.5 py-2 bg-slate-50/80 border border-slate-200/80 rounded-md text-xs">
