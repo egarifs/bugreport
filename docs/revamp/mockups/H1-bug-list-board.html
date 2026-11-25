@@ -29,7 +29,7 @@ h1 small{font-weight:400;font-size:14px;color:var(--mute);margin-left:10px}
 .seg button{height:42px;padding:0 14px;border:0;background:transparent;color:var(--ink2);font:500 14px/20px inherit;font-family:inherit;cursor:pointer;display:flex;align-items:center;gap:6px}
 .seg button[aria-pressed=true]{background:var(--accent-bg);color:var(--accent);font-weight:600}
 .bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:16px 0}
-.bar input{flex:1 1 240px;max-width:380px;height:44px;padding:0 14px;border:1px solid var(--ctl);border-radius:8px;background:var(--surface);color:var(--ink);font:inherit}
+.bar>input{flex:1 1 240px;max-width:380px;height:44px;padding:0 14px;border:1px solid var(--ctl);border-radius:8px;background:var(--surface);color:var(--ink);font:inherit}
 .chip{height:44px;padding:0 12px;border:1px dashed var(--ctl);border-radius:8px;background:var(--surface);color:var(--ink2);font:inherit;cursor:pointer}
 .chip b{color:var(--accent);font-weight:600}
 .views{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:4px}
@@ -37,6 +37,26 @@ h1 small{font-weight:400;font-size:14px;color:var(--mute);margin-left:10px}
 .pill{height:32px;padding:0 12px;border:1px solid var(--line);border-radius:16px;background:var(--surface);color:var(--ink2);font:500 13px/18px inherit;font-family:inherit;cursor:pointer}
 .pill[aria-pressed=true]{background:var(--accent-bg);border-color:var(--accent);color:var(--accent)}
 .sp{margin-left:auto;color:var(--mute)}
+
+.fm{position:relative;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.fbtn{height:44px;padding:0 14px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink2);font:500 14px/20px inherit;font-family:inherit;display:inline-flex;align-items:center;gap:8px;cursor:pointer}
+.fbtn .n{background:var(--accent);color:#fff;border-radius:9px;font:500 11px/18px 'Atkinson Hyperlegible Mono',monospace;padding:0 6px}
+.fchip{height:32px;max-width:320px;padding:0 12px;border:1px solid var(--line);border-radius:16px;background:var(--accent-bg);color:var(--accent);font:500 13px/18px inherit;font-family:inherit;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.flink{background:none;border:0;color:var(--mute);text-decoration:underline;cursor:pointer;font:inherit}
+.pop{position:absolute;left:0;top:100%;margin-top:8px;z-index:20;display:flex;width:min(560px,92vw);background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:0 12px 32px -12px rgba(31,28,23,.3);overflow:hidden}
+.pop[hidden]{display:none}
+.pl{width:200px;flex:none;border-right:1px solid var(--line);padding:4px 0;max-height:420px;overflow-y:auto}
+.pl button{width:100%;display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border:0;background:none;color:var(--ink2);font:inherit;cursor:pointer;text-align:left}
+.pl button:hover{background:var(--hover)}
+.pl button[aria-current]{background:var(--accent-bg);color:var(--accent);font-weight:600}
+.pl hr{border:0;border-top:1px solid var(--line2);margin:4px 0}
+.pr{flex:1;min-width:0}
+.pr input[type=search]{width:calc(100% - 24px);margin:12px;height:40px;padding:0 12px;border:1px solid var(--ctl);border-radius:8px;background:var(--surface);color:var(--ink);font:inherit}
+.pr label{display:flex;gap:12px;align-items:center;padding:10px 16px;cursor:pointer}
+.pr label.on{background:var(--accent-bg);color:var(--accent);font-weight:500}
+.pr .list{max-height:340px;overflow-y:auto}
+.pr .sv{display:flex;align-items:center}
+.pr .sv button.go{flex:1;text-align:left;padding:10px 16px;border:0;background:none;color:var(--ink);font:inherit;cursor:pointer}
 /* list */
 .table{background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden;box-shadow:0 1px 2px rgba(31,28,23,.04)}
 .tr{display:grid;grid-template-columns:28px 76px minmax(0,1fr) 112px 116px 120px 96px 76px;gap:12px;align-items:center;padding:12px 16px;border-bottom:1px solid var(--line2)}
@@ -107,23 +127,9 @@ h1 small{font-weight:400;font-size:14px;color:var(--mute);margin-left:10px}
 </header>
 
 <div class="bar" role="search">
-<input type="search" placeholder="Cari ID (CRM-1) atau judul" aria-label="Cari">
-<button class="chip" type="button">Status</button>
-<button class="chip" type="button">Severity: <b>Critical, High</b></button>
-<button class="chip" type="button">Assignee</button>
-<button class="chip" type="button">Reporter</button>
-<button class="chip" type="button">Sprint</button>
-<button class="chip" type="button">Tag</button>
-<button class="btn" type="button" style="height:44px">Simpan tampilan</button>
+<input type="search" id="q" placeholder="Cari ID (CRM-1) atau judul" aria-label="Cari">
+<div class="fm" id="fm"></div>
 </div>
-<div class="views" role="group" aria-label="Tampilan tersimpan">
-<span>Tampilan tersimpan:</span>
-<button class="pill" aria-pressed="true" type="button">Semua bug</button>
-<button class="pill" aria-pressed="false" type="button">Bug saya</button>
-<button class="pill" aria-pressed="false" type="button">Critical minggu ini <small>· proyek</small></button>
-<button class="pill" aria-pressed="false" type="button">Menunggu retest</button>
-</div>
-<div style="height:12px"></div>
 
 <div class="bulk" id="bulk" role="region" aria-label="Aksi massal"><b id="bn">0</b> dipilih
 <button class="btn" type="button" style="height:36px">Ubah status</button><button class="btn" type="button" style="height:36px">Assign</button><button class="btn" type="button" style="height:36px">Tambah tag</button></div>
@@ -164,7 +170,7 @@ function sev(x){return `<span class="sev s-${x}"><i></i>${sevN[x]}</span>`}
 function slaC(t){return t.startsWith('Lewat')?'sla late':'sla'}
 function renderList(){
  let h=`<div class="tr th"><span><input type="checkbox" aria-label="Pilih semua" id="all"></span><span>ID</span><span>Judul</span><span>Severity</span><span>Status</span><span class="hide-md">Assignee</span><span class="hide-md">Sprint</span><span class="hide-md">SLA</span></div>`;
- B.forEach((b,i)=>{h+=`<div class="tr${i==0?' sel':''}"><span><input type="checkbox" class="ck" aria-label="Pilih ${b[0]}"></span><a class="mono" style="color:var(--accent);text-decoration:none" href="12-bug-detail.html">${b[0]}</a><div><div class="t-title">${b[1]}</div><div class="t-sub"><span class="tag">${b[7]}</span>${b[6]?`💬 ${b[6]} `:''}${b[9]?`📎 ${b[9]}`:''}</div></div>${sev(b[2])}<span><span class="st">${b[3]}</span></span><span class="who hide-md"><span class="av">${b[4]}</span>${b[5]}</span><span class="hide-md" style="font-size:13px">${b[8]}</span><span class="hide-md ${slaC(b[11])}">${b[11]}</span></div>`});
+ visible().forEach((b,i)=>{h+=`<div class="tr${i==0?' sel':''}"><span><input type="checkbox" class="ck" aria-label="Pilih ${b[0]}"></span><a class="mono" style="color:var(--accent);text-decoration:none" href="12-bug-detail.html">${b[0]}</a><div><div class="t-title">${b[1]}</div><div class="t-sub"><span class="tag">${b[7]}</span>${b[6]?`💬 ${b[6]} `:''}${b[9]?`📎 ${b[9]}`:''}</div></div>${sev(b[2])}<span><span class="st">${b[3]}</span></span><span class="who hide-md"><span class="av">${b[4]}</span>${b[5]}</span><span class="hide-md" style="font-size:13px">${b[8]}</span><span class="hide-md ${slaC(b[11])}">${b[11]}</span></div>`});
  $('#tbl').innerHTML=h;
  const upd=()=>{const n=document.querySelectorAll('.ck:checked').length;$('#bn').textContent=n;$('#bulk').classList.toggle('on',n>0)};
  document.querySelectorAll('.ck').forEach(c=>c.onchange=upd);
@@ -173,7 +179,7 @@ function renderList(){
 let dragId=null;
 function card(b){return `<article class="card" draggable="true" tabindex="0" data-id="${b[0]}"><div class="k"><a class="mono" href="12-bug-detail.html">${b[0]}</a>${sev(b[2])}<button class="kebab" aria-label="Menu ${b[0]}" type="button">⋯</button></div><div class="ti">${b[1]}</div><div><span class="tag">${b[7]}</span><span class="tag">${b[8]}</span></div><div class="ft"><span class="av">${b[4]}</span><span class="${slaC(b[11])}">${b[11]}</span><span class="r"><span>💬 ${b[6]}</span><span>📎 ${b[9]}</span></span></div></article>`}
 function renderBoard(){
- $('#brd').innerHTML=S.map(s=>{const items=B.filter(b=>b[3]==s);return `<div class="col" data-s="${s}"><h2>${s}<span class="n">${items.length}</span></h2><div class="cards">${items.map(card).join('')}</div>${items.length>=25?'<button class="more">Muat lagi</button>':''}</div>`}).join('');
+ $('#brd').innerHTML=S.map(s=>{const items=visible().filter(b=>b[3]==s);return `<div class="col" data-s="${s}"><h2>${s}<span class="n">${items.length}</span></h2><div class="cards">${items.map(card).join('')}</div>${items.length>=25?'<button class="more">Muat lagi</button>':''}</div>`}).join('');
  document.querySelectorAll('.card').forEach(c=>{
   c.ondragstart=e=>{dragId=c.dataset.id;c.classList.add('drag');e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',dragId)};
   c.ondragend=()=>{c.classList.remove('drag');document.querySelectorAll('.col').forEach(x=>x.classList.remove('over','deny'))};
@@ -190,8 +196,46 @@ function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clea
 function view(v){const l=v=='list';$('#list').hidden=!l;$('#board').hidden=l;$('#vList').setAttribute('aria-pressed',l);$('#vBoard').setAttribute('aria-pressed',!l);if(!l)renderBoard();try{history.replaceState(null,'','?view='+v);localStorage.setItem('bug-view',v)}catch(e){}}
 $('#vList').onclick=()=>view('list');$('#vBoard').onclick=()=>view('board');
 $('#theme').onclick=e=>{e.preventDefault();const r=document.documentElement;const d=r.dataset.theme=='dark';if(d)delete r.dataset.theme;else r.dataset.theme='dark';e.target.textContent='Tema: '+(d?'terang':'gelap')};
-document.querySelectorAll('.pill').forEach(p=>p.onclick=()=>{document.querySelectorAll('.pill').forEach(x=>x.setAttribute('aria-pressed',x==p))});
-renderList();
+
+const F={assignee:[],severity:[],status:[],module:[],sprint:[]};
+const CATS=[
+ ['assignee','Assignee',[...new Set(B.map(b=>b[5]))].map(x=>[x,x])],
+ ['severity','Severity',Object.entries(sevN)],
+ ['status','Status',S.map(x=>[x,x])],
+ ['module','Modul',[...new Set(B.map(b=>b[7]))].map(x=>[x,x])],
+ ['sprint','Sprint',[...new Set(B.map(b=>b[8]))].map(x=>[x,x])]];
+const SAVED=[['Bug saya',{assignee:['Budi']}],['Critical',{severity:['crit']}],['Menunggu retest',{status:['Siap retest']}]];
+const IDX={assignee:5,severity:2,status:3,module:7,sprint:8};
+let fOpen=false,fCat='saved',fSearch='';
+const lab=(k,v)=>(CATS.find(c=>c[0]==k)[2].find(o=>o[0]==v)||[v,v])[1];
+function visible(){return B.filter(b=>Object.keys(F).every(k=>!F[k].length||F[k].includes(b[IDX[k]])))}
+function fToggle(k,v){const a=F[k];a.includes(v)?a.splice(a.indexOf(v),1):a.push(v);fApply()}
+function fApply(){renderList();if(!$('#board').hidden)renderBoard();renderF()}
+function renderF(){
+ const n=Object.values(F).reduce((t,a)=>t+a.length,0);
+ const act=CATS.filter(c=>F[c[0]].length);
+ let h=`<button class="fbtn" id="fb" aria-haspopup="dialog" aria-expanded="${fOpen}">☰ Filter ⌄${n?`<span class="n">${n}</span>`:''}</button>`;
+ act.forEach(c=>{h+=`<button class="fchip" data-clear="${c[0]}" aria-label="Hapus filter ${c[1]}">${c[1]}: ${F[c[0]].map(v=>lab(c[0],v)).join(', ')} ×</button>`});
+ if(n)h+='<button class="flink" id="freset">Reset</button>';
+ h+=`<div class="pop" id="pop" role="dialog" aria-label="Filter bug" ${fOpen?'':'hidden'}><div class="pl"><button data-cat="saved" ${fCat=='saved'?'aria-current="true"':''}>Filter tersimpan <span>›</span></button>`;
+ CATS.forEach(c=>{h+=`<button data-cat="${c[0]}" ${fCat==c[0]?'aria-current="true"':''}><span>${c[1]}${F[c[0]].length?` (${F[c[0]].length})`:''}</span><span>›</span></button>`});
+ h+=`<hr><button data-quick="unassigned">Belum di-assign</button><button data-quick="me">Ditugaskan ke saya</button></div><div class="pr">`;
+ if(fCat=='saved'){h+='<div class="list">'+SAVED.map((v,i)=>`<div class="sv"><button class="go" data-saved="${i}">${v[0]}</button></div>`).join('')+'</div>'}
+ else{const c=CATS.find(x=>x[0]==fCat);h+=`<input type="search" id="fs" placeholder="Cari ${c[1].toLowerCase()}" value="${fSearch}"><div class="list">`+c[2].filter(o=>o[1].toLowerCase().includes(fSearch.toLowerCase())).map(o=>`<label class="${F[fCat].includes(o[0])?'on':''}"><input type="checkbox" data-opt="${o[0]}" ${F[fCat].includes(o[0])?'checked':''}>${o[1]}</label>`).join('')+'</div>'}
+ h+='</div></div>';
+ $('#fm').innerHTML=h;
+ $('#fb').onclick=()=>{fOpen=!fOpen;renderF()};
+ document.querySelectorAll('[data-clear]').forEach(x=>x.onclick=()=>{F[x.dataset.clear]=[];fApply()});
+ const r=$('#freset');if(r)r.onclick=()=>{Object.keys(F).forEach(k=>F[k]=[]);fApply()};
+ document.querySelectorAll('[data-cat]').forEach(x=>x.onclick=()=>{fCat=x.dataset.cat;fSearch='';renderF()});
+ document.querySelectorAll('[data-opt]').forEach(x=>x.onchange=()=>fToggle(fCat,x.dataset.opt));
+ document.querySelectorAll('[data-saved]').forEach(x=>x.onclick=()=>{Object.keys(F).forEach(k=>F[k]=[]);Object.assign(F,{assignee:[],severity:[],status:[],module:[],sprint:[]},SAVED[x.dataset.saved][1]);fOpen=false;fApply()});
+ document.querySelectorAll('[data-quick]').forEach(x=>x.onclick=()=>{F.assignee=x.dataset.quick=='me'?['Budi']:[];fApply()});
+ const fs=$('#fs');if(fs)fs.oninput=e=>{fSearch=e.target.value;const p=e.target.selectionStart;renderF();const n=$('#fs');n.focus();n.setSelectionRange(p,p)};
+}
+document.addEventListener('mousedown',e=>{if(fOpen&&!$('#fm').contains(e.target)){fOpen=false;renderF()}});
+document.addEventListener('keydown',e=>{if(e.key=='Escape'&&fOpen){fOpen=false;renderF()}});
+renderF();renderList();
 let q=new URLSearchParams(location.search).get('view');if(q=='board')view('board');
 </script>
 </body>
