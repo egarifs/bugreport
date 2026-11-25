@@ -85,7 +85,8 @@ export default async function ProjectDetailPage({
       include: {
         assignee: { select: { name: true, email: true } },
         module: { select: { name: true } },
-        _count: { select: { comments: true, testRunLinks: true } },
+        _count: { select: { comments: true, attachments: true, testRunLinks: true } },
+        sprint: { select: { name: true } },
       },
     }),
   ]);
@@ -335,7 +336,7 @@ export default async function ProjectDetailPage({
             <div className="flex flex-wrap items-start gap-5">
             <div className="flex-[999_1_520px] min-w-0">
               {/* Desktop: dense table. Left strip = severity, readable at a glance. */}
-              <table className="hidden md:table w-full text-left text-sm bg-surface border border-slate-200 rounded overflow-hidden">
+              <table className="hidden md:table w-full text-left text-sm bg-surface border border-slate-200 rounded-lg overflow-hidden shadow-xs">
                 <thead className="bg-slate-50 border-b border-slate-200 text-xs text-slate-600">
                   <tr>
                     <th scope="col" className="w-[3px] p-0"><span className="sr-only">Severity</span></th>
@@ -357,15 +358,35 @@ export default async function ProjectDetailPage({
                       </td>
                       <td className="py-2 px-3">
                         <Link href={selHref(b.key)} scroll={false} className="text-slate-900 hover:underline">{b.title}</Link>
-                        <span className="block text-xs text-slate-500">
-                          {[b.module?.name ?? (b.status === "DRAFT" ? "Modul belum diisi" : null), source(b) && `dari ${source(b)}`, b._count.comments > 0 && `${b._count.comments} komentar`]
-                            .filter(Boolean)
-                            .join(", ")}
+                        <span className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-slate-500">
+                          {b.module?.name ? (
+                            <span className="px-1.5 rounded-full border border-slate-200 bg-slate-50 text-slate-600">{b.module.name}</span>
+                          ) : b.status === "DRAFT" ? (
+                            <span className="text-slate-400">Modul belum diisi</span>
+                          ) : null}
+                          {b.sprint && <span className="px-1.5 rounded-full border border-slate-200 bg-slate-50 text-slate-600">{b.sprint.name}</span>}
+                          {source(b) && <span>dari {source(b)}</span>}
+                          {(b._count.comments > 0 || b._count.attachments > 0) && (
+                            <span className="font-mono" aria-label={`${b._count.comments} komentar, ${b._count.attachments} lampiran`}>
+                              💬 {b._count.comments} · 📎 {b._count.attachments}
+                            </span>
+                          )}
                         </span>
                       </td>
                       <td className="py-2 px-3"><SeverityBadge severity={b.severity} /></td>
                       <td className="py-2 px-3"><StatusBadge status={b.status} /></td>
-                      <td className="py-2 px-3 text-slate-600 truncate max-w-[10rem]">{b.assignee?.name || b.assignee?.email || "Belum di-assign"}</td>
+                      <td className="py-2 px-3 text-slate-600 max-w-[10rem]">
+                        {b.assignee ? (
+                          <span className="flex items-center gap-2 min-w-0">
+                            <span aria-hidden className="w-6 h-6 shrink-0 rounded-full bg-slate-200 text-slate-700 text-[10px] font-bold inline-flex items-center justify-center">
+                              {(b.assignee.name || b.assignee.email).split(/[\s@.]+/).filter(Boolean).slice(0, 2).map((x) => x[0]?.toUpperCase()).join("")}
+                            </span>
+                            <span className="truncate">{b.assignee.name || b.assignee.email}</span>
+                          </span>
+                        ) : (
+                          <span className="text-slate-400">Belum di-assign</span>
+                        )}
+                      </td>
                       <td className="py-2 px-3 whitespace-nowrap">
                         {b.dueAt ? (() => { const d = dueLabel(b.dueAt, b.status); return <span className={d.overdue ? "text-bad font-bold" : "text-slate-600"}>{d.text}</span>; })() : <span className="text-slate-400">—</span>}
                       </td>
