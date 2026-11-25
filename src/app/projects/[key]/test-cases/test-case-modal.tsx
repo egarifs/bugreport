@@ -434,14 +434,14 @@ export function TestCaseManagementSection({
                         <td className="py-3 px-3 whitespace-nowrap">
                           {tc.priority === "HIGH" ? (
                             <span className="inline-flex items-center gap-1 text-warn font-semibold">
-                              <svg aria-hidden="true" width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                              <svg aria-hidden="true" width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                 <path d="M4 10.5 8 6.5l4 4" />
                               </svg>
                               High
                             </span>
                           ) : tc.priority === "CRITICAL" ? (
                             <span className="inline-flex items-center gap-1 text-bad font-semibold">
-                              <svg aria-hidden="true" width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                              <svg aria-hidden="true" width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                 <path d="M4 10.5 8 6.5l4 4" />
                               </svg>
                               Critical

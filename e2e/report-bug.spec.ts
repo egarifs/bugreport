@@ -25,7 +25,7 @@ test("lapor bug: peringatan mirip, panduan, prioritas hanya untuk reviewer", asy
   const warn = page.getByRole("status").filter({ hasText: "Mirip CRM-" });
   await expect(warn.getByText(`CRM-${n}`, { exact: true })).toBeVisible();
   await expect(warn).toBeVisible();
-  await expect(warn.getByText("Perlu verifikasi").first()).toBeVisible(); // label kamus, bukan READY_FOR_VERIFICATION
+  await expect(warn.getByText("Ready for QA").first()).toBeVisible(); // label kamus, bukan READY_FOR_VERIFICATION
   await expect(warn.getByRole("link", { name: /Buka/ }).first()).toHaveAttribute("href", /\/bugs\/\d+$/);
 
   const email = "client-e2e@example.test";

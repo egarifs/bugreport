@@ -14,7 +14,13 @@ export default defineConfig({
   webServer: process.env.PLAYWRIGHT_BASE_URL
     ? undefined
     : {
-        env: { NEXTAUTH_URL: baseURL, AUTH_URL: baseURL },
+        env: {
+          NEXTAUTH_URL: baseURL,
+          AUTH_URL: baseURL,
+          // The specs sign in through the dev-login button and expect step1-qa to be an auto-approved admin.
+          ENABLE_DEV_LOGIN: "true",
+          ADMIN_EMAILS: process.env.ADMIN_EMAILS ?? "step1-qa@example.test,admin@example.com",
+        },
         command: `npm run dev -- --hostname 127.0.0.1 --port ${port}`,
         url: `${baseURL}/login`,
         reuseExistingServer: !process.env.CI,
