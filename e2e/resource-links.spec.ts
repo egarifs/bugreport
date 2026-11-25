@@ -11,7 +11,7 @@ async function login(page: Page, email: string) {
 test.describe("AC-AG-03: sumber akun uji (Pengaturan, mockup 95)", () => {
   test("AC-AG-03 admin menyimpan link, URL tidak valid ditolak, link tampil", async ({ page }) => {
     await login(page, "step1-qa@example.test");
-    await page.goto("/projects/CRM/settings");
+    await page.goto("/projects/CRM/settings?tab=agent");
     const sec = page.locator('section[aria-labelledby="resource-heading"]');
     await expect(page.locator("#resource-heading")).toHaveText("Sumber akun uji");
     await expect(sec.getByText("BugBoard hanya menyimpan link")).toBeVisible();
@@ -21,7 +21,7 @@ test.describe("AC-AG-03: sumber akun uji (Pengaturan, mockup 95)", () => {
     await sec.getByRole("button", { name: "Simpan" }).first().click();
     await expect(sec.getByText("harus diawali http")).toBeVisible();
 
-    await page.goto("/projects/CRM/settings"); // fresh form: server action state is per submit
+    await page.goto("/projects/CRM/settings?tab=agent"); // fresh form: server action state is per submit
     const sec2 = page.locator('section[aria-labelledby="resource-heading"]');
     await sec2.getByLabel("Label").first().fill("Akun uji Staging");
     await sec2.getByLabel("URL").first().fill("https://notion.so/akun-uji");

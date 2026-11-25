@@ -18,7 +18,7 @@ export default async function ProjectSettingsPage({
   searchParams,
 }: {
   params: Promise<{ key: string }>;
-  searchParams: Promise<{ newKey?: string }>;
+  searchParams: Promise<{ newKey?: string; tab?: string }>;
 }) {
   const session = await auth();
   const user = session?.user as { id?: string; email?: string; isAdmin?: boolean } | undefined;
@@ -27,6 +27,8 @@ export default async function ProjectSettingsPage({
   const { key } = await params;
   const sp = await searchParams;
   const newCreatedKey = sp.newKey;
+  // Kunci baru dibuat di tab Agent: arahkan ke sana agar pemberitahuannya terlihat.
+  const tab: "umum" | "modul" | "agent" | "ai" = newCreatedKey ? "agent" : sp.tab === "modul" || sp.tab === "agent" || sp.tab === "ai" ? sp.tab : "umum";
 
   const project = await prisma.project.findUnique({
     where: { key: key.toUpperCase() },
@@ -60,18 +62,21 @@ export default async function ProjectSettingsPage({
   return (
     <AppShell activeProjectKey={project.key}>
       <div className="min-h-full flex flex-col">
-        <header className="bg-surface border-b border-slate-200 px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span className="font-mono font-bold text-xs bg-slate-100 text-slate-700 px-2 py-0.5 rounded">
-              {project.key}
-            </span>
-            <span className="font-semibold text-slate-900 text-sm">
-              Project Settings & AI Agent Keys
-            </span>
-          </div>
+        <header className="px-6 md:px-10 pt-6">
+          <h1 className="text-2xl font-semibold text-slate-900">Pengaturan project</h1>
+          <p className="text-sm text-slate-600">{project.name} ({project.key}) · {canManage ? "hanya Admin yang bisa mengubah." : "mode lihat saja."}</p>
         </header>
 
-        <main className="p-6 space-y-8 flex-1">
+        <div className="p-6 md:px-10 flex flex-wrap items-start gap-6 flex-1">
+        <nav aria-label="Bagian pengaturan" className="flex-1 basis-[200px] max-w-[220px] flex flex-col gap-0.5">
+          {([["umum", "Umum dan anggota", project.members.length], ["modul", "Modul", null], ["agent", "Agent dan API key", project.apiKeys.length], ["ai", "Kuota AI Chat", null]] as const).map(([k, l, n]) => (
+            <Link key={k} href={`/projects/${project.key}/settings?tab=${k}`} aria-current={tab === k ? "page" : undefined}
+              className={`flex items-center justify-between h-11 px-3 rounded-lg text-sm ${tab === k ? "bg-action-soft text-link font-semibold" : "text-slate-800 font-medium hover:bg-slate-100"}`}>
+              {l}{n !== null && <span className="font-mono text-[13px] text-slate-600">{n}</span>}
+            </Link>
+          ))}
+        </nav>
+        <main className="flex-[999_1_560px] min-w-0 max-w-[920px] space-y-6">
           {/* Freshly Generated API Key Notice */}
           {newCreatedKey && (
             <div className="bg-warn-bg border border-warn-border rounded-lg p-4 text-xs">
@@ -87,6 +92,31 @@ export default async function ProjectSettingsPage({
             </div>
           )}
 
+          {tab === "umum" && (
+            <section aria-labelledby="umum" className="bg-surface border border-slate-200 rounded-lg p-6 shadow-sm space-y-4">
+              <div>
+                <h2 id="umum" className="text-base font-bold text-slate-900">Umum</h2>
+                <dl className="mt-2 grid grid-cols-[120px_1fr] gap-y-1 text-sm">
+                  <dt className="text-slate-600">Kode</dt><dd className="font-mono">{project.key}</dd>
+                  <dt className="text-slate-600">Nama</dt><dd>{project.name}</dd>
+                  <dt className="text-slate-600">Deskripsi</dt><dd>{project.description ?? "—"}</dd>
+                </dl>
+              </div>
+              <div>
+                <h2 className="text-base font-bold text-slate-900 mb-2">Anggota ({project.members.length})</h2>
+                <ul className="divide-y divide-slate-100 text-sm">
+                  {[...project.members].sort((a, b) => (a.user.name ?? a.user.email).localeCompare(b.user.name ?? b.user.email)).map((m) => (
+                    <li key={m.id} className="flex items-center justify-between gap-3 py-2">
+                      <span className="min-w-0"><span className="block font-medium truncate">{m.user.name ?? m.user.email}</span><span className="block text-xs text-slate-500 truncate">{m.user.email}</span></span>
+                      <span className="text-xs font-semibold text-slate-700">{m.role}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </section>
+          )}
+
+          {tab === "ai" && (
           <section className="bg-surface border border-slate-200 rounded-lg p-6 shadow-sm">
             <h2 className="text-base font-bold text-slate-900">Pemakaian AI Chat hari ini</h2>
             <p className="text-xs text-slate-500 mb-3">Kuota token per project, reset 00:00 WIB. Ubah lewat env <code>CHAT_DAILY_TOKENS_PER_PROJECT</code>.</p>
@@ -98,8 +128,10 @@ export default async function ProjectSettingsPage({
               <div className={`h-full ${aiPct >= 90 ? "bg-rose-600" : "bg-ink"}`} style={{ width: `${aiPct}%` }} />
             </div>
           </section>
+          )}
 
-          <ModulesSection projectId={project.id} projectKey={project.key} canManage={canManage} />
+          {tab === "modul" && <ModulesSection projectId={project.id} projectKey={project.key} canManage={canManage} />}
+          {tab === "agent" && (<>
           {["ADMIN", "QA", "DEVELOPER"].includes(role) && <ResourceSection projectId={project.id} projectKey={project.key} canManage={canManage} />}
 
           {/* AI Agent API Keys Section (CRUD vs View Only Mode) */}
@@ -351,7 +383,9 @@ export default async function ProjectSettingsPage({
               </div>
             )}
           </section>
+          </>)}
         </main>
+        </div>
       </div>
     </AppShell>
   );
