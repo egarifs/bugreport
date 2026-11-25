@@ -134,9 +134,9 @@ Metode: membandingkan teks/label tiap artboard dengan HTML halaman yang sama dar
 |---|---|
 | Login (production) | Sama untuk kalimat utama. Beda: judul merek "Bug Report by egarifs" vs desain "BugBoard Sismedika"; production juga menampilkan form email + kata sandi, desain hanya Google. |
 | Font dan warna aksi | Sama (Atkinson Hyperlegible, aksi `#1E5AA8`). |
-| Latar dan skala abu | **Beda**: aplikasi memakai abu dingin (`#F4F6F7`), desain krem hangat (`#F6F4EF`) dengan tekstur titik. |
-| Semua project (`Projects`) | **Beda**: desain berupa tabel (Peran Anda, Bug aktif, Penghalang rilis, Menunggu review, Aktivitas terakhir), tab Saya anggota/Semua/Arsip, pencarian, pelipatan project uji. |
-| Pengaturan project (`Settings`) | **Beda**: desain memakai tab "Umum dan anggota / Modul / Agent dan API key / Kuota AI Chat"; aplikasi masih satu halaman panjang. |
+| Latar dan skala abu | **Selesai (belum deploy)**: tema terang kini krem hangat `#F6F4EF` dengan tekstur titik; tema gelap tidak berubah; tes kontras lulus. |
+| Semua project (`Projects`) | **Selesai (belum deploy)**: tabel dengan tab, pencarian, urut aktivitas, project uji dilipat. Semula: desain berupa tabel (Peran Anda, Bug aktif, Penghalang rilis, Menunggu review, Aktivitas terakhir), tab Saya anggota/Semua/Arsip, pencarian, pelipatan project uji. |
+| Pengaturan project (`Settings`) | **Selesai (belum deploy)**: tab Umum dan anggota, Modul, Agent dan API key, Kuota AI Chat. Semula: desain memakai tab "Umum dan anggota / Modul / Agent dan API key / Kuota AI Chat"; aplikasi masih satu halaman panjang. |
 | Sprint | **Beda**: daftar sprint Berjalan/Berikutnya/Selesai di kiri, "Lihat tren", "Tutup sprint…", panel revisi dokumen belum seperti desain. |
 | Dokumen bisnis | **Beda**: pembaca per bagian ("Bagian terpilih", "Dirujuk oleh", "Riwayat bagian ini", pencarian bagian) belum ada. |
 | Kesiapan rilis | **Beda**: "Bagikan PDF", kartu Blocker/High aktif, "Cakupan requirement", tautan "Buka RTM" dan "Lihat release notes draf" belum ada di halaman ini. |
