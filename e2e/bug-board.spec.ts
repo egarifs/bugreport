@@ -164,3 +164,21 @@ test("aksi massal: ubah status, assign, dan tag beberapa bug sekaligus", async (
   await expect.poll(async () => (await prisma.bug.findUniqueOrThrow({ where: { id: ids[1] } })).assigneeId).toBe(user.id);
   await prisma.$disconnect();
 });
+
+test("pintasan J/K memilih bug berikutnya di list dan panel pratinjau muncul", async ({ page }) => {
+  const prisma = new PrismaClient();
+  const { project, user } = await qaLogin(prisma, page);
+  const stamp = `E2E jk ${Date.now()}`;
+  const last = await prisma.bug.findFirst({ where: { projectId: project.id }, orderBy: { number: "desc" } });
+  const base = (last?.number ?? 0) + 1;
+  for (let i = 0; i < 2; i++) {
+    await prisma.bug.create({ data: { projectId: project.id, number: base + i, key: `CRM-${base + i}`, title: `${stamp} ${i}`, severity: "LOW", status: "DRAFT", reporterId: user.id, actualResult: "a", expectedResult: "b", stepsToReproduce: "1" } });
+  }
+  await page.setViewportSize({ width: 1400, height: 900 });
+  await page.goto(`/projects/CRM?view=all&q=${encodeURIComponent(stamp)}`);
+  await page.locator("body").click({ position: { x: 5, y: 5 } });
+  await page.keyboard.press("j");
+  await expect(page).toHaveURL(/sel=CRM-\d+/);
+  await expect(page.getByRole("complementary", { name: /Pratinjau dan triase CRM-/ })).toBeVisible();
+  await prisma.$disconnect();
+});

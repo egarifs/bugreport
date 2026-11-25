@@ -68,6 +68,11 @@ export function parseBugListFilters(raw: BugListRawParams, defaultView: BugListV
   };
 }
 
+// Every narrowing filter cleared (tab, layout and paging are the caller's business).
+export function emptyFilters(): Pick<BugListFilters, "q" | "status" | "severity" | "priority" | "moduleIds" | "sprintIds" | "assigneeIds" | "reporterIds" | "tagIds" | "page"> {
+  return { q: undefined, status: [], severity: [], priority: [], moduleIds: [], sprintIds: [], assigneeIds: [], reporterIds: [], tagIds: [], page: 1 };
+}
+
 // True when the user narrowed the list beyond the tab itself (drives "reset" and empty-state copy).
 export function isFiltered(f: BugListFilters): boolean {
   return Boolean(
@@ -153,4 +158,10 @@ export function bugListQuery(f: BugListFilters, over: Record<string, string | un
 export function sanitizeViewQuery(query: string): string {
   const raw = Object.fromEntries(new URLSearchParams(query)) as BugListRawParams;
   return bugListQuery(parseBugListFilters(raw, "all"), { page: undefined, cols: undefined });
+}
+
+// Prefix for selection links ("...?view=all&sel="): the caller appends an encoded bug key.
+export function bugListSelectionBase(projectKey: string, f: BugListFilters): string {
+  const href = bugListHref(projectKey, f, { sel: undefined });
+  return `${href}${href.includes("?") ? "&" : "?"}sel=`;
 }

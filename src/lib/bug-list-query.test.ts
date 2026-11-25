@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { buildBugWhere, bugListHref, isFiltered, pageWindow, parseBugListFilters, UNASSIGNED } from "./bug-list-query";
+import { bugListSelectionBase, buildBugWhere, bugListHref, isFiltered, pageWindow, parseBugListFilters, UNASSIGNED } from "./bug-list-query";
 
 const ctx = { projectId: "p1", userId: "u1" };
 
@@ -73,4 +73,9 @@ test("tag filter matches any selected tag and survives in the URL", () => {
   assert.ok((buildBugWhere(f, ctx).AND as object[]).some((c) => JSON.stringify(c) === JSON.stringify({ tags: { some: { id: { in: ["t1", "t2"] } } } })));
   assert.equal(isFiltered(f), true);
   assert.equal(bugListHref("CRM", f), "/projects/CRM?view=all&tag=t1%2Ct2");
+});
+
+test("selection base always ends in sel= so J/K can append a bug key", () => {
+  assert.equal(bugListSelectionBase("CRM", parseBugListFilters({ view: "all", severity: "HIGH" }, "all")), "/projects/CRM?view=all&severity=HIGH&sel=");
+  assert.equal(bugListSelectionBase("CRM", parseBugListFilters({}, "all")), "/projects/CRM?view=all&sel=");
 });
