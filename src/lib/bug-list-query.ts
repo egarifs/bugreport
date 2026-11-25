@@ -1,4 +1,5 @@
-import { BugSeverity, BugStatus, type Prisma } from "@prisma/client";
+import { BugPriority, BugSeverity, BugStatus, type Prisma } from "@prisma/client";
+import { BOARD_PAGE, boardLimit } from "./bug-board";
 
 // Pure query rules for the project bug list: URL params in, validated filters and Prisma input out.
 // No database access here so the rules stay unit-testable.
@@ -9,52 +10,68 @@ export const DONE_STATUSES: BugStatus[] = ["CLOSED", "INVALID", "DUPLICATE", "CA
 
 export type BugListView = "review" | "mine" | "all";
 
+export type BugLayout = "list" | "board";
+
 export type BugListFilters = {
   view: BugListView;
+  layout: BugLayout;
+  cols: number; // board cards loaded per column
   q?: string;
-  status?: BugStatus;
-  severity?: BugSeverity;
-  moduleId?: string;
-  sprintId?: string;
-  assigneeId?: string; // user id, or UNASSIGNED
-  reporterId?: string;
+  // Multi-select filters: values within one filter are ORed, different filters are ANDed.
+  status: BugStatus[];
+  severity: BugSeverity[];
+  priority: BugPriority[];
+  moduleIds: string[];
+  sprintIds: string[];
+  assigneeIds: string[]; // user ids, or UNASSIGNED
+  reporterIds: string[];
   page: number;
 };
 
 export type BugListRawParams = Partial<Record<
-  "view" | "q" | "status" | "severity" | "module" | "sprint" | "assignee" | "reporter" | "page",
+  "view" | "layout" | "cols" | "q" | "status" | "severity" | "priority" | "module" | "sprint" | "assignee" | "reporter" | "page",
   string
 >>;
 
 const ID_MAX = 64;
 const Q_MAX = 100;
+const LIST_MAX = 50;
 
 const pickEnum = <T extends string>(values: readonly T[], v?: string): T | undefined =>
   values.find((x) => x === v);
 
-const cleanId = (v?: string) => {
-  const s = v?.trim();
-  return s && s.length <= ID_MAX ? s : undefined;
-};
+// "a,b,c" -> unique, validated values (unknown ones dropped, list capped).
+const csv = (v?: string): string[] => [...new Set((v ?? "").split(",").map((x) => x.trim()).filter(Boolean))].slice(0, LIST_MAX);
+const enumList = <T extends string>(values: readonly T[], v?: string): T[] =>
+  csv(v).map((x) => pickEnum(values, x)).filter((x): x is T => Boolean(x));
+const idList = (v?: string): string[] => csv(v).filter((x) => x.length <= ID_MAX);
 
 export function parseBugListFilters(raw: BugListRawParams, defaultView: BugListView): BugListFilters {
   const page = Number.parseInt(raw.page ?? "", 10);
+  const layout = pickEnum(["list", "board"] as const, raw.layout) ?? "list";
   return {
-    view: pickEnum(["review", "mine", "all"] as const, raw.view) ?? defaultView,
+    // The board spans every status, so it defaults to the "all" tab instead of the role's landing queue.
+    view: pickEnum(["review", "mine", "all"] as const, raw.view) ?? (layout === "board" ? "all" : defaultView),
+    layout,
+    cols: boardLimit(raw.cols),
     q: raw.q?.trim().slice(0, Q_MAX) || undefined,
-    status: pickEnum(Object.values(BugStatus), raw.status),
-    severity: pickEnum(Object.values(BugSeverity), raw.severity),
-    moduleId: cleanId(raw.module),
-    sprintId: cleanId(raw.sprint),
-    assigneeId: cleanId(raw.assignee),
-    reporterId: cleanId(raw.reporter),
+    status: enumList(Object.values(BugStatus), raw.status),
+    severity: enumList(Object.values(BugSeverity), raw.severity),
+    priority: enumList(Object.values(BugPriority), raw.priority),
+    moduleIds: idList(raw.module),
+    sprintIds: idList(raw.sprint),
+    assigneeIds: idList(raw.assignee),
+    reporterIds: idList(raw.reporter),
     page: Number.isFinite(page) && page > 0 ? Math.min(page, 10_000) : 1,
   };
 }
 
 // True when the user narrowed the list beyond the tab itself (drives "reset" and empty-state copy).
 export function isFiltered(f: BugListFilters): boolean {
-  return Boolean(f.q || f.status || f.severity || f.moduleId || f.sprintId || f.assigneeId || f.reporterId);
+  return Boolean(
+    f.q || f.status.length || f.severity.length || f.priority.length ||
+    f.moduleIds.length || f.sprintIds.length || f.assigneeIds.length || f.reporterIds.length,
+  );
 }
 
 const mineWhere = (userId: string): Prisma.BugWhereInput => ({
@@ -71,17 +88,18 @@ export function bugTabWhere(view: BugListView, userId: string): Prisma.BugWhereI
 // Every clause is ANDed so the tab, filters and search can never override each other.
 export function buildBugWhere(f: BugListFilters, ctx: { projectId: string; userId: string }): Prisma.BugWhereInput {
   const and: Prisma.BugWhereInput[] = [bugTabWhere(f.view, ctx.userId)];
-  if (f.status) and.push({ status: f.status });
-  if (f.severity) and.push({ severity: f.severity });
-  if (f.moduleId) and.push({ moduleId: f.moduleId });
-  if (f.sprintId) and.push({ sprintId: f.sprintId });
-  if (f.reporterId) and.push({ reporterId: f.reporterId });
-  if (f.assigneeId) {
-    and.push(
-      f.assigneeId === UNASSIGNED
-        ? { assigneeId: null, bugAssignees: { none: {} } }
-        : { OR: [{ assigneeId: f.assigneeId }, { bugAssignees: { some: { userId: f.assigneeId } } }] },
-    );
+  if (f.status.length) and.push({ status: { in: f.status } });
+  if (f.severity.length) and.push({ severity: { in: f.severity } });
+  if (f.priority.length) and.push({ priority: { in: f.priority } });
+  if (f.moduleIds.length) and.push({ moduleId: { in: f.moduleIds } });
+  if (f.sprintIds.length) and.push({ sprintId: { in: f.sprintIds } });
+  if (f.reporterIds.length) and.push({ reporterId: { in: f.reporterIds } });
+  if (f.assigneeIds.length) {
+    const users = f.assigneeIds.filter((id) => id !== UNASSIGNED);
+    const or: Prisma.BugWhereInput[] = [];
+    if (users.length) or.push({ assigneeId: { in: users } }, { bugAssignees: { some: { userId: { in: users } } } });
+    if (users.length < f.assigneeIds.length) or.push({ assigneeId: null, bugAssignees: { none: {} } });
+    and.push({ OR: or });
   }
   if (f.q) {
     and.push({ OR: [{ title: { contains: f.q, mode: "insensitive" } }, { key: { contains: f.q, mode: "insensitive" } }] });
@@ -105,14 +123,17 @@ export function pageWindow(page: number, total: number, size = PAGE_SIZE) {
 export function bugListHref(projectKey: string, f: BugListFilters, over: Record<string, string | undefined> = {}): string {
   const base: Record<string, string | undefined> = {
     view: f.view,
+    layout: f.layout === "board" ? "board" : undefined,
     q: f.q,
-    status: f.status,
-    severity: f.severity,
-    module: f.moduleId,
-    sprint: f.sprintId,
-    assignee: f.assigneeId,
-    reporter: f.reporterId,
+    status: f.status.join(","),
+    severity: f.severity.join(","),
+    priority: f.priority.join(","),
+    module: f.moduleIds.join(","),
+    sprint: f.sprintIds.join(","),
+    assignee: f.assigneeIds.join(","),
+    reporter: f.reporterIds.join(","),
     page: f.page > 1 ? String(f.page) : undefined,
+    cols: f.cols > BOARD_PAGE ? String(f.cols) : undefined,
   };
   const p = new URLSearchParams();
   for (const [k, v] of Object.entries({ ...base, ...over })) if (v) p.set(k, v);

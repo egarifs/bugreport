@@ -17,8 +17,13 @@ import { revalidatePath } from "next/cache";
 import { ActionForm, type ActionResult } from "@/components/ui/action-form";
 import { triageBug, startOfTodayWib } from "@/lib/triage-service";
 import { TriageKeys } from "./triage-keys";
+import { BugBoard } from "./bug-board";
+import { LayoutToggle } from "./layout-toggle";
+import { FilterMenu } from "./filter-menu";
+import { loadBoard } from "@/lib/bug-board-service";
+import { BOARD_COLUMNS, BOARD_PAGE, dragTargets } from "@/lib/bug-board";
 import {
-  UNASSIGNED, bugListHref, bugOrderBy, bugTabWhere, buildBugWhere, isFiltered, pageWindow, parseBugListFilters,
+  bugListHref, bugOrderBy, bugTabWhere, buildBugWhere, isFiltered, pageWindow, parseBugListFilters,
   type BugListView as View, type BugListRawParams,
 } from "@/lib/bug-list-query";
 
@@ -50,14 +55,17 @@ export default async function ProjectDetailPage({
   // Landing page per role: QA reviews drafts, vendor/dev sees own work, client goes to portal.
   if (role === "CLIENT" && !user.isAdmin) redirect(`/projects/${project.key}/portal`);
   const filters = parseBugListFilters(sp, canReview ? "review" : canWork ? "mine" : "all");
-  const { view, status, severity, q } = filters;
+  const { view, q } = filters;
   const base: Prisma.BugWhereInput = { projectId: project.id };
   const listWhere = buildBugWhere(filters, { projectId: project.id, userId: user.id });
 
   const today = startOfTodayWib();
   const sprints = await prisma.sprint.findMany({ where: { projectId: project.id }, orderBy: { startsAt: "desc" }, select: { id: true, name: true } });
+  const isBoard = filters.layout === "board";
+  const colLimit = filters.cols;
   const total = await prisma.bug.count({ where: listWhere });
   const win = pageWindow(filters.page, total);
+  const boardColumns = isBoard ? await loadBoard(listWhere, colLimit) : [];
   const [reviewCount, mineCount, modules, members, reviewedToday, closedToday, bugs] = await Promise.all([
     prisma.bug.count({ where: { ...base, status: "DRAFT" } }),
     prisma.bug.count({ where: { ...base, ...bugTabWhere("mine", user.id) } }),
@@ -71,7 +79,7 @@ export default async function ProjectDetailPage({
       where: listWhere,
       orderBy: bugOrderBy(view),
       skip: win.skip,
-      take: win.take,
+      take: isBoard ? 0 : win.take,
       include: {
         assignee: { select: { name: true, email: true } },
         module: { select: { name: true } },
@@ -86,7 +94,7 @@ export default async function ProjectDetailPage({
     { id: "all", label: "Semua bug", show: true },
   ];
   // Tab links reset filters and paging; selection links keep both.
-  const href = (v: View) => bugListHref(project.key, { ...filters, view: v, q: undefined, status: undefined, severity: undefined, moduleId: undefined, sprintId: undefined, assigneeId: undefined, reporterId: undefined, page: 1 });
+  const href = (v: View) => bugListHref(project.key, { ...filters, view: v, q: undefined, status: [], severity: [], priority: [], moduleIds: [], sprintIds: [], assigneeIds: [], reporterIds: [], page: 1 });
   const selHref = (k: string) => bugListHref(project.key, filters, { sel: k });
   const pageHref = (n: number) => bugListHref(project.key, filters, { page: n > 1 ? String(n) : undefined });
   const selected = bugs.find((b) => b.key === sp.sel) ?? null;
@@ -258,13 +266,17 @@ export default async function ProjectDetailPage({
                   )}
                 </Link>
               ))}
-              <span className="ml-auto text-xs text-slate-400 font-mono pr-1">{total} bug</span>
+              <span className="ml-auto flex items-center gap-3"><span className="text-xs text-slate-400 font-mono">{total} bug</span><LayoutToggle current={filters.layout} listHref={bugListHref(project.key, filters, { layout: "list", cols: undefined })} boardHref={bugListHref(project.key, filters, { layout: "board", page: undefined })} /></span>
             </nav>
 
-            <form className="flex flex-wrap items-center gap-2 text-xs" role="search">
-              <input type="hidden" name="view" value={view} />
-              <label className="sr-only" htmlFor="q">Cari bug</label>
-              <div className="relative flex-1 min-w-[200px]">
+            <div className="flex flex-wrap items-center gap-2 text-xs">
+              <form role="search" className="relative flex-1 min-w-[200px] max-w-md">
+                {Object.entries({
+                  view, layout: filters.layout, status: filters.status.join(","), severity: filters.severity.join(","),
+                  priority: filters.priority.join(","), module: filters.moduleIds.join(","), sprint: filters.sprintIds.join(","),
+                  assignee: filters.assigneeIds.join(","), reporter: filters.reporterIds.join(","),
+                }).map(([n, v]) => v && <input key={n} type="hidden" name={n} value={v} />)}
+                <label className="sr-only" htmlFor="q">Cari bug</label>
                 <input
                   id="q"
                   type="search"
@@ -276,58 +288,37 @@ export default async function ProjectDetailPage({
                 <svg className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
-              </div>
-
-              <select name="severity" defaultValue={severity ?? ""} aria-label="Severity" className="px-2.5 py-1.5 border border-slate-200 rounded-md bg-surface text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-1 focus:ring-slate-400 cursor-pointer">
-                <option value="">Semua severity</option>
-                {Object.values(BugSeverity).map((s) => <option key={s} value={s}>{SEVERITY_STYLE[s].label}</option>)}
-              </select>
-
-              {view === "all" && (
-                <select name="status" defaultValue={status ?? ""} aria-label="Status" className="px-2.5 py-1.5 border border-slate-200 rounded-md bg-surface text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-1 focus:ring-slate-400 cursor-pointer">
-                  <option value="">Semua status</option>
-                  {Object.values(BugStatus).map((s) => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
-                </select>
-              )}
-
-              {modules.length > 0 && (
-                <select name="module" defaultValue={filters.moduleId ?? ""} aria-label="Modul" className="px-2.5 py-1.5 border border-slate-200 rounded-md bg-surface text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-1 focus:ring-slate-400 cursor-pointer">
-                  <option value="">Semua modul</option>
-                  {modules.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
-                </select>
-              )}
-
-              {sprints.length > 0 && (
-                <select name="sprint" defaultValue={filters.sprintId ?? ""} aria-label="Sprint" className="px-2.5 py-1.5 border border-slate-200 rounded-md bg-surface text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-1 focus:ring-slate-400 cursor-pointer">
-                  <option value="">Semua sprint</option>
-                  {sprints.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
-                </select>
-              )}
-
-              <select name="assignee" defaultValue={filters.assigneeId ?? ""} aria-label="Assignee" className="px-2.5 py-1.5 border border-slate-200 rounded-md bg-surface text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-1 focus:ring-slate-400 cursor-pointer">
-                <option value="">Semua assignee</option>
-                <option value={UNASSIGNED}>Belum di-assign</option>
-                {members.map((m) => <option key={m.userId} value={m.userId}>{m.user.name || m.user.email}</option>)}
-              </select>
-
-              <select name="reporter" defaultValue={filters.reporterId ?? ""} aria-label="Reporter" className="px-2.5 py-1.5 border border-slate-200 rounded-md bg-surface text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-1 focus:ring-slate-400 cursor-pointer">
-                <option value="">Semua reporter</option>
-                {members.map((m) => <option key={m.userId} value={m.userId}>{m.user.name || m.user.email}</option>)}
-              </select>
-
-              <button type="submit" className="px-3 py-1.5 border border-slate-200 bg-slate-50 hover:bg-slate-100 rounded-md font-semibold text-slate-700 transition-colors">
-                Terapkan
-              </button>
-
-              {filtered && (
-                <Link href={href(view)} className="px-2 py-1.5 text-slate-500 hover:text-slate-900 text-xs underline">
-                  Reset
-                </Link>
-              )}
-            </form>
+              </form>
+              <FilterMenu
+                meId={userId}
+                categories={[
+                  { param: "assignee", label: "Assignee", options: members.map((m) => ({ value: m.userId, label: (m.user.name || m.user.email) + (m.userId === userId ? " (Saya)" : "") })) },
+                  { param: "reporter", label: "Dilaporkan oleh", options: members.map((m) => ({ value: m.userId, label: m.user.name || m.user.email })) },
+                  { param: "severity", label: "Severity", options: Object.values(BugSeverity).map((v) => ({ value: v, label: SEVERITY_STYLE[v].label })) },
+                  { param: "priority", label: "Priority", options: Object.values(BugPriority).map((v) => ({ value: v, label: v })) },
+                  { param: "status", label: "Status", options: Object.values(BugStatus).map((v) => ({ value: v, label: STATUS_LABEL[v] })) },
+                  { param: "module", label: "Modul", options: modules.map((m) => ({ value: m.id, label: m.name })) },
+                  { param: "sprint", label: "Sprint", options: sprints.map((x) => ({ value: x.id, label: x.name })) },
+                ]}
+              />
+            </div>
           </div>
 
-          {bugs.length === 0 ? (
+          {isBoard ? (
+            <BugBoard
+              projectKey={project.key}
+              columns={boardColumns.map((c) => {
+                const def = BOARD_COLUMNS.find((x) => x.id === c.id)!;
+                return {
+                  ...c,
+                  statuses: def.statuses,
+                  dropStatus: def.dropStatus,
+                  moreHref: bugListHref(project.key, filters, { cols: String(colLimit + BOARD_PAGE) }),
+                };
+              })}
+              allowed={Object.fromEntries(Object.values(BugStatus).map((st) => [st, dragTargets(st, project.members[0]?.role ?? null, Boolean(user.isAdmin))]))}
+            />
+          ) : bugs.length === 0 ? (
             <StatePanel
               kind={filtered ? "filtered" : "empty"}
               title={filtered ? "Tidak ada bug yang cocok" : view === "review" ? "Antrean bersih" : "Belum ada bug"}
