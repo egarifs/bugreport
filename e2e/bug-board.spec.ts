@@ -42,7 +42,7 @@ test("board: pindah kartu lewat menu, status tersimpan; transisi terlarang tidak
   await page.goto(`/projects/CRM?layout=board&q=${encodeURIComponent(title)}`);
 
   // filter menu: severity High keeps the card, Low hides it
-  await page.getByRole("button", { name: "Filter" }).click();
+  await page.getByRole("button", { name: /^Filter( \d+)?$/ }).click();
   await page.getByRole("button", { name: /^Severity/ }).click();
   await page.getByRole("checkbox", { name: "Low" }).check();
   await expect(page.getByText(title)).toHaveCount(0);
@@ -87,9 +87,39 @@ test("board: seret kartu ke kolom valid pindah, ke kolom yang tidak diizinkan di
   await expect(page.getByText("#e2e-tag")).toBeVisible();
 
   await page.goto(`/projects/CRM?view=all&q=${encodeURIComponent(title)}`);
-  await page.getByRole("button", { name: "Filter" }).click();
+  await page.getByRole("button", { name: /^Filter( \d+)?$/ }).click();
   await page.getByRole("button", { name: /^Tag/ }).click();
   await page.getByRole("checkbox", { name: "#e2e-tag" }).check();
   await expect(page.getByRole("link", { name: title })).toBeVisible();
+  await prisma.$disconnect();
+});
+
+test("filter tersimpan: simpan, terapkan dari menu, hapus", async ({ page }) => {
+  const prisma = new PrismaClient();
+  const { project, user } = await qaLogin(prisma, page);
+  await prisma.savedBugView.deleteMany({ where: { projectId: project.id, ownerId: user.id } });
+  const name = `E2E kritis ${Date.now()}`;
+  await page.setViewportSize({ width: 1400, height: 900 });
+  await page.goto("/projects/CRM?view=all&severity=BLOCKER");
+
+  await page.getByRole("button", { name: /^Filter( \d+)?$/ }).click();
+  await page.getByRole("button", { name: /^Filter tersimpan/ }).click();
+  await page.getByLabel("Nama filter").fill(name);
+  await page.getByRole("button", { name: "Simpan filter" }).click();
+  await expect(page.getByText("Filter disimpan.")).toBeVisible();
+  expect((await prisma.savedBugView.findFirstOrThrow({ where: { projectId: project.id, ownerId: user.id, name } })).query).toContain("severity=BLOCKER");
+
+  // apply from a clean URL
+  await page.goto("/projects/CRM?view=all");
+  await page.getByRole("button", { name: /^Filter( \d+)?$/ }).click();
+  await page.getByRole("button", { name: /^Filter tersimpan/ }).click();
+  await page.getByRole("button", { name, exact: true }).click();
+  await expect(page).toHaveURL(/severity=BLOCKER/);
+  await expect(page.getByRole("button", { name: /Hapus filter Severity/ })).toBeVisible();
+
+  await page.getByRole("button", { name: /^Filter( \d+)?$/ }).click();
+  await page.getByRole("button", { name: /^Filter tersimpan/ }).click();
+  await page.getByRole("button", { name: `Hapus filter ${name}` }).click();
+  await expect.poll(() => prisma.savedBugView.count({ where: { projectId: project.id, ownerId: user.id, name } })).toBe(0);
   await prisma.$disconnect();
 });

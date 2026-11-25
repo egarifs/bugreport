@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { deleteViewAction, saveViewAction } from "./saved-view-actions";
 
@@ -29,6 +29,13 @@ export function FilterMenu({ categories, meId, projectKey, savedViews, canShare 
   useEffect(() => setLocal({}), [urlKey]);
   const SAVED = "__saved";
   const root = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const [popTop, setPopTop] = useState(0); // phones: the popover is fixed, so place it under the button
+  // Focus the search box on pointer devices only; on phones it would pop the keyboard and scroll the page.
+  useEffect(() => {
+    if (open && window.matchMedia("(hover: hover)").matches) searchRef.current?.focus({ preventScroll: true });
+  }, [open, active]);
 
   useEffect(() => {
     if (!open) return;
@@ -90,7 +97,8 @@ export function FilterMenu({ categories, meId, projectKey, savedViews, canShare 
         type="button"
         aria-haspopup="dialog"
         aria-expanded={open}
-        onClick={() => setOpen((o) => !o)}
+        ref={btnRef}
+        onClick={() => { setPopTop((btnRef.current?.getBoundingClientRect().bottom ?? 0) + 8); setOpen((o) => !o); }}
         className="inline-flex items-center gap-2 px-3 py-1.5 border border-slate-200 rounded-md bg-surface text-slate-700 text-xs font-semibold hover:bg-slate-50"
       >
         <svg aria-hidden width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M2 4.5h7M12 4.5h2M2 11.5h2M7 11.5h7"/><circle cx="10.5" cy="4.5" r="1.5"/><circle cx="5.5" cy="11.5" r="1.5"/></svg>
@@ -117,7 +125,7 @@ export function FilterMenu({ categories, meId, projectKey, savedViews, canShare 
       )}
 
       {open && cat && (
-        <div role="dialog" aria-label="Filter bug" className="absolute left-0 top-full mt-2 z-30 flex w-[min(560px,92vw)] bg-surface border border-slate-200 rounded-lg shadow-lg overflow-hidden">
+        <div role="dialog" aria-label="Filter bug" style={{ "--pop-top": `${popTop}px` } as CSSProperties} className="fixed left-3 right-3 top-[var(--pop-top)] sm:absolute sm:left-0 sm:right-auto sm:top-full sm:w-[560px] sm:mt-2 z-30 flex bg-surface border border-slate-200 rounded-lg shadow-lg overflow-hidden">
           <ul className="w-48 shrink-0 border-r border-slate-200 py-1 max-h-[420px] overflow-y-auto">
             <li>
               <button type="button" aria-current={savedOpen ? "true" : undefined} onClick={() => { setActive(SAVED); setMsg(null); }}
@@ -182,7 +190,7 @@ export function FilterMenu({ categories, meId, projectKey, savedViews, canShare 
               <input
                 id="filter-search"
                 type="search"
-                autoFocus
+                ref={searchRef}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder={`Cari ${cat.label.toLowerCase()}`}
