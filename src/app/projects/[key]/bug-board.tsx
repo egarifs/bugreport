@@ -44,7 +44,7 @@ export function BugBoard({ projectKey, columns, allowed }: {
     setCards((cs) => cs.map((c) => (c.id === id ? { ...c, status: target } : c)));
     startTransition(async () => {
       let res: { ok?: string; error?: string };
-      try { res = await moveBugAction(projectKey, id, target); } catch { res = { error: "Gagal memindahkan bug." }; }
+      try { res = await moveBugAction(projectKey, id, target, card.status); } catch { res = { error: "Gagal memindahkan bug." }; }
       if ("error" in res && res.error) { setCards(prev); setToast(res.error); }
       else { setToast(`${card.key}: ${STATUS_LABEL[card.status]} → ${STATUS_LABEL[target]}`); router.refresh(); }
     });

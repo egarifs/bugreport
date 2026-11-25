@@ -11,10 +11,12 @@ type Actor = Awaited<ReturnType<typeof checkProjectPermission>>;
 
 // Status change from a board drag. Same gate, audit and notification as the detail page,
 // restricted to moves that need no extra input. Caller must already be a project member.
-export async function moveBugStatus(actor: Actor, projectId: string, bugId: string, target: BugStatus) {
+export async function moveBugStatus(actor: Actor, projectId: string, bugId: string, target: BugStatus, expectedFrom?: BugStatus) {
   if (!Object.values(BugStatus).includes(target)) return { error: "Status tujuan tidak valid." };
   const bug = await prisma.bug.findFirst({ where: { id: bugId, projectId } });
   if (!bug) return { error: "Bug tidak ditemukan." };
+  // The board sends the status it displays; if someone else moved the bug meanwhile, refuse instead of overwriting.
+  if (expectedFrom && bug.status !== expectedFrom) return { error: "Status bug sudah berubah. Muat ulang board." };
   if (bug.status === target) return { ok: "Status tidak berubah." };
   if (needsDetailPage(bug.status, target)) return { error: "Perpindahan ini perlu data tambahan. Buka detail bug." };
 

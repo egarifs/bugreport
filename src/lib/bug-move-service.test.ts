@@ -36,3 +36,15 @@ test("board move: allowed drag audited, forbidden or detail-only moves leave sta
   assert.equal((await moveBugStatus(q, other.id, bug.id, "IN_PROGRESS")).error, "Bug tidak ditemukan.");
   assert.equal(await status(), "READY_FOR_VERIFICATION");
 });
+
+test("board move: a stale expected status is refused and the newer status survives", async () => {
+  const t = Date.now();
+  const qa = await prisma.user.create({ data: { email: `qa_bms${t}@example.com`, name: "qa", status: "ACTIVE" } });
+  const project = await createTestProject({ data: { key: `BS${String(t).slice(-6)}`, name: "Stale", members: { create: [{ userId: qa.id, role: "QA" }] } } });
+  const bug = await prisma.bug.create({ data: { projectId: project.id, number: 1, key: `${project.key}-1`, title: "x", severity: "HIGH", reporterId: qa.id, status: "IN_PROGRESS" } });
+  const q = { ...qa, role: "QA" as const };
+  // another browser already moved it from OPEN to IN_PROGRESS; this one still shows OPEN
+  assert.match((await moveBugStatus(q, project.id, bug.id, "DESIGN_REVIEW", "OPEN")).error ?? "", /sudah berubah/);
+  assert.equal((await prisma.bug.findUniqueOrThrow({ where: { id: bug.id } })).status, "IN_PROGRESS");
+  assert.ok((await moveBugStatus(q, project.id, bug.id, "DESIGN_REVIEW", "IN_PROGRESS")).ok);
+});
