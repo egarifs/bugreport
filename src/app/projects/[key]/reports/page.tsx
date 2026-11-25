@@ -11,6 +11,8 @@ import { SummaryTab } from "./summary-tab";
 import { exitStatus } from "@/lib/stlc";
 import { exitFacts } from "@/lib/stlc-service";
 import { PerformanceTab } from "./performance-tab";
+import { PrintButton } from "@/components/layout/print-button";
+import { releaseCoverage } from "@/lib/requirement-service";
 
 const SEVERITIES = ["BLOCKER", "HIGH", "MEDIUM", "LOW"] as const;
 
@@ -51,6 +53,8 @@ export default async function ReportsPage({
   // Kriteria keluar dari Test Plan yang disetujui (informatif, tidak memblokir rilis). Disembunyikan dari Klien.
   const plan = isClient ? null : await prisma.stlcDoc.findFirst({ where: { projectId: project.id, kind: "TEST_PLAN", status: "APPROVED" }, orderBy: { approvedAt: "desc" }, select: { id: true, title: true } });
   const exit = plan ? exitStatus(await exitFacts(project.id)) : [];
+  const coverage = isClient ? null : await releaseCoverage(project.id, project.key);
+  const draftNotes = isClient ? null : await prisma.stlcDoc.findFirst({ where: { projectId: project.id, kind: "RELEASE_NOTES", status: "DRAFT" }, orderBy: { updatedAt: "desc" }, select: { id: true } });
   const maxSev = Math.max(1, ...SEVERITIES.map((s) => r.openBySeverity[s] ?? 0));
 
   return (
@@ -59,6 +63,7 @@ export default async function ReportsPage({
         <header className="flex flex-wrap items-center justify-between gap-3">
           <h1 className="text-lg font-semibold text-slate-900">Laporan kesiapan rilis</h1>
           {!isClient && <ReportTabs projectKey={project.key} active="release" />}
+          {!isClient && <PrintButton label="Bagikan PDF" />}
           {!isClient && <a
             href={`/api/projects/${project.key}/export`}
             className="press-snappy px-3.5 py-2 text-sm font-bold rounded bg-surface border border-slate-300 text-slate-800 hover:bg-slate-50 hover:border-slate-400 shadow-xs"
@@ -117,6 +122,29 @@ export default async function ReportsPage({
                 </li>
               ))}
             </ul>
+          )}
+        </section>
+
+        <section aria-label="Ringkasan rilis" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {([["BLOCKER", "Blocker aktif"], ["HIGH", "High aktif"]] as const).map(([sev, label]) => {
+            const n = r.openBySeverity[sev] ?? 0;
+            return (
+              <div key={sev} className="bg-surface border border-slate-200 rounded-lg p-4">
+                <div className={`text-2xl font-bold tabular-nums ${n > 0 ? "text-bad" : "text-slate-900"}`}>{n}</div>
+                <div className="text-xs font-bold text-slate-700">{label}</div>
+              </div>
+            );
+          })}
+          {coverage && (
+            <div className="bg-surface border border-slate-200 rounded-lg p-4 sm:col-span-2">
+              <div className="text-2xl font-bold tabular-nums text-slate-900">{coverage.verified}/{coverage.total}</div>
+              <div className="text-xs font-bold text-slate-700">Cakupan requirement terverifikasi</div>
+              <div className="text-xs text-slate-500">{coverage.withoutCase} requirement belum punya test case</div>
+              <div className="mt-2 flex flex-wrap gap-3 text-xs font-bold">
+                <Link className="underline" href={`/projects/${project.key}/rtm?doc=${coverage.slug}`}>Buka RTM</Link>
+                {draftNotes && <Link className="underline" href={`/projects/${project.key}/stlc/${draftNotes.id}`}>Lihat release notes draf</Link>}
+              </div>
+            </div>
           )}
         </section>
 

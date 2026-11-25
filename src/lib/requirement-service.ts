@@ -75,3 +75,12 @@ export async function sectionDor(sectionId: string) {
   const dor = dorChecks({ versionApproved: s.doc.versions[0]?.status === "APPROVED", criteria: s.acceptanceCriteria, moduleMarked: Boolean(s.moduleId), testCaseCount: s._count.testCases });
   return { section: s, dor };
 }
+
+/** Ringkasan cakupan requirement untuk laporan rilis: dokumen bisnis pertama (sama dengan RTM bawaan). */
+export async function releaseCoverage(projectId: string, projectKey: string) {
+  const doc = await prisma.businessDoc.findFirst({ where: { projectId }, orderBy: { title: "asc" }, select: { id: true, slug: true } });
+  if (!doc) return null;
+  const rtm = await loadRtm(projectId, projectKey, doc.id);
+  if (!rtm || rtm.rows.length === 0) return null;
+  return { slug: doc.slug, total: rtm.rows.length, verified: rtm.rows.filter((r) => r.coverage === "VERIFIED").length, withoutCase: rtm.rows.filter((r) => r.coverage === "NO_TC").length };
+}
