@@ -5,6 +5,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { AppShell } from "@/components/layout/app-shell";
 import { TypeIcon, timeAgo } from "@/components/layout/notification-parts";
+import { groupNotifications } from "@/lib/notification-groups";
 
 const PAGE = 50;
 
@@ -64,21 +65,28 @@ export default async function NotificationsPage({ searchParams }: { searchParams
               <p className="mt-1 text-sm text-slate-500">Notifikasi disimpan 90 hari.</p>
             </div>
           ) : (
-            <ul className="max-w-3xl bg-surface border border-slate-200 rounded-lg divide-y divide-slate-100">
-              {items.map((n) => (
-                <li key={n.id}>
-                  <Link href={`/notifications/${n.id}`} prefetch={false} className={`flex gap-3 px-5 py-4 hover:bg-slate-50 ${n.readAt ? "" : "bg-slate-50/60"}`}>
-                    <TypeIcon type={n.type} />
-                    <span className="flex-1 min-w-0">
-                      <span className={`block text-sm ${n.readAt ? "text-slate-700" : "font-semibold text-slate-900"}`}>{n.title}</span>
-                      {n.body && <span className="block text-sm text-slate-500 truncate mt-0.5">{n.body}</span>}
-                      <span className="block text-xs text-slate-500 mt-1">{timeAgo(n.createdAt.toISOString(), now)}</span>
-                    </span>
-                    {!n.readAt && <span className="mt-2 w-2 h-2 shrink-0 rounded-full bg-rose-600" aria-label="Belum dibaca" />}
-                  </Link>
-                </li>
+            <div className="max-w-3xl space-y-5">
+              {groupNotifications(items, new Date(now)).map((g) => (
+                <section key={g.key} aria-label={g.label}>
+                  <h2 className="px-1 mb-2 text-xs font-bold uppercase tracking-wide text-slate-500">{g.label}</h2>
+                  <ul className="bg-surface border border-slate-200 rounded-lg divide-y divide-slate-100">
+                    {g.items.map((n) => (
+                      <li key={n.id}>
+                        <Link href={`/notifications/${n.id}`} prefetch={false} className={`flex gap-3 px-5 py-4 hover:bg-slate-50 ${n.readAt ? "" : "bg-slate-50/60"}`}>
+                          <TypeIcon type={n.type} />
+                          <span className="flex-1 min-w-0">
+                            <span className={`block text-sm ${n.readAt ? "text-slate-700" : "font-semibold text-slate-900"}`}>{n.title}</span>
+                            {n.body && <span className="block text-sm text-slate-500 truncate mt-0.5">{n.body}</span>}
+                            <span className="block text-xs text-slate-500 mt-1">{timeAgo(n.createdAt.toISOString(), now)}</span>
+                          </span>
+                          {!n.readAt && <span className="mt-2 w-2 h-2 shrink-0 rounded-full bg-rose-600" aria-label="Belum dibaca" />}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
               ))}
-            </ul>
+            </div>
           )}
           {total > PAGE && (
             <nav className="max-w-3xl mt-4 flex justify-between text-sm" aria-label="Halaman">
