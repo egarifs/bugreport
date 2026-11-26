@@ -14,6 +14,7 @@ import { BugListToolbar } from "./bug-list-toolbar";
 import { BugListTable, BugListPager } from "./bug-list-table";
 import { BugPreviewPanel } from "./bug-preview-panel";
 import { BugBoard } from "./bug-board";
+import { BoardColumnsMenu } from "./board-columns-menu";
 import { BulkBar } from "./bulk-bar";
 import { TriageKeys } from "./triage-keys";
 import { NewBugShortcut } from "./new-bug-shortcut";
@@ -83,14 +84,19 @@ export default async function ProjectBugsPage({
           <BugListToolbar projectKey={project.key} userId={user.id} filters={filters} data={data} canReview={canReview} canWork={canWork} />
 
           {filters.layout === "board" ? (
+            <>
+            <div className="mb-3 flex justify-end">
+              <BoardColumnsMenu columns={BOARD_COLUMNS.map((c) => ({ id: c.id, label: c.label }))} hidden={filters.hide} />
+            </div>
             <BugBoard
               projectKey={project.key}
-              columns={data.boardColumns.map((c) => {
+              columns={data.boardColumns.filter((c) => !filters.hide.includes(c.id)).map((c) => {
                 const def = BOARD_COLUMNS.find((x) => x.id === c.id)!;
                 return { ...c, statuses: def.statuses, dropStatus: def.dropStatus, moreHref: bugListHref(project.key, filters, { cols: String(filters.cols + BOARD_PAGE) }) };
               })}
               allowed={Object.fromEntries(Object.values(BugStatus).map((s) => [s, dragTargets(s, membership?.role ?? null, Boolean(user.isAdmin))]))}
             />
+            </>
           ) : bugs.length === 0 ? (
             <StatePanel
               kind={filtered ? "filtered" : "empty"}

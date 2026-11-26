@@ -41,7 +41,7 @@ export function BugListToolbar({ projectKey, userId, filters, data, canReview, c
   const tabHref = (v: BugListView) => bugListHref(projectKey, { ...filters, ...emptyFilters(), view: v });
   // The search box submits as GET, so the other active filters travel as hidden inputs.
   const carried = {
-    view: filters.view, layout: filters.layout, status: filters.status.join(","), severity: filters.severity.join(","),
+    view: filters.view, layout: filters.layout, hide: filters.hide.join(","), status: filters.status.join(","), severity: filters.severity.join(","),
     priority: filters.priority.join(","), module: filters.moduleIds.join(","), sprint: filters.sprintIds.join(","),
     assignee: filters.assigneeIds.join(","), reporter: filters.reporterIds.join(","), tag: filters.tagIds.join(","),
   };

@@ -1,6 +1,6 @@
 # Test case project bugreport
 
-Dibuat otomatis dari `docs/testcases/bugreport.json` oleh `prisma/seed-bugreport.ts` (65 test case, 10 modul). Sumber kebenaran ada di JSON.
+Dibuat otomatis dari `docs/testcases/bugreport.json` oleh `prisma/seed-bugreport.ts` (66 test case, 10 modul). Sumber kebenaran ada di JSON.
 
 | Kode | Judul | Modul | Prioritas | Tipe | Role | Prasyarat | Langkah | Hasil diharapkan |
 |---|---|---|---|---|---|---|---|---|
@@ -69,3 +69,4 @@ Dibuat otomatis dari `docs/testcases/bugreport.json` oleh `prisma/seed-bugreport
 | TC-RUN-003 | Indikator merah saat ada yang gagal setelah semua dijalankan | Test Run | HIGH | Functional | QA | Test run 2 item | 1) Catat Lolos untuk satu item dan Gagal untuk lainnya | Selama masih ada yang belum dijalankan tetap berputar. Setelah semua dijalankan menjadi silang merah dengan teks Gagal. |
 | TC-RUN-004 | Daftar test run menampilkan status dan progres | Test Run | MEDIUM | UI | QA | Beberapa test run dengan hasil berbeda | 1) Buka Test case, tab Runs | Setiap kartu menampilkan ikon status, teks status n/total, dan bar progres. |
 | TC-RUN-005 | Animasi dihentikan untuk pengguna reduced motion | Test Run | LOW | Accessibility | QA | Sistem diatur mengurangi gerakan | 1) Buka test run yang belum lolos | Spinner dan strip tidak bergerak tetapi status tetap terbaca dari teks dan ikon. |
+| TC-BRD-010 | Sembunyikan kolom board, pilihan diingat | Board | MEDIUM | Functional | QA | - | 1) Buka Board<br>2) Klik Kolom, hilangkan centang Closed dan Lainnya<br>3) Buka lagi Board tanpa parameter hide<br>4) Klik Tampilkan semua<br>5) Hilangkan centang semua kolom satu per satu | Kolom Closed dan Lainnya hilang, tombol menampilkan 6/8 dan URL memuat hide. Pilihan diingat saat Board dibuka lagi. Tampilkan semua memulihkan kolom. Satu kolom terakhir tidak bisa disembunyikan. |

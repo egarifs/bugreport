@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { bugListSelectionBase, buildBugWhere, bugListHref, isFiltered, pageWindow, parseBugListFilters, UNASSIGNED } from "./bug-list-query";
+import { bugListQuery, bugListSelectionBase, buildBugWhere, bugListHref, sanitizeViewQuery, isFiltered, pageWindow, parseBugListFilters, UNASSIGNED } from "./bug-list-query";
 
 const ctx = { projectId: "p1", userId: "u1" };
 
@@ -78,4 +78,14 @@ test("tag filter matches any selected tag and survives in the URL", () => {
 test("selection base always ends in sel= so J/K can append a bug key", () => {
   assert.equal(bugListSelectionBase("CRM", parseBugListFilters({ view: "all", severity: "HIGH" }, "all")), "/projects/CRM?view=all&severity=HIGH&sel=");
   assert.equal(bugListSelectionBase("CRM", parseBugListFilters({}, "all")), "/projects/CRM?view=all&sel=");
+});
+
+test("hidden board columns: known ids only, one column always stays, URL carries them on the board only", () => {
+  const f = parseBugListFilters({ layout: "board", hide: "closed,nope,other,closed" }, "all");
+  assert.deepEqual(f.hide, ["closed", "other"]);
+  assert.match(bugListQuery(f), /hide=closed%2Cother/);
+  assert.doesNotMatch(bugListQuery({ ...f, layout: "list" }), /hide=/);
+  const all = "draft,open,in_progress,design_review,ready,reopened,closed,other";
+  assert.equal(parseBugListFilters({ hide: all }, "all").hide.length, 7);
+  assert.doesNotMatch(sanitizeViewQuery("layout=board&hide=closed"), /hide=/);
 });

@@ -731,6 +731,17 @@
       "precondition": "Sistem diatur mengurangi gerakan",
       "steps": "1) Buka test run yang belum lolos",
       "expectedResult": "Spinner dan strip tidak bergerak tetapi status tetap terbaca dari teks dan ikon."
+    },
+    {
+      "code": "TC-BRD-010",
+      "title": "Sembunyikan kolom board, pilihan diingat",
+      "module": "Board",
+      "priority": "MEDIUM",
+      "testType": "Functional",
+      "targetRole": "QA",
+      "precondition": "-",
+      "steps": "1) Buka Board\n2) Klik Kolom, hilangkan centang Closed dan Lainnya\n3) Buka lagi Board tanpa parameter hide\n4) Klik Tampilkan semua\n5) Hilangkan centang semua kolom satu per satu",
+      "expectedResult": "Kolom Closed dan Lainnya hilang, tombol menampilkan 6/8 dan URL memuat hide. Pilihan diingat saat Board dibuka lagi. Tampilkan semua memulihkan kolom. Satu kolom terakhir tidak bisa disembunyikan."
     }
   ]
 }

@@ -16,6 +16,13 @@ export const BOARD_COLUMNS: readonly BoardColumn[] = [
   { id: "other", label: "Lainnya", statuses: ["INVALID", "DUPLICATE", "CANNOT_REPRODUCE", "WONT_FIX"], dropStatus: null },
 ];
 
+// ?hide=closed,other -> known column ids only; at least one column always stays visible.
+export function parseHiddenColumns(raw?: string): string[] {
+  const known = new Set(BOARD_COLUMNS.map((c) => c.id));
+  const hide = [...new Set((raw ?? "").split(",").map((x) => x.trim()).filter((x) => known.has(x)))];
+  return hide.length >= BOARD_COLUMNS.length ? hide.slice(0, BOARD_COLUMNS.length - 1) : hide;
+}
+
 export const BOARD_PAGE = 25;
 export const BOARD_MAX = 200;
 

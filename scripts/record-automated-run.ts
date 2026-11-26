@@ -20,6 +20,7 @@ const EVIDENCE: Record<string, string> = {
     ["LIST-001", "FLT-001", "FLT-002", "FLT-003", "FLT-005", "FLT-006", "FLT-007", "FLT-009", "FLT-010", "LIST-003", "LIST-004", "BLK-002", "BRD-001", "BRD-002", "BRD-008", "LIST-002", "BRD-007", "BLK-007", "TAG-004", "TRI-004", "TRI-002", "TRI-003"].map((c) => [`TC-${c}`, "e2e/bgr-regression.spec.ts"]),
   ),
   ...Object.fromEntries(["RPT-001", "RPT-005", "RPT-008", "IMP-001", "IMP-002", "IMP-003", "RUN-003", "RUN-004", "RUN-005"].map((c) => [`TC-${c}`, "e2e/bgr-regression-2.spec.ts"])),
+  "TC-BRD-010": "e2e/bgr-regression.spec.ts + bug-list-query.test.ts (kolom disembunyikan)",
   "TC-BRD-009": "e2e/bgr-regression.spec.ts + bug-move-service.test.ts (setelah perbaikan status basi)",
   "TC-TRI-001": "e2e/triage.spec.ts", "TC-RUN-001": "e2e/test-run-indicator.spec.ts", "TC-RUN-002": "e2e/test-run-indicator.spec.ts",
 };

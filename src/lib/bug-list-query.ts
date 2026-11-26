@@ -1,5 +1,5 @@
 import { BugPriority, BugSeverity, BugStatus, type Prisma } from "@prisma/client";
-import { BOARD_PAGE, boardLimit } from "./bug-board";
+import { BOARD_PAGE, boardLimit, parseHiddenColumns } from "./bug-board";
 
 // Pure query rules for the project bug list: URL params in, validated filters and Prisma input out.
 // No database access here so the rules stay unit-testable.
@@ -16,6 +16,7 @@ export type BugListFilters = {
   view: BugListView;
   layout: BugLayout;
   cols: number; // board cards loaded per column
+  hide: string[]; // board column ids the user hid
   q?: string;
   // Multi-select filters: values within one filter are ORed, different filters are ANDed.
   status: BugStatus[];
@@ -30,7 +31,7 @@ export type BugListFilters = {
 };
 
 export type BugListRawParams = Partial<Record<
-  "view" | "layout" | "cols" | "q" | "status" | "severity" | "priority" | "module" | "sprint" | "assignee" | "reporter" | "tag" | "page",
+  "view" | "layout" | "cols" | "hide" | "q" | "status" | "severity" | "priority" | "module" | "sprint" | "assignee" | "reporter" | "tag" | "page",
   string
 >>;
 
@@ -55,6 +56,7 @@ export function parseBugListFilters(raw: BugListRawParams, defaultView: BugListV
     view: pickEnum(["review", "mine", "all"] as const, raw.view) ?? (layout === "board" ? "all" : defaultView),
     layout,
     cols: boardLimit(raw.cols),
+    hide: parseHiddenColumns(raw.hide),
     q: raw.q?.trim().slice(0, Q_MAX) || undefined,
     status: enumList(Object.values(BugStatus), raw.status),
     severity: enumList(Object.values(BugSeverity), raw.severity),
@@ -148,6 +150,7 @@ export function bugListQuery(f: BugListFilters, over: Record<string, string | un
     tag: f.tagIds.join(","),
     page: f.page > 1 ? String(f.page) : undefined,
     cols: f.cols > BOARD_PAGE ? String(f.cols) : undefined,
+    hide: f.layout === "board" ? f.hide.join(",") : undefined,
   };
   const p = new URLSearchParams();
   for (const [k, v] of Object.entries({ ...base, ...over })) if (v) p.set(k, v);
@@ -157,7 +160,7 @@ export function bugListQuery(f: BugListFilters, over: Record<string, string | un
 // Saved views store only what the parser accepts, minus paging: a stored string can never smuggle other params.
 export function sanitizeViewQuery(query: string): string {
   const raw = Object.fromEntries(new URLSearchParams(query)) as BugListRawParams;
-  return bugListQuery(parseBugListFilters(raw, "all"), { page: undefined, cols: undefined });
+  return bugListQuery(parseBugListFilters(raw, "all"), { page: undefined, cols: undefined, hide: undefined });
 }
 
 // Prefix for selection links ("...?view=all&sel="): the caller appends an encoded bug key.

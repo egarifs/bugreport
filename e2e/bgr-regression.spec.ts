@@ -279,3 +279,47 @@ test("TC-BRD-009: pemindahan dari board basi ditolak, status orang lain tidak te
   await expect(page.getByRole("status").filter({ hasText: /sudah berubah/ })).toBeVisible();
   expect((await prisma.bug.findUniqueOrThrow({ where: { id: bug.id } })).status).toBe("IN_PROGRESS");
 });
+
+test("TC-BRD-010: sembunyikan kolom board, pilihan diingat, minimal satu kolom tersisa", async ({ page }) => {
+  await loginAs(page, "bgr-qa@example.test", "QA");
+  await page.setViewportSize({ width: 1600, height: 900 });
+  await page.goto("/projects/CRM?layout=board&view=all");
+  await page.evaluate(() => localStorage.removeItem("bug-board-hide"));
+  await page.reload();
+  const board = page.getByRole("list", { name: "Board bug" });
+  await expect(board.getByRole("listitem", { name: /^Closed, / })).toBeVisible();
+
+  const open = async () => {
+    const dialog = page.getByRole("dialog", { name: "Kolom board" });
+    // a click before hydration is lost: click again until the menu shows (never while it is already open)
+    await expect(async () => {
+      if (!(await dialog.isVisible())) await page.getByRole("button", { name: /^Kolom/ }).click();
+      await expect(dialog).toBeVisible({ timeout: 1500 });
+    }).toPass({ timeout: 20_000 });
+    return dialog;
+  };
+  let menu = await open();
+  await menu.getByRole("checkbox", { name: "Closed" }).uncheck();
+  await menu.getByRole("checkbox", { name: "Lainnya" }).uncheck();
+  await expect(page).toHaveURL(/hide=closed%2Cother/);
+  await expect(board.getByRole("listitem", { name: /^Closed, / })).toHaveCount(0);
+  await expect(board.getByRole("listitem", { name: /^Lainnya, / })).toHaveCount(0);
+  await expect(board.getByRole("listitem", { name: /^Open, / })).toBeVisible();
+  await expect(page.getByRole("button", { name: /^Kolom/ })).toContainText("6/8");
+
+  // remembered: a board URL without ?hide comes back with the same columns hidden
+  await page.goto("/projects/CRM?layout=board&view=all");
+  await expect(page).toHaveURL(/hide=closed%2Cother/);
+  await expect(board.getByRole("listitem", { name: /^Closed, / })).toHaveCount(0);
+
+  // show all again
+  menu = await open();
+  await menu.getByRole("button", { name: "Tampilkan semua" }).click();
+  await expect(board.getByRole("listitem", { name: /^Closed, / })).toBeVisible();
+
+  // the last visible column cannot be hidden
+  menu = await open();
+  for (const c of ["Draft", "Open", "In progress", "Design Review", "Ready for QA", "Reopened", "Closed"]) await menu.getByRole("checkbox", { name: c, exact: true }).uncheck();
+  await expect(menu.getByRole("checkbox", { name: "Lainnya" })).toBeDisabled();
+  await expect(board.getByRole("listitem", { name: /, \d+ bug$/ })).toHaveCount(1);
+});
