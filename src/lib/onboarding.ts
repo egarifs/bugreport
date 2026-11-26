@@ -4,7 +4,7 @@ export type GuideRole = (typeof GUIDE_ROLES)[number];
 export const GUIDE_ROLE_LABEL: Record<GuideRole, string> = { QA: "QA", DEVELOPER: "Developer", VENDOR: "Vendor", CLIENT: "Klien", ADMIN: "PO / Admin" };
 export const GUIDE_ROLE_HINT: Record<GuideRole, string> = {
   QA: "Menulis test case, menjalankan test run, melaporkan dan memverifikasi bug.",
-  DEVELOPER: "Mengerjakan bug yang ditugaskan dan memindahkannya ke Perlu verifikasi.",
+  DEVELOPER: "Mengerjakan bug yang ditugaskan dan memindahkannya ke Ready for QA.",
   VENDOR: "Menjalankan test dan mengisi hasil perbaikan untuk bug yang ditugaskan.",
   CLIENT: "Melaporkan bug dari sisi pengguna dan memantau perkembangannya.",
   ADMIN: "Meninjau draf, memantau kesiapan rilis, dan menyetujui dokumen.",
@@ -51,7 +51,7 @@ export const GLOSSARY: readonly { term: string; meaning: string }[] = [
   { term: "Severity", meaning: "Seberapa parah dampak bug: Blocker, High, Medium, Low." },
   { term: "Prioritas", meaning: "Seberapa cepat bug harus dikerjakan: Urgent, High, Normal, Low." },
   { term: "Triase", meaning: "Meninjau bug Draft: diterima menjadi Open, atau ditolak (Invalid/Duplicate)." },
-  { term: "Perlu verifikasi", meaning: "Perbaikan selesai dan menunggu QA menguji di build yang diisi." },
+  { term: "Ready for QA", meaning: "Perbaikan selesai dan menunggu QA menguji di build yang diisi." },
   { term: "Test run", meaning: "Satu putaran eksekusi sekumpulan test case; hasilnya Lolos, Gagal, atau Terblokir." },
   { term: "RTM", meaning: "Matriks yang menautkan bagian requirement ke test case, hasil, dan bug." },
   { term: "Definition of Done", meaning: "Daftar syarat yang harus terpenuhi sebelum sprint ditutup." },

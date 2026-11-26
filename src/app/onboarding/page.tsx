@@ -66,7 +66,7 @@ export default async function OnboardingPage({ searchParams }: { searchParams: P
                 ))}</ul>
               )}
               {tab === "flow" && (
-                <ol className="space-y-2 text-sm">{["Draft: laporan baru menunggu triase", "Open: diterima dan siap dikerjakan", "In progress: sedang dikerjakan", "Perlu verifikasi: perbaikan selesai di sebuah build", "Closed: lolos verifikasi QA (atau Reopened bila gagal)"].map((s, i) => (
+                <ol className="space-y-2 text-sm">{["Draft: laporan baru menunggu triase", "Open: diterima dan siap dikerjakan", "In progress: sedang dikerjakan", "Ready for QA: perbaikan selesai di sebuah build", "Closed: lolos verifikasi QA (atau Reopened bila gagal)"].map((s, i) => (
                   <li key={s} className="bg-surface border border-slate-200 rounded-lg p-3"><b>{i + 1}.</b> {s}</li>
                 ))}</ol>
               )}
