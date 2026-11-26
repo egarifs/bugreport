@@ -742,6 +742,17 @@
       "precondition": "-",
       "steps": "1) Buka Board\n2) Klik Kolom, hilangkan centang Closed dan Lainnya\n3) Buka lagi Board tanpa parameter hide\n4) Klik Tampilkan semua\n5) Hilangkan centang semua kolom satu per satu",
       "expectedResult": "Kolom Closed dan Lainnya hilang, tombol menampilkan 6/8 dan URL memuat hide. Pilihan diingat saat Board dibuka lagi. Tampilkan semua memulihkan kolom. Satu kolom terakhir tidak bisa disembunyikan."
+    },
+    {
+      "code": "TC-BRD-011",
+      "title": "Pilih banyak kartu di board lalu aksi massal",
+      "module": "Board",
+      "priority": "HIGH",
+      "testType": "Functional",
+      "targetRole": "QA",
+      "precondition": "Role dengan izin ubah bug, ada tiga bug Open",
+      "steps": "1) Buka Board\n2) Centang dua kartu\n3) Pilih status In progress di bar aksi massal, klik Terapkan\n4) Buka Board sebagai Viewer",
+      "expectedResult": "Bar aksi massal muncul dan menampilkan 2 dipilih. Dua kartu pindah ke kolom In progress dan pilihan dikosongkan. Viewer tidak melihat checkbox kartu."
     }
   ]
 }

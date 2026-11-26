@@ -13,8 +13,9 @@ type ColumnView = BoardColumnData & { statuses: BugStatus[]; dropStatus: BugStat
 
 const initials = (n: string) => n.split(/[\s@.]+/).filter(Boolean).slice(0, 2).map((p) => p[0]?.toUpperCase()).join("");
 
-export function BugBoard({ projectKey, columns, allowed }: {
+export function BugBoard({ projectKey, columns, allowed, selectable = false }: {
   projectKey: string;
+  selectable?: boolean; // show a checkbox per card (they feed the BulkBar form)
   columns: ColumnView[];
   allowed: Record<string, BugStatus[]>; // current status -> statuses this user may drag to
 }) {
@@ -93,7 +94,8 @@ export function BugBoard({ projectKey, columns, allowed }: {
                     >
                       <span aria-hidden className={`absolute left-0 top-0 bottom-0 w-[3px] ${SEVERITY_STYLE[c.severity].strip}`} />
                       <div className="flex items-center justify-between gap-2 text-xs">
-                        <Link href={`/projects/${projectKey}/bugs/${c.number}`} className="font-mono font-bold text-action hover:underline">{c.key}</Link>
+                        {selectable && <input type="checkbox" name="ids" value={c.id} form="bulk-form" aria-label={`Pilih ${c.key}`} draggable={false} className="w-4 h-4 -ml-0.5" />}
+                        <Link href={`/projects/${projectKey}/bugs/${c.number}`} className="mr-auto font-mono font-bold text-action hover:underline">{c.key}</Link>
                         <SeverityBadge severity={c.severity} />
                       </div>
                       <p className="mt-1 text-sm text-slate-900 leading-snug line-clamp-3">{c.title}</p>

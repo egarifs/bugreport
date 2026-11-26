@@ -88,7 +88,15 @@ export default async function ProjectBugsPage({
             <div className="mb-3 flex justify-end">
               <BoardColumnsMenu columns={BOARD_COLUMNS.map((c) => ({ id: c.id, label: c.label }))} hidden={filters.hide} />
             </div>
+            {canWork && (
+              <BulkBar
+                projectKey={project.key}
+                statuses={BULK_STATUSES.map((v) => ({ value: v, label: STATUS_LABEL[v] }))}
+                members={data.members.map((m) => ({ id: m.userId, label: m.user.name || m.user.email }))}
+              />
+            )}
             <BugBoard
+              selectable={canWork}
               projectKey={project.key}
               columns={data.boardColumns.filter((c) => !filters.hide.includes(c.id)).map((c) => {
                 const def = BOARD_COLUMNS.find((x) => x.id === c.id)!;

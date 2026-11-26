@@ -197,6 +197,7 @@ test("TC-LIST-002 TC-BRD-007 TC-BLK-007 TC-TAG-004 TC-TRI-004: role tanpa izin",
   await page.goto(`/projects/CRM?layout=board&q=${encodeURIComponent(s)}`);
   await expect(page.getByText(`${s} open`)).toBeVisible();
   await expect(page.getByLabel(`Pindahkan ${open.key} ke`)).toHaveCount(0);
+  await expect(page.getByRole("checkbox")).toHaveCount(0); // no card checkboxes either
   await expect(page.getByRole("listitem").filter({ hasText: `${s} open` }).last()).not.toHaveAttribute("draggable", "true");
   await page.goto(`/projects/CRM/bugs/${open.number}`);
   await expect(page.getByText("#e2e-ro")).toBeVisible();
@@ -322,4 +323,25 @@ test("TC-BRD-010: sembunyikan kolom board, pilihan diingat, minimal satu kolom t
   for (const c of ["Draft", "Open", "In progress", "Design Review", "Ready for QA", "Reopened", "Closed"]) await menu.getByRole("checkbox", { name: c, exact: true }).uncheck();
   await expect(menu.getByRole("checkbox", { name: "Lainnya" })).toBeDisabled();
   await expect(board.getByRole("listitem", { name: /, \d+ bug$/ })).toHaveCount(1);
+});
+
+test("TC-BRD-011: pilih banyak kartu di board lalu ubah status massal", async ({ page }) => {
+  const { project, user } = await loginAs(page, "bgr-qa@example.test", "QA");
+  const s = stamp();
+  const bugs = await createBugs(prisma, project, [0, 1, 2].map((i) => ({ title: `${s} ${i}`, reporterId: user.id })));
+  await page.setViewportSize({ width: 1600, height: 900 });
+  await page.goto(`/projects/CRM?layout=board&q=${encodeURIComponent(s)}`);
+  const bar = page.getByRole("form", { name: "Aksi massal" });
+  await expect(bar).toBeHidden();
+
+  await page.getByRole("checkbox", { name: `Pilih ${bugs[0].key}` }).check();
+  await page.getByRole("checkbox", { name: `Pilih ${bugs[1].key}` }).check();
+  await expect(bar.getByText("dipilih")).toContainText("2");
+  await bar.getByLabel("Status tujuan").selectOption({ label: "In progress" });
+  await bar.getByRole("button", { name: "Terapkan" }).first().click();
+  await expect(bar.getByRole("status")).toContainText("2 bug diubah");
+  await expect.poll(() => prisma.bug.count({ where: { id: { in: bugs.map((b) => b.id) }, status: "IN_PROGRESS" } })).toBe(2);
+  await expect(page.getByRole("listitem", { name: /^In progress, 2 bug/ })).toBeVisible();
+  await expect(page.getByRole("listitem", { name: /^Open, 1 bug/ }).getByText(`${s} 2`)).toBeVisible();
+  await expect(bar.getByText("dipilih")).toContainText("0");
 });
