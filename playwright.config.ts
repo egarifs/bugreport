@@ -6,6 +6,10 @@ const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? `http://127.0.0.1:${port}`;
 export default defineConfig({
   testDir: "./e2e",
   workers: 1, // tests share one DB and dev-login users; parallel logins race
+  // The dev server compiles each route on first visit; a long multi-page flow can pass 30s / 5s when the machine is busy.
+  timeout: 60_000,
+  expect: { timeout: 15_000 },
+  retries: process.env.CI ? 1 : 0,
   testMatch: "**/*.spec.ts",
   use: {
     baseURL,
