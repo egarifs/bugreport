@@ -1,5 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
-import { PrismaClient, type BugSeverity, type BugStatus, type ProjectRole } from "@prisma/client";
+import { PrismaClient, type ProjectRole } from "@prisma/client";
+import { createBugs } from "./helpers/bugs";
 
 // Regression for the "bugreport" test cases (docs/testcases/bugreport.json). Test names start with the case code(s).
 const prisma = new PrismaClient();
@@ -18,23 +19,6 @@ async function loginAs(page: Page, email: string, role: ProjectRole) {
   await page.getByRole("button", { name: "Login Dev (Auto-create user)" }).click();
   await expect(page).toHaveURL(/\/projects/);
   return { project, user };
-}
-
-type Seed = { title: string; severity?: BugSeverity; status?: BugStatus; assigneeId?: string; reporterId: string };
-
-// Insert bugs directly while keeping Project.bugSeq ahead so form-created bugs never collide on key.
-async function seedBugs(projectId: string, rows: Seed[]) {
-  const last = await prisma.bug.findFirst({ where: { projectId }, orderBy: { number: "desc" }, select: { number: true } });
-  let n = last?.number ?? 0;
-  const out = [];
-  for (const r of rows) {
-    n++;
-    out.push(await prisma.bug.create({
-      data: { projectId, number: n, key: `CRM-${n}`, title: r.title, severity: r.severity ?? "LOW", status: r.status ?? "OPEN", reporterId: r.reporterId, assigneeId: r.assigneeId, actualResult: "a", expectedResult: "b", stepsToReproduce: "1" },
-    }));
-  }
-  await prisma.project.update({ where: { id: projectId }, data: { bugSeq: n } });
-  return out;
 }
 
 const filterBtn = (p: Page) => p.getByRole("button", { name: /^Filter( \d+)?$/ });
@@ -59,7 +43,7 @@ test("TC-LIST-001 TC-FLT-001: tab sesuai role dan menu Filter dua panel", async 
 test("TC-FLT-002 TC-FLT-003 TC-FLT-006 TC-FLT-009: severity, OR, chip, reset, cari tetap memakai filter", async ({ page }) => {
   const { project, user } = await loginAs(page, "bgr-qa@example.test", "QA");
   const s = stamp();
-  await seedBugs(project.id, [
+  await createBugs(prisma, project, [
     { title: `${s} blocker`, severity: "BLOCKER", reporterId: user.id },
     { title: `${s} high`, severity: "HIGH", reporterId: user.id },
     { title: `${s} low`, severity: "LOW", reporterId: user.id },
@@ -106,7 +90,7 @@ test("TC-FLT-002 TC-FLT-003 TC-FLT-006 TC-FLT-009: severity, OR, chip, reset, ca
 test("TC-FLT-005 TC-FLT-007: Belum di-assign, Ditugaskan ke saya, kotak cari pilihan", async ({ page }) => {
   const { project, user } = await loginAs(page, "bgr-qa@example.test", "QA");
   const s = stamp();
-  await seedBugs(project.id, [
+  await createBugs(prisma, project, [
     { title: `${s} milik saya`, reporterId: user.id, assigneeId: user.id },
     { title: `${s} tanpa assignee`, reporterId: user.id },
   ]);
@@ -144,7 +128,7 @@ test("TC-FLT-010: menu Filter muat di ponsel tanpa scroll horizontal", async ({ 
 test("TC-LIST-003 TC-LIST-004: paginasi 25 per halaman dan metadata baris", async ({ page }) => {
   const { project, user } = await loginAs(page, "bgr-qa@example.test", "QA");
   const s = stamp();
-  const bugs = await seedBugs(project.id, Array.from({ length: 27 }, (_, i) => ({ title: `${s} ${String(i).padStart(2, "0")}`, reporterId: user.id })));
+  const bugs = await createBugs(prisma, project, Array.from({ length: 27 }, (_, i) => ({ title: `${s} ${String(i).padStart(2, "0")}`, reporterId: user.id })));
   const mod = await prisma.module.findFirst({ where: { projectId: project.id } });
   const tag = await prisma.bugTag.upsert({ where: { projectId_name: { projectId: project.id, name: "e2e-meta" } }, create: { projectId: project.id, name: "e2e-meta" }, update: {} });
   const newest = bugs[bugs.length - 1]; // list is newest first, so it is on page 1
@@ -170,7 +154,7 @@ test("TC-LIST-003 TC-LIST-004: paginasi 25 per halaman dan metadata baris", asyn
 test("TC-BLK-002: pilih semua memilih seluruh baris halaman", async ({ page }) => {
   const { project, user } = await loginAs(page, "bgr-qa@example.test", "QA");
   const s = stamp();
-  await seedBugs(project.id, Array.from({ length: 3 }, (_, i) => ({ title: `${s} ${i}`, reporterId: user.id })));
+  await createBugs(prisma, project, Array.from({ length: 3 }, (_, i) => ({ title: `${s} ${i}`, reporterId: user.id })));
   await page.setViewportSize({ width: 1400, height: 900 });
   await page.goto(`/projects/CRM?view=all&q=${encodeURIComponent(s)}`);
   await page.getByRole("checkbox", { name: "Pilih semua bug di halaman ini" }).check();
@@ -198,7 +182,7 @@ test("TC-BRD-001 TC-BRD-002: toggle Board diingat dan kolom sesuai status", asyn
 test("TC-LIST-002 TC-BRD-007 TC-BLK-007 TC-TAG-004 TC-TRI-004: role tanpa izin", async ({ page, browser }) => {
   const { project, user } = await loginAs(page, "bgr-viewer@example.test", "VIEWER");
   const s = stamp();
-  const [draft, open] = await seedBugs(project.id, [
+  const [draft, open] = await createBugs(prisma, project, [
     { title: `${s} draft`, status: "DRAFT", reporterId: user.id },
     { title: `${s} open`, status: "OPEN", reporterId: user.id },
   ]);
@@ -242,7 +226,7 @@ test("TC-LIST-002 TC-BRD-007 TC-BLK-007 TC-TAG-004 TC-TRI-004: role tanpa izin",
 test("TC-TRI-002 TC-TRI-003: terima tanpa modul ditolak, tolak menjadi Invalid", async ({ page }) => {
   const { project, user } = await loginAs(page, "bgr-qa@example.test", "QA");
   const s = stamp();
-  const [a, b] = await seedBugs(project.id, [
+  const [a, b] = await createBugs(prisma, project, [
     { title: `${s} a`, status: "DRAFT", reporterId: user.id },
     { title: `${s} b`, status: "DRAFT", reporterId: user.id },
   ]);
@@ -262,7 +246,7 @@ test("TC-TRI-002 TC-TRI-003: terima tanpa modul ditolak, tolak menjadi Invalid",
 test("TC-BRD-008: Muat lagi menambah kartu di kolom panjang", async ({ page }) => {
   const { project, user } = await loginAs(page, "bgr-qa@example.test", "QA");
   const s = stamp();
-  await seedBugs(project.id, Array.from({ length: 27 }, (_, i) => ({ title: `${s} ${String(i).padStart(2, "0")}`, status: "OPEN" as const, reporterId: user.id })));
+  await createBugs(prisma, project, Array.from({ length: 27 }, (_, i) => ({ title: `${s} ${String(i).padStart(2, "0")}`, status: "OPEN" as const, reporterId: user.id })));
   await page.setViewportSize({ width: 1600, height: 900 });
   await page.goto(`/projects/CRM?layout=board&q=${encodeURIComponent(s)}`);
   const open = page.getByRole("listitem", { name: /^Open, 27 bug/ });
@@ -276,7 +260,7 @@ test("TC-BRD-008: Muat lagi menambah kartu di kolom panjang", async ({ page }) =
 test("TC-BRD-009: pemindahan dari board basi ditolak, status orang lain tidak tertimpa", async ({ page, browser }) => {
   const { project, user } = await loginAs(page, "bgr-qa@example.test", "QA");
   const s = stamp();
-  const [bug] = await seedBugs(project.id, [{ title: `${s} balapan`, status: "OPEN", reporterId: user.id }]);
+  const [bug] = await createBugs(prisma, project, [{ title: `${s} balapan`, status: "OPEN", reporterId: user.id }]);
   await page.setViewportSize({ width: 1600, height: 900 });
   await page.goto(`/projects/CRM?layout=board&q=${encodeURIComponent(s)}`);
   const menuB = page.getByLabel(`Pindahkan ${bug.key} ke`);

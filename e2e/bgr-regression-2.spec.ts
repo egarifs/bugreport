@@ -1,5 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { PrismaClient } from "@prisma/client";
+import { createBugs, syncBugSeq } from "./helpers/bugs";
 
 // Second half of the "bugreport" regression cases: reporting, import, test run indicator. Test names start with the case code(s).
 const prisma = new PrismaClient();
@@ -19,15 +20,11 @@ async function login(page: Page) {
   await expect(page).toHaveURL(/\/projects/);
   return { project, user };
 }
-const syncSeq = async (projectId: string) => {
-  const last = await prisma.bug.findFirst({ where: { projectId }, orderBy: { number: "desc" }, select: { number: true } });
-  await prisma.project.update({ where: { id: projectId }, data: { bugSeq: last?.number ?? 0 } });
-};
 const stamp = () => `E2E-BGR2 ${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
 
 test("TC-RPT-001: lapor bug dengan data lengkap membuka detail dengan nomor berikutnya", async ({ page }) => {
   const { project } = await login(page);
-  await syncSeq(project.id);
+  await syncBugSeq(prisma, project.id);
   const before = (await prisma.project.findUniqueOrThrow({ where: { id: project.id } })).bugSeq;
   const title = stamp();
   const mod = await prisma.module.findFirstOrThrow({ where: { projectId: project.id } });
@@ -49,7 +46,7 @@ test("TC-RPT-001: lapor bug dengan data lengkap membuka detail dengan nomor beri
 
 test("TC-RPT-005: judul wajib dan link harus http/https", async ({ page }) => {
   const { project } = await login(page);
-  await syncSeq(project.id);
+  await syncBugSeq(prisma, project.id);
   const count = () => prisma.bug.count({ where: { projectId: project.id } });
   const before = await count();
   await page.goto("/projects/CRM/bugs/new");
@@ -68,7 +65,7 @@ test("TC-RPT-005: judul wajib dan link harus http/https", async ({ page }) => {
 
 test("TC-RPT-008: tempel screenshot dengan Ctrl+V lalu simpan melampirkannya", async ({ page }) => {
   const { project } = await login(page);
-  await syncSeq(project.id);
+  await syncBugSeq(prisma, project.id);
   const title = stamp();
   await page.goto("/projects/CRM/bugs/new");
   await page.getByLabel("Judul bug").fill(title);
@@ -89,11 +86,10 @@ test("TC-RPT-008: tempel screenshot dengan Ctrl+V lalu simpan melampirkannya", a
 
 test("TC-IMP-001 TC-IMP-002 TC-IMP-003: pratinjau menandai mirip, impor Draft berurutan, file salah ditolak", async ({ page }) => {
   const { project, user } = await login(page);
-  await syncSeq(project.id);
+  await syncBugSeq(prisma, project.id);
   const s = stamp();
-  const last = (await prisma.project.findUniqueOrThrow({ where: { id: project.id } })).bugSeq;
-  await prisma.bug.create({ data: { projectId: project.id, number: last + 1, key: `CRM-${last + 1}`, title: `${s} duplikat`, severity: "LOW", status: "OPEN", reporterId: user.id, actualResult: "a", expectedResult: "b", stepsToReproduce: "1" } });
-  await syncSeq(project.id);
+  const [dup] = await createBugs(prisma, project, [{ title: `${s} duplikat`, reporterId: user.id }]);
+  const last = dup.number - 1;
   const md = `| Judul | Modul | Severity | Langkah | Aktual | Ekspektasi |\n| --- | --- | --- | --- | --- | --- |\n| ${s} duplikat | - | High | a | b | c |\n| ${s} baru | - | Low | a | b | c |\n`;
   const before = await prisma.bug.count({ where: { projectId: project.id } });
 

@@ -1,5 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { PrismaClient } from "@prisma/client";
+import { createBugs, syncBugSeq } from "./helpers/bugs";
 
 async function login(page: Page, email: string) {
   await page.goto("/login");
@@ -13,8 +14,7 @@ test("lapor bug: peringatan mirip, panduan, prioritas hanya untuk reviewer", asy
   const project = await prisma.project.findUniqueOrThrow({ where: { key: "CRM" } });
   const qa = await prisma.user.findUniqueOrThrow({ where: { email: "step1-qa@example.test" } });
   const title = `Pemindahan pemilik kontak ${Math.random().toString(36).slice(2, 10)} gagal`; // unique: API returns top 5 only
-  const n = ((await prisma.bug.findFirst({ where: { projectId: project.id }, orderBy: { number: "desc" } }))?.number ?? 0) + 1;
-  await prisma.bug.create({ data: { projectId: project.id, number: n, key: `CRM-${n}`, title, severity: "HIGH", status: "READY_FOR_VERIFICATION", reporterId: qa.id } });
+  const [{ number: n }] = await createBugs(prisma, project, [{ title, severity: "HIGH", status: "READY_FOR_VERIFICATION", reporterId: qa.id }]);
 
   await login(page, "step1-qa@example.test");
   await page.goto("/projects/CRM/bugs/new");
@@ -67,9 +67,7 @@ test("lapor bug: draf tersimpan otomatis, pulih setelah reload, bisa dihapus", a
 test("lapor bug: tag dari form tersimpan dan tampil di detail", async ({ page }) => {
   const prisma = new PrismaClient();
   const title = `E2E form tag ${Date.now()}`;
-  // other specs insert bugs directly; keep the sequence counter ahead of them
-  const last = await prisma.bug.findFirst({ where: { project: { key: "CRM" } }, orderBy: { number: "desc" }, select: { number: true } });
-  await prisma.project.update({ where: { key: "CRM" }, data: { bugSeq: last?.number ?? 0 } });
+  await syncBugSeq(prisma, (await prisma.project.findUniqueOrThrow({ where: { key: "CRM" } })).id); // other specs insert bugs directly
   await login(page, "step1-qa@example.test");
   await page.goto("/projects/CRM/bugs/new");
   await page.getByLabel("Judul bug").fill(title);
@@ -88,8 +86,7 @@ test("lapor bug: tag dari form tersimpan dan tampil di detail", async ({ page })
 test("lapor bug cepat: judul saja, Ctrl+Enter, form kosong lagi, pilihan terakhir diingat", async ({ page }) => {
   const prisma = new PrismaClient();
   const stamp = Date.now();
-  const last = await prisma.bug.findFirst({ where: { project: { key: "CRM" } }, orderBy: { number: "desc" }, select: { number: true } });
-  await prisma.project.update({ where: { key: "CRM" }, data: { bugSeq: last?.number ?? 0 } });
+  await syncBugSeq(prisma, (await prisma.project.findUniqueOrThrow({ where: { key: "CRM" } })).id);
   await login(page, "step1-qa@example.test");
   await page.goto("/projects/CRM/bugs/new");
   await page.evaluate(() => Object.keys(localStorage).filter((k) => k.startsWith("bug")).forEach((k) => localStorage.removeItem(k)));

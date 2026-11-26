@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { PrismaClient } from "@prisma/client";
+import { createBugs } from "./helpers/bugs";
 
 async function qaLogin(prisma: PrismaClient, page: import("@playwright/test").Page) {
   const email = "board-qa@example.test";
@@ -27,12 +28,9 @@ test("board: pindah kartu lewat menu, status tersimpan; transisi terlarang tidak
     create: { projectId: project.id, userId: user.id, role: "QA" },
     update: { role: "QA" },
   });
-  const last = await prisma.bug.findFirst({ where: { projectId: project.id }, orderBy: { number: "desc" } });
-  const n = (last?.number ?? 0) + 1;
   const title = `E2E board ${Date.now()}`;
-  const bug = await prisma.bug.create({
-    data: { projectId: project.id, number: n, key: `CRM-${n}`, title, severity: "HIGH", status: "OPEN", reporterId: user.id, actualResult: "a", expectedResult: "b", stepsToReproduce: "1" },
-  });
+  const [bug] = await createBugs(prisma, project, [{ title, severity: "HIGH", reporterId: user.id }]);
+  const n = bug.number;
 
   await page.goto("/login");
   await page.getByPlaceholder("test.qa@example.com").fill(email);
@@ -64,18 +62,18 @@ test("board: pindah kartu lewat menu, status tersimpan; transisi terlarang tidak
 test("board: seret kartu ke kolom valid pindah, ke kolom yang tidak diizinkan ditolak; tag ditambah di detail dan bisa difilter", async ({ page }) => {
   const prisma = new PrismaClient();
   const { project, user } = await qaLogin(prisma, page);
-  const last = await prisma.bug.findFirst({ where: { projectId: project.id }, orderBy: { number: "desc" } });
-  const n = (last?.number ?? 0) + 1;
   const title = `E2E drag ${Date.now()}`;
-  const bug = await prisma.bug.create({
-    data: { projectId: project.id, number: n, key: `CRM-${n}`, title, severity: "HIGH", status: "OPEN", reporterId: user.id, actualResult: "a", expectedResult: "b", stepsToReproduce: "1" },
-  });
+  const [bug] = await createBugs(prisma, project, [{ title, severity: "HIGH", reporterId: user.id }]);
+  const n = bug.number;
   await page.setViewportSize({ width: 1600, height: 900 });
   await page.goto(`/projects/CRM?layout=board&q=${encodeURIComponent(title)}`);
   const card = page.getByRole("listitem").filter({ hasText: title }).last();
 
-  await card.dragTo(page.getByRole("listitem", { name: /^Draft/ }));
-  await expect(page.getByRole("status").filter({ hasText: "tidak bisa dipindah" })).toBeVisible();
+  // a drop before hydration does nothing and the toast lasts 3.5s, so retry the (harmless, refused) drag until it shows
+  await expect(async () => {
+    await card.dragTo(page.getByRole("listitem", { name: /^Draft/ }));
+    await expect(page.getByRole("status").filter({ hasText: "tidak bisa dipindah" })).toBeVisible({ timeout: 2000 });
+  }).toPass({ timeout: 20_000 });
   expect((await prisma.bug.findUniqueOrThrow({ where: { id: bug.id } })).status).toBe("OPEN");
 
   await card.dragTo(page.getByRole("listitem", { name: /^In progress/ }));
@@ -86,10 +84,11 @@ test("board: seret kartu ke kolom valid pindah, ke kolom yang tidak diizinkan di
   await page.getByLabel("Tambah tag").press("Enter");
   await expect(page.getByText("#e2e-tag")).toBeVisible();
 
-  await page.goto(`/projects/CRM?view=all&q=${encodeURIComponent(title)}`);
+  await page.goto(`/projects/CRM?view=all&layout=list&q=${encodeURIComponent(title)}`);
   await page.getByRole("button", { name: /^Filter( \d+)?$/ }).click();
   await page.getByRole("button", { name: /^Tag/ }).click();
   await page.getByRole("checkbox", { name: "#e2e-tag" }).check();
+  await expect(page).toHaveURL(/tag=/);
   await expect(page.getByRole("link", { name: title })).toBeVisible();
   await prisma.$disconnect();
 });
@@ -128,15 +127,9 @@ test("aksi massal: ubah status, assign, dan tag beberapa bug sekaligus", async (
   const prisma = new PrismaClient();
   const { project, user } = await qaLogin(prisma, page);
   const stamp = `E2E massal ${Date.now()}`;
-  const last = await prisma.bug.findFirst({ where: { projectId: project.id }, orderBy: { number: "desc" } });
-  const base = (last?.number ?? 0) + 1;
-  const ids: string[] = [];
-  for (let i = 0; i < 2; i++) {
-    const b = await prisma.bug.create({
-      data: { projectId: project.id, number: base + i, key: `CRM-${base + i}`, title: `${stamp} ${i}`, severity: "LOW", status: "OPEN", reporterId: user.id, actualResult: "a", expectedResult: "b", stepsToReproduce: "1" },
-    });
-    ids.push(b.id);
-  }
+  const made = await createBugs(prisma, project, [0, 1].map((i) => ({ title: `${stamp} ${i}`, reporterId: user.id })));
+  const base = made[0].number;
+  const ids = made.map((b) => b.id);
   await page.setViewportSize({ width: 1400, height: 900 });
   await page.goto(`/projects/CRM?view=all&q=${encodeURIComponent(stamp)}`);
   await expect(page.getByRole("form", { name: "Aksi massal" })).toBeHidden();
@@ -169,16 +162,15 @@ test("pintasan J/K memilih bug berikutnya di list dan panel pratinjau muncul", a
   const prisma = new PrismaClient();
   const { project, user } = await qaLogin(prisma, page);
   const stamp = `E2E jk ${Date.now()}`;
-  const last = await prisma.bug.findFirst({ where: { projectId: project.id }, orderBy: { number: "desc" } });
-  const base = (last?.number ?? 0) + 1;
-  for (let i = 0; i < 2; i++) {
-    await prisma.bug.create({ data: { projectId: project.id, number: base + i, key: `CRM-${base + i}`, title: `${stamp} ${i}`, severity: "LOW", status: "DRAFT", reporterId: user.id, actualResult: "a", expectedResult: "b", stepsToReproduce: "1" } });
-  }
+  await createBugs(prisma, project, [0, 1].map((i) => ({ title: `${stamp} ${i}`, status: "DRAFT" as const, reporterId: user.id })));
   await page.setViewportSize({ width: 1400, height: 900 });
   await page.goto(`/projects/CRM?view=all&q=${encodeURIComponent(stamp)}`);
   await page.locator("body").click({ position: { x: 5, y: 5 } });
-  await page.keyboard.press("j");
-  await expect(page).toHaveURL(/sel=CRM-\d+/);
+  // keys pressed before hydration are lost: repeat until the selection reaches the URL
+  await expect(async () => {
+    await page.keyboard.press("j");
+    await expect(page).toHaveURL(/sel=CRM-\d+/, { timeout: 1500 });
+  }).toPass({ timeout: 20_000 });
   await expect(page.getByRole("complementary", { name: /Pratinjau dan triase CRM-/ })).toBeVisible();
   await prisma.$disconnect();
 });
