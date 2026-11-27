@@ -64,17 +64,21 @@ export async function saveTestCaseCore(
 
   let moduleArea: string | null = null;
   if (input.moduleId) {
-    const mod = await prisma.module.findUnique({ where: { id: input.moduleId } });
-    if (mod) moduleArea = mod.name;
+    const mod = await prisma.module.findFirst({ where: { id: input.moduleId, projectId } });
+    if (!mod) return { error: "Modul tidak valid." };
+    moduleArea = mod.name;
   }
 
   let code = input.code?.trim().toUpperCase();
   if (!code) {
-    const count = await prisma.testCase.count({ where: { projectId } });
+    let n = (await prisma.testCase.count({ where: { projectId } })) + 1;
     const prefix = moduleArea
       ? moduleArea.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 4)
       : projectKey;
-    code = `TC-${prefix || "GEN"}-${String(count + 1).padStart(3, "0")}`;
+    const mk = () => `TC-${prefix || "GEN"}-${String(n).padStart(3, "0")}`;
+    // count turun setelah delete: lewati kode yang sudah ada agar tidak menimpa test case lain.
+    while (await prisma.testCase.findUnique({ where: { projectId_code: { projectId, code: mk() } }, select: { id: true } })) n++;
+    code = mk();
   }
 
   const priority = input.priority || "MEDIUM";
