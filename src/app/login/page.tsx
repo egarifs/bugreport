@@ -18,7 +18,9 @@ export default async function LoginPage({
     redirect("/pending");
   }
 
-  const { callbackUrl, error } = await searchParams;
+  const { callbackUrl: rawCallback, error } = await searchParams;
+  // Hanya path internal (awalan "/" tapi bukan "//" atau "/\\"), cegah open redirect.
+  const callbackUrl = rawCallback && /^\/(?![/\\])/.test(rawCallback) ? rawCallback : undefined;
   const showDevLogin = process.env.ENABLE_DEV_LOGIN === "true";
 
   return (

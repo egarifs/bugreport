@@ -34,7 +34,9 @@ export default async function AdminUsersPage({
     | { id?: string; email?: string; isAdmin?: boolean }
     | undefined;
 
-  if (!user?.isAdmin) {
+  // Cek DB (bukan JWT): admin yang dicabut/di-suspend langsung kehilangan akses.
+  const dbAdmin = user?.id ? await prisma.user.findUnique({ where: { id: user.id }, select: { isAdmin: true, status: true } }) : null;
+  if (!dbAdmin?.isAdmin || dbAdmin.status !== "ACTIVE") {
     redirect("/projects");
   }
 

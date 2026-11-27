@@ -11,7 +11,7 @@ const enableDevLogin = process.env.ENABLE_DEV_LOGIN === "true";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   trustHost: true,
-  session: { strategy: "jwt" },
+  session: { strategy: "jwt", maxAge: 8 * 60 * 60 }, // 8 jam: batasi umur token admin/status basi
   providers: [
     Google({
       clientId: process.env.AUTH_GOOGLE_ID || "",
@@ -22,8 +22,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       name: "Email dan kata sandi",
       credentials: { email: { type: "email" }, password: { type: "password" } },
       async authorize(c, req) {
-        // Di belakang proxy: IP klien = entri pertama x-forwarded-for.
-        const ip = req?.headers?.get("x-forwarded-for")?.split(",")[0].trim() || "unknown";
+                // cf-connecting-ip diisi Cloudflare dan tidak bisa dipalsukan klien; x-forwarded-for entri pertama bisa.
+        const ip = req?.headers?.get("cf-connecting-ip") || req?.headers?.get("x-forwarded-for")?.split(",")[0].trim() || "unknown";
         if (!allowAttempt(ip)) return null;
         if (typeof c?.email !== "string" || typeof c?.password !== "string" || !c.password) return null;
         const u = await verifyLogin(c.email, c.password);
