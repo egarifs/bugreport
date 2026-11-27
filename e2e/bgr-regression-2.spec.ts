@@ -139,7 +139,7 @@ test("TC-RUN-003: tetap berputar selama ada yang belum dijalankan, merah setelah
   await prisma.testCase.deleteMany({ where: { id: { in: cases.map((c) => c.id) } } });
 });
 
-test("TC-RUN-004 TC-RUN-005: daftar run menampilkan status dan progres, reduced motion mematikan animasi", async ({ page }) => {
+test("TC-RUN-004 TC-RUN-005: daftar run menampilkan status dan progres, reduced motion tetap menjalankan indikator (lebih lambat)", async ({ page }) => {
   await login(page);
   const { run, cases } = await seedRun(["PASS", "NOT_RUN"]);
   await page.emulateMedia({ reducedMotion: "reduce" });
@@ -152,9 +152,10 @@ test("TC-RUN-004 TC-RUN-005: daftar run menampilkan status dan progres, reduced 
   await page.goto(`/projects/CRM/test-runs/${run.id}`);
   const status = page.getByRole("status").filter({ hasText: "Menunggu dijalankan" });
   await expect(status).toBeVisible(); // still readable from text
-  const names = await page.evaluate(() => [...document.querySelectorAll("svg.animate-spin, .run-stripes")].map((el) => getComputedStyle(el).animationName));
-  expect(names.length).toBeGreaterThan(0);
-  for (const n of names) expect(n).toBe("none");
+  // status = umpan balik: spinner dan strip tetap bergerak saat reduced-motion, bukan mati
+  const anim = await page.evaluate(() => [...document.querySelectorAll("svg.keep-motion, .run-stripes")].map((el) => ({ n: getComputedStyle(el).animationName, d: parseFloat(getComputedStyle(el).animationDuration) })));
+  expect(anim.length).toBeGreaterThan(0);
+  for (const a of anim) { expect(a.n).not.toBe("none"); expect(a.d).toBeGreaterThanOrEqual(2.4); }
   await prisma.testRun.delete({ where: { id: run.id } });
   await prisma.testCase.deleteMany({ where: { id: { in: cases.map((c) => c.id) } } });
 });

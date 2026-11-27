@@ -44,7 +44,8 @@ input:not([type="checkbox"]):not([type="radio"]), textarea, select {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  * { transition: none !important; animation: none !important; }
+  /* .keep-motion: spinner status berjalan tetap berputar (umpan balik, bukan dekorasi). */
+  *:not(.keep-motion):not(.run-stripes) { transition: none !important; animation: none !important; }
 }
 
 /* Markdown (docs viewer, AI chat). No typography plugin: a few rules cover it. */
@@ -93,7 +94,8 @@ input:not([type="checkbox"]):not([type="radio"]), textarea, select {
   animation: run-stripes 1s linear infinite;
 }
 .run-pop { animation: run-pop .35s ease-out both; }
-@media (prefers-reduced-motion: reduce) { .run-stripes, .run-pop { animation: none; } }
+/* Reduced-motion: strip tetap bergeser tapi 4x lebih lambat; pop sekali dimatikan. */
+@media (prefers-reduced-motion: reduce) { .run-pop { animation: none; } .run-stripes { animation-duration: 4s; } }
 
 /* Interactive & Report Micro-motions */
 @keyframes bar-grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }

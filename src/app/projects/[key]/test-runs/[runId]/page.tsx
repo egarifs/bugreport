@@ -18,14 +18,14 @@ const GLYPH: Record<string, string> = { NOT_RUN: "○", PASS: "✓", FAIL: "✗"
 function StatusIcon({ status, isRunning }: { status: string; isRunning?: boolean }) {
   if (isRunning) {
     return (
-      <svg className="w-4 h-4 text-amber-500 animate-spin motion-reduce:animate-none shrink-0" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <svg className="w-4 h-4 text-amber-500 animate-spin keep-motion motion-reduce:animate-[spin_2.4s_linear_infinite] shrink-0" viewBox="0 0 16 16" fill="none" aria-hidden="true">
         <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="2" strokeDasharray="28" strokeDashoffset="14" strokeLinecap="round" />
       </svg>
     );
   }
   if (status === "NOT_RUN") {
     return (
-      <svg className="w-4 h-4 text-amber-500 shrink-0 animate-[spin_2.4s_linear_infinite] motion-reduce:animate-none" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <svg className="w-4 h-4 text-amber-500 shrink-0 animate-[spin_2.4s_linear_infinite] keep-motion motion-reduce:animate-[spin_2.4s_linear_infinite]" viewBox="0 0 16 16" fill="none" aria-hidden="true">
         <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="2" strokeDasharray="3 3" />
       </svg>
     );

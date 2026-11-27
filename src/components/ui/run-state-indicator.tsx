@@ -7,10 +7,10 @@ const BOX = "shrink-0";
 export function RunStateIcon({ kind, size = 18 }: { kind: RunKind; size?: number }) {
   const common = { width: size, height: size, viewBox: "0 0 16 16", fill: "none", "aria-hidden": true, className: BOX } as const;
   if (kind === "running" || kind === "waiting") {
-    // running spins fast, waiting spins slowly (both stop for reduced-motion users and keep the ring visible)
+    // running spins fast, waiting spins slowly (both keep turning for reduced-motion users, slowly, since they are status feedback)
     const speed = kind === "running" ? "animate-spin" : "animate-[spin_2.4s_linear_infinite]";
     return (
-      <svg {...common} className={`${BOX} text-amber-500 ${speed} motion-reduce:animate-none`}>
+      <svg {...common} className={`${BOX} text-amber-500 ${speed} keep-motion motion-reduce:animate-[spin_2.4s_linear_infinite]`}>
         <circle cx="8" cy="8" r="6" stroke="currentColor" strokeOpacity="0.25" strokeWidth="2" />
         <path d="M8 2a6 6 0 0 1 6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
       </svg>
