@@ -29,11 +29,14 @@ test("test run: spinner dan strip animasi selama belum lolos, centang hijau sete
   await expect(badge).toContainText("0/2");
   await expect(badge.locator("svg.animate-spin, svg[class*='animate-']")).toHaveCount(1);
   await expect(page.locator(".run-stripes")).toBeVisible();
+  // item belum dijalankan ikut berputar di daftar kiri
+  await expect(page.locator("nav[aria-label='Daftar test case'] svg[class*='animate-']")).toHaveCount(2);
 
   // one passed, one still waiting: still spinning, 1/2
   await prisma.testRunItem.update({ where: { id: run.items[0].id }, data: { status: "PASS" } });
   await page.reload();
   await expect(page.getByRole("status").filter({ hasText: "Menunggu dijalankan" })).toContainText("1/2");
+  await expect(page.locator("nav[aria-label='Daftar test case'] svg[class*='animate-']")).toHaveCount(1); // hanya yang belum jalan
 
   // everything passed: green check, no stripes
   await prisma.testRunItem.update({ where: { id: run.items[1].id }, data: { status: "PASS" } });

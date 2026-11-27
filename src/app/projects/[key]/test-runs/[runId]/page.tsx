@@ -25,7 +25,7 @@ function StatusIcon({ status, isRunning }: { status: string; isRunning?: boolean
   }
   if (status === "NOT_RUN") {
     return (
-      <svg className="w-4 h-4 text-slate-400 shrink-0" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <svg className="w-4 h-4 text-amber-500 shrink-0 animate-[spin_2.4s_linear_infinite] motion-reduce:animate-none" viewBox="0 0 16 16" fill="none" aria-hidden="true">
         <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="2" strokeDasharray="3 3" />
       </svg>
     );
