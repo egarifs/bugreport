@@ -13,7 +13,7 @@ Paket ini berisi semua layar revamp (v2 sampai v5) sebagai mockup HTML dan scree
 | `ROADMAP.md` | Urutan implementasi: MVP inti QA, fase berikut, dan perubahan skema per langkah. **Mulai dari sini.** |
 | `PROMPTS.md` | Prompt siap pakai untuk agent coding: pembuka sesi dan per langkah ROADMAP. |
 | `acceptance/*.md` | Kriteria terima Diberikan/Ketika/Maka per fitur MVP. |
-| `dataset.md`, `dataset.json` | Satu dataset cerita (CRM Contoh · Sprint 14) untuk board, seed sandbox, dan e2e. |
+| `dataset.md`, `dataset.json` | Satu dataset cerita (CRM Sismedika · Sprint 14) untuk board, seed sandbox, dan e2e. |
 | `agent/bugboard-qa-runner.md` | Instruksi untuk agent QA (pi, Claude Code, dsb.) yang dijalankan di folder lokal QA (F9). |
 
 ## Cara membaca mockup
@@ -96,6 +96,7 @@ Canvas dan `index.html` disusun per alur, dibaca kiri ke kanan. Setiap alur diaw
 | 12 Ringkasan grafik | — | `C1` | QA, PO/Admin (workload: lead) |
 | 13 Navigasi | — | `D1` → `D2` → `D3` | Semua |
 | 14 STLC & dokumen | `E0` | `E5` → `E2` → `E1` → `E3` → `E6` → `E4` | PO/Admin, QA, Developer |
+| 16 Otomasi Playwright | `H0` | `H1` → `H2` → `H3` → `H4`, `H5`, `H6` | QA, agent pi, runner lokal |
 | 15 Referensi & pola | — | `G6`, `G7` (berlaku untuk semua alur) | Semua |
 | 11 Performa | `B0` | `B1` / `B2` → `B3` → `B4`, `B5` | QA, Dev/Vendor, PO/Admin, Klien (agregat) |
 
@@ -154,6 +155,13 @@ Fondasi untuk semua alur: `01`, `02`, `03`. Layar yang sudah digantikan (`00`, `
 | G4 | `G4-kesiapan-rilis-v3` | Kesiapan rilis v3: penghalang + kriteria keluar Test Plan (panel kanan baru di Fase 3) | `app/projects/[key]/reports/page.tsx` |
 | G5 | `G5-preferensi-notifikasi` | Profil › Notifikasi: per jenis Segera/Harian/Per sesi/Mati, cakupan, mode fokus | profil (baru) |
 | G6 | `G6-kamus-status-izin` | Referensi: kamus status bug/test/requirement + matriks hak akses | `src/lib/status-dictionary.ts` (baru), `permissions.ts` |
+| H0 | `H0-alur-otomasi` | Peta alur: test case lengkap → kode Playwright → jalankan → tinjau (F15, bukan layar) | — |
+| H1 | `H1-test-case-tab-otomasi` | Test case › tab Otomasi: cakupan, status otomasi, pilih banyak, jalankan di runner (F15) | `app/projects/[key]/test-cases/automation/` (baru) |
+| H2 | `H2-detail-tc-otomasi` | Detail test case › tab Otomasi: tautan kode, kelengkapan, perintah agent, riwayat jalan, peringatan TC berubah (F15) | `test-cases/[id]` |
+| H3 | `H3-test-run-otomasi-berjalan` | Test run otomasi berjalan: progres, spinner per item, log runner (F15) | `test-runs/[runId]` |
+| H4 | `H4-triase-kegagalan-otomasi` | Kegagalan perlu ditinjau: Bug produk / Test rusak / Flaky (F15) | baru |
+| H5 | `H5-runner-otomasi` | Profil › Runner otomasi: daftar runner, pasang runner, reporter, cek tag (F15) | profil (baru) |
+| H6 | `H6-hubungkan-test-lama` | Hubungkan test Playwright yang sudah ada: Cocok / Perlu ditinjau / Tidak cocok (F15) | `test-cases/automation/link` (baru) |
 | G7 | `G7-state-kosong-error` | Pola state: kosong, filter tanpa hasil, skeleton, gagal memuat, tanpa akses, data banyak, validasi, gelap | komponen bersama |
 | 40 | `40-portal-klien-konsep-v1` | Konsep awal portal klien (mobile) | belum ada |
 
@@ -354,7 +362,7 @@ Peran Client mendapat tampilan sendiri yang lebih sederhana, berisi:
 
 ### F8. Test case dan test run sesuai standar QA (keputusan 2 Nov 2026)
 Mockup: `23b`, `24a`, `24b` (menggantikan `24` untuk eksekusi). Nama, angka, dan tanggal di mockup adalah contoh.
-Kondisi kode sebelum Step #10 (kolom `Bug.testRunItemId` sudah dihapus di migrasi `20261111090000`): `TestRunItem` hanya menyimpan hasil terakhir (re-run menimpa), test run membaca test case langsung dari repository (edit ikut berubah tanpa jejak), satu item hanya bisa punya satu bug (`Bug.testRunItemId` unik), dan test case tidak punya versi atau status.
+Kondisi kode sekarang: `TestRunItem` hanya menyimpan hasil terakhir (re-run menimpa), test run membaca test case langsung dari repository (edit ikut berubah tanpa jejak), satu item hanya bisa punya satu bug (`Bug.testRunItemId` unik), dan test case tidak punya versi atau status.
 
 **Repository test case**
 - Status `DRAFT` / `READY` / `DEPRECATED`. Hanya `READY` yang bisa dimasukkan ke run. `DEPRECATED` disembunyikan dari daftar default, riwayat tetap ada.
@@ -593,6 +601,99 @@ Skema
 - `TestSummary` snapshot: `docVersionId`, `data Json` (angka dibekukan), `finalizedAt`, `finalizedById`.
 - `SprintDoDItem` (konfigurasi per project) dan `SprintClosure`: hasil checklist + `exceptionReason`.
 - RTM dihitung dari `RequirementSection` ↔ rujukan test case/bug ↔ percobaan terakhir; tidak disimpan, dihitung saat dibuka (cache per versi dokumen bila perlu).
+
+### F15. Otomasi dari test case: via agent dulu, kode bila perlu (keputusan 26 Nov 2026)
+
+Mockup: `H0`–`H6`. Roadmap: langkah #13, setelah F9. Kriteria terima: `acceptance/05-otomasi.md`.
+
+Keputusan: **cara C (gabungan)**. BRD: dokumen "BRD · Otomasi test case BugBoard" (Claude Docs).
+- User non-teknis cukup menulis test case lengkap lalu menekan **Jalankan**. Test case tanpa kode dijalankan **via agent**: agent pi di runner membaca langkah dan mempraktikkannya di browser, memakai mesin yang sama dengan F9.
+- Test case yang sering dipakai dan stabil bisa dijadikan kode lewat tombol **Jadikan kode** (opsional, orang teknis). Kode Playwright dihubungkan oleh tag `@TC-xxx` di judul test dan dijalankan **via kode**: hitungan detik, tanpa token AI.
+- Runner tim dipasang dan dipegang oleh Ega.
+
+BugBoard mengatur antrean dan mencatat hasil. Kode tinggal di repo test (git). Browser hanya dijalankan oleh runner.
+
+**Status otomasi** (`TestCase.automationStatus`, tampil sebagai tag di daftar dan detail; label diambil dari modul kamus status yang sama dengan `G6`):
+
+| Enum | Label | Kapan |
+|---|---|---|
+| `MANUAL` | Manual | Default. Kelengkapan belum terpenuhi. |
+| `READY` | Siap · via agent | Semua poin kelengkapan terpenuhi (sama dengan syarat "Siap untuk agent" F9). Bisa dijalankan via agent; belum ada kode tertaut. |
+| `AUTOMATED` | Otomatis · kode | Reporter pernah mengirim hasil untuk tag TC ini dari repo yang terdaftar. Dijalankan via kode. |
+| `NEEDS_FIX` | Perlu perbaikan | QA menandai "Test rusak" di triase. Sampai kodenya diperbaiki, jalan berikutnya otomatis via agent. |
+| `NOT_AUTOMATABLE` | Tidak diotomasi | Dipilih manual dengan alasan wajib (mis. butuh perangkat fisik). |
+
+"Perlu ditinjau" adalah keadaan **percobaan** yang gagal dan belum diputuskan, bukan status test case.
+
+**Kelengkapan untuk otomasi** (dicek server):
+- Langkah bernomor.
+- Hasil yang diharapkan terisi.
+- Data uji terisi bila langkah memakai `{{variabel}}`.
+- Peran ada di sumber akun uji (status `OK` terakhir).
+- Lingkungan dipilih.
+
+**Jadikan kode** (`H1`, `H2`, opsional), mengikuti alur resmi Playwright Test Agents (planner → generator → healer). Tombol "Jadikan kode" atau "Perbarui kode" menyalin dua perintah:
+- `npx bugboard tc plan TC-018 > specs/TC-018.md` mengekspor TC sebagai **plan markdown format planner Playwright**: judul, prasyarat, langkah bernomor dengan data uji terisi, hasil yang diharapkan per langkah, dan seed `tests/seed.spec.ts`. Plan ini menggantikan langkah planner, karena isinya sudah ditulis QA.
+- `pi "generate dari specs/TC-018.md"`.
+
+Agent lalu:
+1. Membaca plan (atau TC lewat MCP `get_test_case`).
+2. Menjalankan Playwright generator di lingkungan uji. File hasil memuat header `// spec: specs/TC-018.md` dari generator.
+3. Menulis `tests/<modul>/<slug>.spec.ts` dengan judul berakhiran `@TC-018`.
+4. Membuka PR di repo test.
+
+BugBoard tidak menyimpan kode. Instruksi untuk agent ditambahkan ke `agent/bugboard-qa-runner.md` (bagian "Membuat otomasi").
+
+**Tautan kode.** Reporter `@bugboard/playwright-reporter` mengirim data tautan per hasil: repo, file, baris, judul test, dan commit. Tautan disimpan di `AutomationLink` (testCaseId, repo, filePath, line, testTitle, commitSha, caseVersion, lastSeenAt). Bila `TestCase.version` > `AutomationLink.caseVersion`, `H2` menampilkan peringatan "Test case berubah setelah kode dibuat".
+
+**Runner** (`H5`). Paket CLI `packages/cli`, perintah `npx bugboard runner --name <nama>`, dijalankan di folder repo test dengan `BUGBOARD_KEY` di `.env`.
+- Polling antrean tiap 5 detik. Heartbeat dan lease mengikuti F9: ≤ 30 detik, kedaluwarsa 90 detik.
+- Hanya menjalankan dua perintah tetap di foldernya:
+  - via kode: `npx playwright test --grep "<tag>" --project=<browser>`;
+  - via agent: agent pi dengan skill `bugboard-qa-runner` dan argumen `--run <id>` (agent lalu memakai `claim_next_item`, `heartbeat`, `record_result` seperti F9, dengan browser lewat Playwright MCP).
+
+  Server hanya mengirim daftar kode TC, cara (agent/kode), lingkungan, build, dan browser. Perintah atau argumen lain ditolak.
+- Pemasang dan pemegang runner tim: Ega.
+- Model `AutomationRunner`: id, ownerId, projectId, name, browsers[], environments[], lastSeenAt, isTeam. Runner hanya mengambil jalan milik pemiliknya, kecuali `isTeam` (diatur Admin).
+
+**Menjalankan** (`H1`, `H3`):
+- Tombol Jalankan membuat test run baru bertipe `AUTOMATED`, dengan nama "Otomasi · <modul/tag> · <build>", berisi item untuk semua TC yang dipilih dan berstatus Siap, Otomatis, atau Perlu perbaikan.
+- Cara per item ditentukan otomatis: **via kode** bila status Otomatis; **via agent** bila Siap atau Perlu perbaikan. Di detail TC tersedia dua tombol: "Jalankan via agent" (mis. setelah TC berubah dan kode belum diperbarui) dan "Jalankan via kode".
+- Item via kode dijalankan lebih dulu, lalu item via agent satu per satu. Bar pilihan menampilkan jumlah per cara dan peringatan bahwa via agent lebih lambat dan memakai token AI.
+- **Sarankan jadikan kode**: TC yang dijalankan via agent lebih sering dari ambang per sprint diberi label itu di `H1`. Ambangnya diatur QA lead di Pengaturan project (belum ditentukan).
+- Setiap hasil menjadi percobaan F8 dengan `source = AUTOMATION`, `via = AGENT | CODE`, durasi, dan bukti (trace, screenshot, video ≤ 20 MB). Via agent memakai aturan hasil F9: ragu → Terblokir.
+- Indikator berjalan dan log memakai polling 5 detik. Log diambil dari 200 baris terakhir output runner, disamarkan oleh pola rahasia yang sama dengan F9.
+- Batalkan menghentikan proses di runner. Item yang belum selesai menjadi Dilewati dengan alasan "dibatalkan".
+
+**Triase kegagalan** (`H4`). Percobaan gagal dari otomasi tidak membuat bug. Percobaan itu masuk antrean "Perlu ditinjau" sampai QA memilih salah satu:
+- **Bug produk**: buat Draft atau tautkan ke bug yang ada, dengan dedupe `search_bugs`. Langkah, build, trace, dan screenshot terisi otomatis.
+- **Test rusak**: TC menjadi `NEEDS_FIX`, ditugaskan ke seseorang. Tombol "Salin perintah healer" menyalin `pi "heal test @TC-021"`, yang menjalankan Playwright healer di repo test lalu membuka PR. Healer boleh men-skip test bila menurutnya fitur memang rusak; agent wajib melaporkan itu sebagai kemungkinan bug produk, bukan diam-diam men-skip.
+- **Flaky**: jalankan ulang 1×. Bila lolos, percobaan dicatat Lolos dengan label `flaky`, dan jumlah flaky ditampilkan di laporan.
+
+Petunjuk otomatis hanyalah teks bantu, bukan keputusan. Contohnya:
+- Timeout pada locator sementara halaman termuat: "kemungkinan test rusak".
+- Assertion nilai berbeda: "kemungkinan bug produk".
+
+**Cek tag** (`H3`, `H5`). Reporter memeriksa tag setiap jalan dan mengirim peringatan:
+- Test tanpa tag `@TC-xxx`.
+- ID TC yang tidak ada di project.
+- Satu test bertag lebih dari satu TC.
+- Dua test bertag TC yang sama.
+
+Peringatan tampil di ringkasan test run dan di Profil › Runner. Test bermasalah tidak dihitung, tetapi tidak menggagalkan jalan.
+
+**Hubungkan test yang sudah ada** (`H6`). Untuk QA yang sudah punya test Playwright sebelum BugBoard (pola dari BrowserStack Test Companion):
+- `npx bugboard tests scan` membaca `npx playwright test --list` dan mengirim file, judul, dan langkah (`test.step`) dari test tanpa tag. Kode tidak dikirim.
+- Server mencocokkan judul, lalu langkah, ke TC di project. Hasilnya dikelompokkan:
+  - **Cocok**: judul ≥ 90% mirip dan langkah sesuai.
+  - **Perlu ditinjau**: ragu, atau ada lebih dari satu kandidat.
+  - **Tidak cocok**: tidak ada kandidat. Aksi: buat TC Draft dari test itu, atau abaikan.
+- Server tidak pernah menautkan otomatis. QA memilih lalu menekan "Tautkan". `AutomationLink` langsung tersimpan berdasarkan file + judul.
+- `npx bugboard tests tag --apply` menulis tag ke judul test di mesin QA. Setelah itu QA membuat PR.
+
+**Riset pembanding (26 Nov 2026).** Playwright Test Agents (planner/generator/healer), Allure TestOps (job CI, launch, run ulang di launch yang sama), Qase AIDEN (ekspor kode Playwright dari TC), BrowserStack Test Companion (tombol Automate per baris/bulk, status Not Automated → Automated, tag ID TC, tautkan test lama, perbaiki kegagalan), Azure DevOps MCP + Playwright, dan Bugasura. Bugasura punya test management (requirement, suite, test run per sprint) tanpa fitur otomasi Playwright.
+
+**Ditunda.** Jadwal (nightly) dan pemicu dari CI masuk fase berikut. MVP otomasi hanya menyediakan "Jalankan" manual.
 
 ## Review QA lead (keputusan 3 Nov 2026)
 

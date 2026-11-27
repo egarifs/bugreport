@@ -62,6 +62,33 @@ Jika QA sudah punya laporan dari framework (JUnit XML atau Playwright JSON), cuk
 3. Tidak ada → `create_bug_draft` dengan `testRunItemId`, judul spesifik, langkah reproduksi sampai langkah gagal, hasil yang diharapkan dan aktual, `environment`, `buildNumber`, `component` dari `list_modules`, severity sesuai dampak.
 4. Bug selalu Draft; jangan mengubah statusnya.
 
+## Dijalankan oleh runner BugBoard (via agent, F15)
+
+Bila kamu dipanggil oleh `bugboard runner` dengan `--run <id>`, kamu menjalankan item test run otomasi yang ditandai **via agent**.
+
+- Ikuti alur kerja di atas mulai langkah 4: `claim_next_item`, eksekusi langkah persis, `heartbeat`, lalu `record_result`.
+- Browser dijalankan lewat Playwright (MCP atau tool lokal yang ditetapkan runner). Jangan membuat atau mengubah file kode test di mode ini.
+- Hasil tercatat dengan `via = AGENT`. Aturan "ragu → Terblokir" tetap berlaku.
+- Kegagalan tidak membuat bug. Item masuk antrean "Perlu ditinjau" di BugBoard; jangan memanggil `create_bug_draft` di mode ini.
+- Selesai bila `claim_next_item` kosong, lalu `finish_session`.
+
+## Membuat atau memperbarui otomasi Playwright (F15)
+
+Dipakai bila QA meminta "buat otomasi TC-xxx" atau "perbarui otomasi TC-xxx" di folder repo test.
+
+1. `get_test_case` untuk TC tersebut. Hentikan dan laporkan bila status otomasinya bukan Siap diotomasi atau Otomatis, atau bila ada poin kelengkapan yang kurang.
+2. Cari file yang sudah ada dengan tag `@TC-xxx`. Bila ada, perbarui file itu; jangan membuat file kedua.
+3. Ekspor plan: `npx bugboard tc plan TC-xxx > specs/TC-xxx.md`. Jalankan Playwright **generator** dari plan itu (lewat `npx playwright init-agents`). Plan ini menggantikan planner, jadi jangan menambah langkah di luar plan. Ikuti langkah persis di lingkungan uji, bukan produksi.
+   - Untuk "perbaiki test rusak TC-xxx", pakai **healer**. Bila healer ingin men-skip test karena fitur tampak rusak, jangan di-skip. Laporkan ke QA sebagai kemungkinan bug produk.
+4. Aturan kode:
+   - Satu test per TC, dengan judul diakhiri `@TC-xxx`. Simpan di `tests/<modul>/<slug>.spec.ts`.
+   - Gunakan locator berbasis peran/label (`getByRole`, `getByLabel`), bukan selector CSS rapuh.
+   - Setiap poin hasil yang diharapkan = satu `expect`.
+   - Akun uji dibaca dari sumber akun uji atau `.env` lokal. Jangan menulis kredensial di kode.
+5. Jalankan test sekali secara lokal. Laporkan hasilnya ke QA, termasuk bila gagal dan dugaan penyebabnya.
+6. Buat branch dan PR di repo test dengan judul `otomasi: TC-xxx <judul>`. Jangan merge sendiri.
+7. Jangan memanggil `record_result` untuk jalan percobaan ini. Hasil resmi masuk lewat reporter saat dijalankan dari BugBoard.
+
 ## Aturan keamanan
 
 - Jangan pernah menulis password, token, cookie, isi `.env`, atau isi dokumen akun uji di hasil, komentar, judul bug, bukti teks, atau balasan. Jangan screenshot dokumen akun uji.

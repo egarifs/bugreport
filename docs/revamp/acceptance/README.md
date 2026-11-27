@@ -8,6 +8,7 @@ Format: **Diberikan** (kondisi awal) / **Ketika** (aksi) / **Maka** (hasil yang 
 | `02-siklus-bug.md` | Laporkan v3, detail v3, verifikasi di build, gabung duplikat, notifikasi | #4–#8, #11 |
 | `03-test-run.md` | Versi test case, percobaan, re-run, banyak bug, tutup run | #9–#10 |
 | `04-agent-qa.md` | Kunci, sumber akun uji, MCP/CLI, lease, heartbeat, hasil, bug | #12 |
+| `05-otomasi.md` | Status otomasi, buat kode, reporter, runner, jalankan, triase kegagalan | #13 |
 
 Test otomatis: Playwright (e2e, nama test diawali ID AC) dan Vitest (unit). Seed: `../dataset.json` sebagai project `isTest`.
 
